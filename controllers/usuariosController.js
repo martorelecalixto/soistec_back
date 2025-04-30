@@ -1,4 +1,5 @@
 const { poolPromise } = require('../db');
+const bcrypt = require('bcryptjs'); // ✅ Importar bcrypt
 
 const getUsuarios = async (req, res) => {
   try {
@@ -30,33 +31,43 @@ const getUsuarioById = async (req, res) => {
 const createUsuario = async (req, res) => {
   try {
     const { nome, email, senha } = req.body;
+
+    // ✅ Criptografar a senha antes de salvar
+    const hashedSenha = await bcrypt.hash(senha, 10);
+
     const pool = await poolPromise;
     await pool
       .request()
       .input('nome', nome)
       .input('email', email)
-      .input('senha', senha)
+      .input('senha', hashedSenha)
       .query('INSERT INTO usuarios (nome, email, senha) VALUES (@nome, @email, @senha)');
-    res.status(201).send('Usuário criado');
+
+    res.status(201).json({ success: true, message: 'Usuário criado com sucesso' });
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const updateUsuario = async (req, res) => {
   try {
     const { nome, email, senha } = req.body;
+
+    // ✅ Criptografar nova senha se fornecida
+    const hashedSenha = await bcrypt.hash(senha, 10);
+
     const pool = await poolPromise;
     await pool
       .request()
       .input('idusuario', req.params.idusuario)
       .input('nome', nome)
       .input('email', email)
-      .input('senha', senha)
+      .input('senha', hashedSenha)
       .query('UPDATE usuarios SET nome = @nome, email = @email, senha = @senha WHERE idusuario = @idusuario');
-    res.send('Usuário atualizado');
+
+    res.json({ success: true, message: 'Usuário atualizado com sucesso' });
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -67,9 +78,9 @@ const deleteUsuario = async (req, res) => {
       .request()
       .input('idusuario', req.params.idusuario)
       .query('DELETE FROM usuarios WHERE idusuario = @idusuario');
-    res.send('Usuário deletado');
+    res.json({ success: true, message: 'Usuário deletado com sucesso' });
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
