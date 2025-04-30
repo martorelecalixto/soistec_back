@@ -1,9 +1,13 @@
 const express = require('express');
+const cors = require('cors'); // ✅ Importa o CORS
 require('dotenv').config();
 
 const app = express();
 const usuariosRoutes = require('./routes/usuariosRoutes');
 const setupSwagger = require('./swagger');
+
+// ✅ Ativa o CORS para todas as origens (ou configure uma origem específica)
+app.use(cors());
 
 app.use(express.json());
 
