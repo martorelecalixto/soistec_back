@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Rotas da API
 app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/auth/login', authRoutes); // ✅ Define rota para autenticação
+app.use('/auth/login', authRoutes); // ✅ Define rota para autenticação
 
 // Swagger
 setupSwagger(app);
