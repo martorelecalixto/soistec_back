@@ -21,7 +21,7 @@ app.use(express.json());
 // Rotas da API
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/auth', authRoutes); 
-app.use('/api/filiais', authRoutes); 
+app.use('/api/filiais', filiaisRoutes); 
 
 // Swagger
 setupSwagger(app);
