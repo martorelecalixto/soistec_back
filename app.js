@@ -6,7 +6,8 @@ const app = express();
 
 // Rotas
 const usuariosRoutes = require('./routes/usuariosRoutes');
-const authRoutes = require('./routes/authRoutes'); // ✅ Importa as rotas de autenticação
+const authRoutes = require('./routes/authRoutes'); 
+const filiaisRoutes = require('./routes/filiaisRoutes'); 
 
 // Swagger
 const setupSwagger = require('./swagger');
@@ -19,7 +20,8 @@ app.use(express.json());
 
 // Rotas da API
 app.use('/api/usuarios', usuariosRoutes);
-app.use('/auth', authRoutes); // ✅ Define rota para autenticação
+app.use('/auth', authRoutes); 
+app.use('/filiais', authRoutes); 
 
 // Swagger
 setupSwagger(app);
