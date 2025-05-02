@@ -21,13 +21,13 @@ app.use(express.json());
 // Rotas da API
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/auth', authRoutes); 
-app.use('/filiais', authRoutes); 
+app.use('/api/filiais', authRoutes); 
 
 // Swagger
 setupSwagger(app);
 
 // Inicialização do servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

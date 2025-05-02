@@ -11,7 +11,7 @@ const filiaisController = require('../controllers/filiaisController');
 
 /**
  * @swagger
- * /filiais:
+ * /api/filiais:
  *   get:
  *     summary: Lista filiais com filtros opcionais
  *     tags: [Filiais]
@@ -75,7 +75,7 @@ router.get('/', filiaisController.getFiliais);
 
 /**
  * @swagger
- * /filiais:
+ * /api/filiais:
  *   post:
  *     summary: Cria uma nova filial
  *     tags: [Filiais]
@@ -162,13 +162,13 @@ router.post('/', filiaisController.createFilial);
 
 /**
  * @swagger
- * /filiais/{id}:
+ * /api/filiais/{idfilial}:
  *   put:
  *     summary: Atualiza uma filial existente
  *     tags: [Filiais]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: idfilial
  *         required: true
  *         schema:
  *           type: integer
@@ -248,13 +248,13 @@ router.put('/:id', filiaisController.updateFilial);
 
 /**
  * @swagger
- * /filiais/{id}:
+ * /api/filiais/{idfilial}:
  *   delete:
  *     summary: Remove uma filial existente
  *     tags: [Filiais]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: idfilial
  *         required: true
  *         schema:
  *           type: integer
