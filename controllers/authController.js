@@ -28,7 +28,7 @@ const login = async (req, res) => {
 
     // Gera token JWT com nome, email e id
     const token = jwt.sign(
-      { idusuario: usuario.idusuario, nome: usuario.nome, email: usuario.email },
+      { idusuario: usuario.idusuario, nome: usuario.nome, email: usuario.email, empresa: usuario.empresa },
       SECRET_KEY,
       { expiresIn: '8h' }
     );
@@ -39,6 +39,7 @@ const login = async (req, res) => {
       nome: usuario.nome,
       email: usuario.email,
       fctoken: token,
+      empresa: usuario.empresa,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
