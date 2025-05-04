@@ -41,7 +41,9 @@ const authController = require('../controllers/authController');
  *                   type: string
  *                 fctoken:
  *                   type: string
- *       401:
+ *                 empresa:
+ *                   type: string
+*       401:
  *         description: E-mail ou senha inválidos
  *       500:
  *         description: Erro no servidor

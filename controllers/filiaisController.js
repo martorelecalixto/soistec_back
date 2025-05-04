@@ -107,13 +107,14 @@ const createFilial = async (req, res) => {
       .input('valorir', valorir)
       .input('valorcsll', valorcsll)
       .input('valorinss', valorinss)
+      .input('empresa', empresa)
       .query(
         'INSERT INTO filiais (nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2, redessociais, home, email,'+
         'linkimagem, logradouro, complemento, numero, estado, cidade, bairro, cep, referencia, valoricms, valoriss,'+
-        'valorcofins, valorpis, valoripi, valorir, valorcsll, valorinss) ' +
+        'valorcofins, valorpis, valoripi, valorir, valorcsll, valorinss, empresa) ' +
         'VALUES (@nome, @cnpjcpf, @razaosocial, @celular1, @celular2, @telefone1, @telefone2, @redessociais, @home, @email,'+
         '@linkimagem, @logradouro, @complemento, @numero, @estado, @cidade, @bairro, @cep, @referencia, @valoricms, @valoriss,'+
-        '@valorcofins, @valorpis, @valoripi, @valorir, @valorcsll, @valorinss)'
+        '@valorcofins, @valorpis, @valoripi, @valorir, @valorcsll, @valorinss, @empresa)'
       );
 
     res.status(201).json({ success: true, message: 'Filial criada com sucesso' });
