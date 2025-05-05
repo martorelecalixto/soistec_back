@@ -244,7 +244,7 @@ router.post('/', filiaisController.createFilial);
  *       404:
  *         description: Filial não encontrada
  */
-router.put('/:id', filiaisController.updateFilial);
+router.put('/:idfilial', filiaisController.updateFilial);
 
 /**
  * @swagger
@@ -265,6 +265,6 @@ router.put('/:id', filiaisController.updateFilial);
  *       404:
  *         description: Filial não encontrada
  */
-router.delete('/:id', filiaisController.deleteFilial);
+router.delete('/:idfilial', filiaisController.deleteFilial);
 
 module.exports = router;
