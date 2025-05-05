@@ -182,7 +182,7 @@ router.post('/', filiaisController.createFilial);
  *             properties:
  *               nome:
  *                 type: string
- *               razaoSocial:
+ *               razaosocial:
  *                 type: string
  *               cnpjcpf:
  *                 type: string
@@ -194,7 +194,7 @@ router.post('/', filiaisController.createFilial);
  *                 type: string
  *               telefone2:
  *                 type: string
- *               redesSociais:
+ *               redessociais:
  *                 type: string
  *               home:
  *                 type: string
@@ -220,21 +220,21 @@ router.post('/', filiaisController.createFilial);
  *                 type: string
  *               empresa:
  *                 type: string
- *               valorICMS:
+ *               valoricms:
  *                 type: number
- *               valorISS:
+ *               valoriss:
  *                 type: number
- *               valorCOFINS:
+ *               valorcofins:
  *                 type: number
- *               valorPIS:
+ *               valorpis:
  *                 type: number
- *               valorIPI:
+ *               valoripi:
  *                 type: number
- *               valorIR:
+ *               valorir:
  *                 type: number
- *               valorCSLL:
+ *               valorcsll:
  *                 type: number
- *               valorINSS:
+ *               valorinss:
  *                 type: number
  *     responses:
  *       200:
