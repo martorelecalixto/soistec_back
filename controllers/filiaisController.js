@@ -37,8 +37,14 @@ const getFiliais = async (req, res) => {
    // const pool = await poolPromise;
     //const result = await pool.request().query('SELECT * FROM filiais ${whereClause}');
     //res.json(result.recordset);
-    const query = `SELECT * FROM filiais ${whereClause}`;
-    const result = await request.query(query);
+   // const query = `SELECT * FROM filiais ${whereClause}`;
+   const query =
+    `SELECT idfilial, nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2,
+      redessociais, home, email, linkimagem, logradouro, complemento, numero,
+      estado, cidade, bairro, cep, referencia, valoricms, valoriss, valorcofins,
+      valorpis, valoripi, valorir, valorcsll, valorinss, empresa FROM filiais ${whereClause}`
+
+   const result = await request.query(query);
 
     res.json(result.recordset);    
   } catch (error) {
@@ -60,7 +66,14 @@ const getFilialById = async (req, res) => {
     const result = await pool
       .request()
       .input('idfilial', req.params.id)
-      .query('SELECT * FROM filiais  WHERE idfilial = @idfilial');
+      .query(
+        `SELECT idfilial, nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2,
+          redessociais, home, email, linkimagem, logradouro, complemento, numero,
+          estado, cidade, bairro, cep, referencia, valoricms, valoriss, valorcofins,
+          valorpis, valoripi, valorir, valorcsll, valorinss, empresa FROM filiais  WHERE idfilial = @idfilial`
+      );
+
+    //  .query('SELECT * FROM filiais  WHERE idfilial = @idfilial');
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
