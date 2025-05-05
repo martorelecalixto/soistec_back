@@ -87,7 +87,7 @@ router.get('/', filiaisController.getFiliais);
  *             type: object
  *             required:
  *               - nome
- *               - razaoSocial
+ *               - razaosocial
  *               - logradouro
  *               - numero
  *               - estado
@@ -98,7 +98,7 @@ router.get('/', filiaisController.getFiliais);
  *             properties:
  *               nome:
  *                 type: string
- *               razaoSocial:
+ *               razaosocial:
  *                 type: string
  *               cnpjcpf:
  *                 type: string
@@ -110,13 +110,13 @@ router.get('/', filiaisController.getFiliais);
  *                 type: string
  *               telefone2:
  *                 type: string
- *               redesSociais:
+ *               redessociais:
  *                 type: string
  *               home:
  *                 type: string
  *               email:
  *                 type: string
- *               linkImagem:
+ *               linkimagem:
  *                 type: string
  *               logradouro:
  *                 type: string
@@ -136,21 +136,21 @@ router.get('/', filiaisController.getFiliais);
  *                 type: string
  *               empresa:
  *                 type: string
- *               valorICMS:
+ *               valoricms:
  *                 type: number
- *               valorISS:
+ *               valoriss:
  *                 type: number
- *               valorCOFINS:
+ *               valorcofins:
  *                 type: number
- *               valorPIS:
+ *               valorpis:
  *                 type: number
- *               valorIPI:
+ *               valoripi:
  *                 type: number
- *               valorIR:
+ *               valorir:
  *                 type: number
- *               valorCSLL:
+ *               valorcsll:
  *                 type: number
- *               valorINSS:
+ *               valorinss:
  *                 type: number
  *     responses:
  *       201:
