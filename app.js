@@ -8,6 +8,7 @@ const app = express();
 const usuariosRoutes = require('./routes/usuariosRoutes');
 const authRoutes = require('./routes/authRoutes'); 
 const filiaisRoutes = require('./routes/filiaisRoutes'); 
+const atividadesRoutes = require('./routes/atividadesRoutes'); 
 
 // Swagger
 const setupSwagger = require('./swagger');
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/auth', authRoutes); 
 app.use('/api/filiais', filiaisRoutes); 
+app.use('/api/atividades', atividadesRoutes); 
 
 // Swagger
 setupSwagger(app);
