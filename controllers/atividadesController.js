@@ -24,6 +24,8 @@ const getAtividades = async (req, res) => {
       request.input('nome', `%${nome}%`);
     }
 
+    whereClause += ' ORDER BY nome ';
+
    const query =
     `SELECT id, nome, 
       empresa FROM Atividades ${whereClause}`
@@ -52,7 +54,7 @@ const getAtividadeById = async (req, res) => {
       .input('id', req.params.id)
       .query(
         `SELECT id, nome, 
-          empresa FROM atividades  WHERE id = @id`
+          empresa FROM atividades  WHERE id = @id ORDER BY nome`
       );
 
     //  .query('SELECT * FROM atividades  WHERE id = @id');

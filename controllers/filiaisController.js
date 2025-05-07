@@ -34,6 +34,8 @@ const getFiliais = async (req, res) => {
       request.input('email', `%${email}%`);
     }
 
+    whereClause += ' ORDER BY nome ';
+
    // const pool = await poolPromise;
     //const result = await pool.request().query('SELECT * FROM filiais ${whereClause}');
     //res.json(result.recordset);
@@ -70,7 +72,7 @@ const getFilialById = async (req, res) => {
         `SELECT idfilial, nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2,
           redessociais, home, email, linkimagem, logradouro, complemento, numero,
           estado, cidade, bairro, cep, referencia, valoricms, valoriss, valorcofins,
-          valorpis, valoripi, valorir, valorcsll, valorinss, empresa FROM filiais  WHERE idfilial = @idfilial`
+          valorpis, valoripi, valorir, valorcsll, valorinss, empresa FROM filiais  WHERE idfilial = @idfilial ORDER BY nome`
       );
 
     //  .query('SELECT * FROM filiais  WHERE idfilial = @idfilial');
