@@ -19,10 +19,10 @@ const getVendasBilhete = async (req, res) => {
     // Parâmetros opcionais
     let whereClause = 'WHERE empresa = @empresa';
 
-    if (nome) {
-      whereClause += ' AND datavenda >= @datavenda';
-      request.input('datavenda', `${datavenda}`);
-    }
+   // if (nome) {
+   //   whereClause += ' AND datavenda >= @datavenda';
+   //   request.input('datavenda', `${datavenda}`);
+   // }
 
     whereClause += ' ORDER BY datavenda desc ';
 
@@ -37,7 +37,7 @@ const getVendasBilhete = async (req, res) => {
             entidades entidades_2 ON vendasbilhetes.idemissor = entidades_2.identidade LEFT OUTER JOIN
             entidades entidades_1 ON vendasbilhetes.idvendedor = entidades_1.identidade LEFT OUTER JOIN
             grupos ON vendasbilhetes.idgrupo = grupos.id LEFT OUTER JOIN
-            itensvendabilhete ON vendasbilhetes.idvenda = itensvendabilhete.idvenda ${whereClause}  ORDER BY vendasbilhetes.datavenda DESC `
+            itensvendabilhete ON vendasbilhetes.idvenda = itensvendabilhete.idvenda ${whereClause}  `
 
    const result = await request.query(query);
 
