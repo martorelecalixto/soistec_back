@@ -11,7 +11,7 @@ const vendasbilheteController = require('../controllers/vendasbilheteController'
 
 /**
  * @swagger
- * /api/vendasbilhetes:
+ * /api/vendasbilhete:
  *   get:
  *     summary: Lista vendas com filtros opcionais
  *     tags: [VendasBilhetes]
@@ -58,7 +58,7 @@ router.get('/', vendasbilheteController.getVendasBilhete);
 
 /**
  * @swagger
- * /api/vendasbilhetes:
+ * /api/vendasbilhete:
  *   post:
  *     summary: Cria uma nova venda
  *     tags: [VendasBilhetes]
@@ -141,7 +141,7 @@ router.post('/', vendasbilheteController.createVendasBilhete);
 
 /**
  * @swagger
- * /api/vendasbilhetes/{idvenda}:
+ * /api/vendasbilhete/{idvenda}:
  *   put:
  *     summary: Atualiza uma venda existente
  *     tags: [VendasBilhetes]
@@ -225,7 +225,7 @@ router.put('/:idvenda', vendasbilheteController.updateVendasBilhete);
 
 /**
  * @swagger
- * /api/vendasbilhetes/{idvenda}:
+ * /api/vendasbilhete/{idvenda}:
  *   delete:
  *     summary: Remove uma venda existente
  *     tags: [VendasBilhetes]
