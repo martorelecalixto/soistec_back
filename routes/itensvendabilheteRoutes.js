@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const itensVendaBilheteController = require('../controllers/itensvendabilheteController');
+const itensvendabilheteController = require('../controllers/itensvendabilheteController');
 
 /**
  * @swagger
@@ -32,7 +32,7 @@ const itensVendaBilheteController = require('../controllers/itensvendabilheteCon
  *               items:
  *                 type: object
  */
-router.get('/', itensVendaBilheteController.getItens);
+router.get('/', itensvendabilheteController.getItensVendaBilhete);
 
 /**
  * @swagger
@@ -84,7 +84,7 @@ router.get('/', itensVendaBilheteController.getItens);
  *       201:
  *         description: Item criado com sucesso
  */
-router.post('/', itensVendaBilheteController.createItem);
+router.post('/', itensvendabilheteController.createItemVendaBilhete);
 
 /**
  * @swagger
@@ -140,7 +140,7 @@ router.post('/', itensVendaBilheteController.createItem);
  *       200:
  *         description: Item atualizado com sucesso
  */
-router.put('/:id', itensVendaBilheteController.updateItem);
+router.put('/:id', itensvendabilheteController.updateItemVendaBilhete);
 
 /**
  * @swagger
@@ -159,6 +159,6 @@ router.put('/:id', itensVendaBilheteController.updateItem);
  *       200:
  *         description: Item removido com sucesso
  */
-router.delete('/:id', itensVendaBilheteController.deleteItem);
+router.delete('/:id', itensvendabilheteController.deleteItemVendaBilhete);
 
 module.exports = router;

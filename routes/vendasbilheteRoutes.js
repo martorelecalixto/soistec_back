@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const vendasbController = require('../controllers/vendasbilheteController');
+const vendasbilheteController = require('../controllers/vendasbilheteController');
 
 /**
  * @swagger
@@ -137,7 +137,7 @@ router.get('/', vendasbilheteController.getVendasBilhete);
  *       400:
  *         description: Dados inválidos
  */
-router.post('/', vendasbilheteController.createVendaBilhete);
+router.post('/', vendasbilheteController.createVendasBilhete);
 
 /**
  * @swagger
@@ -221,7 +221,7 @@ router.post('/', vendasbilheteController.createVendaBilhete);
  *       404:
  *         description: Venda não encontrada
  */
-router.put('/:idvenda', vendasbilheteController.updateVendaBilhete);
+router.put('/:idvenda', vendasbilheteController.updateVendasBilhete);
 
 /**
  * @swagger
@@ -242,6 +242,6 @@ router.put('/:idvenda', vendasbilheteController.updateVendaBilhete);
  *       404:
  *         description: Venda não encontrada
  */
-router.delete('/:idvenda', vendasbilheteController.deleteVendaBilhete);
+router.delete('/:idvenda', vendasbilheteController.deleteVendasBilhete);
 
 module.exports = router;

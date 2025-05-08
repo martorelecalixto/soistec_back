@@ -20,11 +20,11 @@ const getVendasBilhete = async (req, res) => {
     let whereClause = 'WHERE empresa = @empresa';
 
     if (nome) {
-      whereClause += ' AND nome LIKE @nome';
-      request.input('nome', `%${nome}%`);
+      whereClause += ' AND datavenda >= @datavenda';
+      request.input('datavenda', `${datavenda}`);
     }
 
-    whereClause += ' ORDER BY datavencimento desc ';
+    whereClause += ' ORDER BY datavenda desc ';
 
    const query =
      `SELECT vendasbilhetes.datavenda, vendasbilhetes.valortotal, vendasbilhetes.id, vendasbilhetes.idfatura, 
