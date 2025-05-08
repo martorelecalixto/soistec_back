@@ -17,14 +17,14 @@ const getVendasBilhete = async (req, res) => {
     request.input('empresa', empresa);
 
     // Parâmetros opcionais
-    let whereClause = 'WHERE empresa = @empresa';
+    let whereClause = 'WHERE vendasbilhetes.empresa = @empresa';
 
    // if (nome) {
    //   whereClause += ' AND datavenda >= @datavenda';
    //   request.input('datavenda', `${datavenda}`);
    // }
 
-    whereClause += ' ORDER BY datavenda desc ';
+    whereClause += ' ORDER BY vendasbilhetes.datavenda desc ';
 
    const query =
      `SELECT vendasbilhetes.datavenda, vendasbilhetes.valortotal, vendasbilhetes.id, vendasbilhetes.idfatura, 
