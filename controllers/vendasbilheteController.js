@@ -3,7 +3,7 @@ const { poolPromise } = require('../db');
 // Obter todas as vendasbilhete
 const getVendasBilhete = async (req, res) => {
   try {
-    const { empresa, nome } = req.query;
+    const { empresa } = req.query;
 
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -28,7 +28,8 @@ const getVendasBilhete = async (req, res) => {
 
    const query =
      `SELECT vendasbilhetes.datavenda, vendasbilhetes.valortotal, vendasbilhetes.id, vendasbilhetes.idfatura, 
-        entidades.nome AS entidade, vendasbilhetes.idreciboreceber, formapagamento.nome AS pagamento
+        entidades.nome AS entidade, vendasbilhetes.idreciboreceber, formapagamento.nome AS pagamento,
+        vendasbilhetes.empresa, vendasbilhetes.idvenda
         FROM vendasbilhetes INNER JOIN
             entidades ON vendasbilhetes.identidade = entidades.identidade LEFT OUTER JOIN
             filiais ON vendasbilhetes.idfilial = filiais.idfilial LEFT OUTER JOIN

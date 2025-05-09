@@ -23,7 +23,7 @@ const vendasbilheteController = require('../controllers/vendasbilheteController'
  *         required: true
  *         description: Nome da empresa (obrigatório)
  *       - in: query
- *         name: idvenda
+ *         name: id
  *         schema:
  *           type: integer
  *         required: false
@@ -44,6 +44,8 @@ const vendasbilheteController = require('../controllers/vendasbilheteController'
  *                   valortotal:
  *                     type: number
  *                   id:
+ *                     type: integer
+ *                   idvenda:
  *                     type: integer
  *                   idfatura:
  *                     type: integer
