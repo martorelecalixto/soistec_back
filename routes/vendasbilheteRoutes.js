@@ -49,9 +49,9 @@ const vendasbilheteController = require('../controllers/vendasbilheteController'
  *                   documento:
  *                     type: string
  *                   valortotal:
- *                     type: number
+ *                     type: double
  *                   descontototal:
- *                     type: number
+ *                     type: double
  *                   cartao_sigla:
  *                     type: string
  *                   cartao_numero:
@@ -91,7 +91,7 @@ const vendasbilheteController = require('../controllers/vendasbilheteController'
  *                   id:
  *                     type: integer
  *                   valorentrada:
- *                     type: number
+ *                     type: double
  *                   empresa:
  *                     type: string
  */
