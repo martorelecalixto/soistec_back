@@ -36,9 +36,9 @@ const getVendasBilhete = async (req, res) => {
 
 
    const query =
-     `SELECT vendasbilhetes.idvenda, vendasbilhetes.valortotal,  
+     `SELECT vendasbilhetes.idvenda, ISNULL(vendasbilhetes.valortotal,0) AS valortotal,  
         vendasbilhetes.observacao, ISNULL(vendasbilhetes.solicitante,'') AS solicitante, vendasbilhetes.identidade, 
-        vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda
+        vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome AS entidade, formapagamento.nome AS pagamento
         FROM vendasbilhetes INNER JOIN
             entidades ON vendasbilhetes.identidade = entidades.identidade LEFT OUTER JOIN
             filiais ON vendasbilhetes.idfilial = filiais.idfilial LEFT OUTER JOIN
