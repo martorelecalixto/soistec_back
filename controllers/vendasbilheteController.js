@@ -17,7 +17,7 @@ const getVendasBilhete = async (req, res) => {
     request.input('empresa', empresa);
 
     // Parâmetros opcionais
-    let whereClause = 'WHERE vendasbilhetes.empresa = @empresa';
+    let whereClause = 'WHERE vendasbilhetes.empresa = @empresa AND vendasbilhetes.id > 0 ';
 
    // if (nome) {
    //   whereClause += ' AND datavenda >= @datavenda';
