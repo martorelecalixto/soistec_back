@@ -27,9 +27,13 @@ const getVendasBilhete = async (req, res) => {
     whereClause += ' ORDER BY vendasbilhetes.datavenda desc ';
 
    const query =
-     `SELECT vendasbilhetes.datavenda, vendasbilhetes.valortotal, vendasbilhetes.id, vendasbilhetes.idfatura, 
-        entidades.nome AS entidade, vendasbilhetes.idreciboreceber, formapagamento.nome AS pagamento,
-        vendasbilhetes.empresa, vendasbilhetes.idvenda
+     `SELECT vendasbilhetes.idvenda, vendasbilhetes.datavenda, vendasbilhetes.datavencimento, vendasbilhetes.documento, vendasbilhetes.valortotal,  
+        vendasbilhetes.descontototal, vendasbilhetes.cartao_sigla, vendasbilhetes.cartao_numero, vendasbilhetes.cartao_mesvencimento,
+        vendasbilhetes.cartao_anovencimento, vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, 
+        vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idmoeda, vendasbilhetes.idformapagamento,  vendasbilhetes.idfilial,
+        vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.chave, vendasbilhetes.excluido, 
+        vendasbilhetes.idcentrocusto, vendasbilhetes.idgrupo, vendasbilhetes.id, vendasbilhetes.valorentrada, 
+        vendasbilhetes.empresa
         FROM vendasbilhetes INNER JOIN
             entidades ON vendasbilhetes.identidade = entidades.identidade LEFT OUTER JOIN
             filiais ON vendasbilhetes.idfilial = filiais.idfilial LEFT OUTER JOIN
