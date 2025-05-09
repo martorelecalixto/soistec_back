@@ -38,22 +38,61 @@ const vendasbilheteController = require('../controllers/vendasbilheteController'
  *               items:
  *                 type: object
  *                 properties:
+ *                   idvenda:
+ *                     type: integer
  *                   datavenda:
  *                     type: string
  *                     format: date-time
+ *                   datavencimento:
+ *                     type: string
+ *                     format: date-time
+ *                   documento:
+ *                     type: string
  *                   valortotal:
  *                     type: number
- *                   id:
+ *                   descontototal:
+ *                     type: number
+ *                   cartao_sigla:
+ *                     type: string
+ *                   cartao_numero:
+ *                     type: string
+ *                   cartao_mesvencimento:
+ *                     type: string
+ *                   cartao_anovencimento:
+ *                     type: string
+ *                   observacao:
+ *                     type: string
+ *                   solicitante:
+ *                     type: string
+ *                   identidade:
+ *                     type: string
+ *                   idvendedor:
  *                     type: integer
- *                   idvenda:
+ *                   idemissor:
+ *                     type: integer
+ *                   idmoeda:
+ *                     type: integer
+ *                   idformapagamento:
+ *                     type: integer
+ *                   idfilial:
  *                     type: integer
  *                   idfatura:
  *                     type: integer
- *                   entidade:
- *                     type: string
  *                   idreciboreceber:
  *                     type: integer
- *                   pagamento:
+ *                   chave:
+ *                     type: string
+ *                   excluido:
+ *                     type: boolean
+ *                   idcentrocusto:
+ *                     type: integer
+ *                   idgrupo:
+ *                     type: integer
+ *                   id:
+ *                     type: integer
+ *                   valorentrada:
+ *                     type: number
+ *                   empresa:
  *                     type: string
  */
 router.get('/', vendasbilheteController.getVendasBilhete);

@@ -26,14 +26,19 @@ const getVendasBilhete = async (req, res) => {
 
     whereClause += ' ORDER BY vendasbilhetes.datavenda desc ';
 
+    //SELECT vendasbilhetes.idvenda, vendasbilhetes.datavenda, vendasbilhetes.datavencimento, vendasbilhetes.documento, vendasbilhetes.valortotal,  
+    //vendasbilhetes.descontototal, vendasbilhetes.cartao_sigla, vendasbilhetes.cartao_numero, vendasbilhetes.cartao_mesvencimento,
+    //vendasbilhetes.cartao_anovencimento, vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, 
+    //vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idmoeda, vendasbilhetes.idformapagamento,  vendasbilhetes.idfilial,
+    //vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.chave, vendasbilhetes.excluido, 
+    //vendasbilhetes.idcentrocusto, vendasbilhetes.idgrupo, vendasbilhetes.id, vendasbilhetes.valorentrada, 
+    //vendasbilhetes.empresa
+
+
    const query =
-     `SELECT vendasbilhetes.idvenda, vendasbilhetes.datavenda, vendasbilhetes.datavencimento, vendasbilhetes.documento, vendasbilhetes.valortotal,  
-        vendasbilhetes.descontototal, vendasbilhetes.cartao_sigla, vendasbilhetes.cartao_numero, vendasbilhetes.cartao_mesvencimento,
-        vendasbilhetes.cartao_anovencimento, vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, 
-        vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idmoeda, vendasbilhetes.idformapagamento,  vendasbilhetes.idfilial,
-        vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.chave, vendasbilhetes.excluido, 
-        vendasbilhetes.idcentrocusto, vendasbilhetes.idgrupo, vendasbilhetes.id, vendasbilhetes.valorentrada, 
-        vendasbilhetes.empresa
+     `SELECT vendasbilhetes.idvenda, vendasbilhetes.valortotal,  
+        vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, 
+        vendasbilhetes.id,  vendasbilhetes.empresa
         FROM vendasbilhetes INNER JOIN
             entidades ON vendasbilhetes.identidade = entidades.identidade LEFT OUTER JOIN
             filiais ON vendasbilhetes.idfilial = filiais.idfilial LEFT OUTER JOIN
