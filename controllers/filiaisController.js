@@ -1,5 +1,39 @@
 const { poolPromise } = require('../db');
 
+
+// Obter todas as filiais
+const getFiliaisDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa ';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT idfilial AS id, nome
+            FROM filiais ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 // Obter todas as filiais
 const getFiliais = async (req, res) => {
   try {
@@ -357,4 +391,5 @@ module.exports = {
   createFilial,
   updateFilial,
   deleteFilial,
+  getFiliaisDropDown,
 };

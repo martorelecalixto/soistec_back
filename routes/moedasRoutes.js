@@ -1,20 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const atividadesController = require('../controllers/atividadesController');
+const moedasController = require('../controllers/moedasController');
 
 /**
  * @swagger
  * tags:
- *   name: Atividades
- *   description: Endpoints para gerenciamento de atividades
+ *   name: Moedas
+ *   description: Endpoints para gerenciamento de moedas
  */
 
 /**
  * @swagger
- * /api/atividades:
+ * /api/moedas:
  *   get:
- *     summary: Lista atividades com filtros opcionais
- *     tags: [Atividades]
+ *     summary: Lista moedas com filtros opcionais
+ *     tags: [Moedas]
  *     parameters:
  *       - in: query
  *         name: empresa
@@ -23,20 +23,20 @@ const atividadesController = require('../controllers/atividadesController');
  *         required: true
  *         description: Nome da empresa (obrigatório)
  *       - in: query
- *         name: id
+ *         name: idmoeda
  *         schema:
  *           type: integer
  *         required: false
- *         description: ID da atividade
+ *         description: ID da moeda
  *       - in: query
  *         name: nome
  *         schema:
  *           type: string
  *         required: false
- *         description: Nome da atividade
+ *         description: Nome da moeda
  *     responses:
  *       200:
- *         description: Lista de atividades
+ *         description: Lista de moedas
  *         content:
  *           application/json:
  *             schema:
@@ -47,14 +47,14 @@ const atividadesController = require('../controllers/atividadesController');
  *                   nome:
  *                     type: string
  */
-router.get('/', atividadesController.getAtividades);
+router.get('/', moedasController.getMoedas);
 
 /**
  * @swagger
- * /api/atividades:
+ * /api/moedas:
  *   post:
- *     summary: Cria uma nova atividade
- *     tags: [Atividades]
+ *     summary: Cria uma nova moeda
+ *     tags: [Moedas]
  *     requestBody:
  *       required: true
  *       content:
@@ -67,29 +67,41 @@ router.get('/', atividadesController.getAtividades);
  *             properties:
  *               nome:
  *                 type: string
+ *               codiso:
+ *                 type: string
+ *               sigla:
+ *                 type: string
+ *               intsingular:
+ *                 type: string
+ *               intplural:
+ *                 type: string
+ *               secsingular:
+ *                 type: string
+ *               secplural:
+ *                 type: string
  *               empresa:
  *                 type: string
  *     responses:
  *       201:
- *         description: Atividade criada com sucesso
+ *         description: Moeda criada com sucesso
  *       400:
  *         description: Dados inválidos
  */
-router.post('/', atividadesController.createAtividade);
+router.post('/', moedasController.createMoeda);
 
 /**
  * @swagger
- * /api/atividades/{id}:
+ * /api/moedas/{idmoeda}:
  *   put:
- *     summary: Atualiza uma atividade existente
- *     tags: [Atividades]
+ *     summary: Atualiza uma moeda existente
+ *     tags: [Moedas]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: idmoeda
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID da atividade a ser atualizada
+ *         description: ID da moeda a ser atualizada
  *     requestBody:
  *       required: true
  *       content:
@@ -103,41 +115,41 @@ router.post('/', atividadesController.createAtividade);
  *                 type: string
  *     responses:
  *       200:
- *         description: Atividade atualizada com sucesso
+ *         description: Moeda atualizada com sucesso
  *       400:
  *         description: Dados inválidos
  *       404:
- *         description: Atividade não encontrada
+ *         description: Moeda não encontrada
  */
-router.put('/:id', atividadesController.updateAtividade);
+router.put('/:idmoeda', moedasController.updateMoeda);
 
 /**
  * @swagger
- * /api/atividades/{id}:
+ * /api/moedas/{id}:
  *   delete:
- *     summary: Remove uma atividade existente
- *     tags: [Atividades]
+ *     summary: Remove uma Moeda existente
+ *     tags: [Moedas]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: idmoeda
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID da atividade a ser removida
+ *         description: ID da moeda a ser removida
  *     responses:
  *       200:
- *         description: Atividade removida com sucesso
+ *         description: Moeda removida com sucesso
  *       404:
- *         description: Atividade não encontrada
+ *         description: Moeda não encontrada
  */
-router.delete('/:id', atividadesController.deleteAtividade);
+router.delete('/:idmoeda', moedasController.deleteMoeda);
 
 /**
  * @swagger
- * /api/atividades:
+ * /api/moedas:
  *   get:
- *     summary: Lista atividades com filtros opcionais
- *     tags: [Atividades]
+ *     summary: Lista moedas com filtros opcionais
+ *     tags: [Moedas]
  *     parameters:
  *       - in: query
  *         name: empresa
@@ -146,20 +158,20 @@ router.delete('/:id', atividadesController.deleteAtividade);
  *         required: true
  *         description: Nome da empresa (obrigatório)
  *       - in: query
- *         name: id
+ *         name: idmoeda
  *         schema:
  *           type: integer
  *         required: false
- *         description: ID da atividade
+ *         description: ID da moeda
  *       - in: query
  *         name: nome
  *         schema:
  *           type: string
  *         required: false
- *         description: Nome da atividade
+ *         description: Nome da moeda
  *     responses:
  *       200:
- *         description: Lista de atividades
+ *         description: Lista de moedas
  *         content:
  *           application/json:
  *             schema:
@@ -167,11 +179,11 @@ router.delete('/:id', atividadesController.deleteAtividade);
  *               items:
  *                 type: object
  *                 properties:
- *                   id:
+ *                   idmoeda:
  *                     type: integer
  *                   nome:
  *                     type: string
  */
-router.get('/', atividadesController.getAtividadesDropDown);
+router.get('/', moedasController.getMoedasDropDown);
 
 module.exports = router;

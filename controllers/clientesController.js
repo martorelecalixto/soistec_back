@@ -1,5 +1,6 @@
 const { poolPromise } = require('../db');
 
+
 // Obter todos os clientes
 const getClientes = async (req, res) => {
   try {

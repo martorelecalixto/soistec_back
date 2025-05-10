@@ -13,6 +13,7 @@ const empresasRoutes = require('./routes/empresasRoutes');
 const entidadesRoutes = require('./routes/entidadesRoutes'); 
 const vendasbilheteRoutes = require('./routes/vendasbilheteRoutes'); 
 const itensvendabilheteRoutes = require('./routes/itensvendabilheteRoutes');
+const moedasRoutes = require('./routes/moedasRoutes');
 // Swagger
 const setupSwagger = require('./swagger');
 
@@ -31,6 +32,7 @@ app.use('/api/empresas', empresasRoutes);
 app.use('/api/entidades', entidadesRoutes); 
 app.use('/api/vendasbilhete', vendasbilheteRoutes); 
 app.use('/api/itensvendabilhete', itensvendabilheteRoutes); 
+app.use('/api/moedas', moedasRoutes); 
 
 // Swagger
 setupSwagger(app);

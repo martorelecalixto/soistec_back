@@ -1,7 +1,7 @@
 const { poolPromise } = require('../db');
 
-// Obter todas as atividades
-const getAtividadesDropDown = async (req, res) => {
+// Obter todas as moedas
+const getMoedasDropDown = async (req, res) => {
   try {
       const { empresa } = req.query;
 
@@ -20,8 +20,8 @@ const getAtividadesDropDown = async (req, res) => {
       whereClause += ' ORDER BY nome ';
 
       const query =
-          `SELECT id, nome
-            FROM atividades ${whereClause}`
+          `SELECT idmoeda AS id, nome
+            FROM moeda ${whereClause}`
 
       const result = await request.query(query);
 
@@ -32,8 +32,8 @@ const getAtividadesDropDown = async (req, res) => {
   }
 };
 
-// Obter todas as atividades
-const getAtividades = async (req, res) => {
+// Obter todas as moedas
+const getMoedas = async (req, res) => {
   try {
     const { empresa, nome } = req.query;
 
@@ -59,8 +59,8 @@ const getAtividades = async (req, res) => {
     whereClause += ' ORDER BY nome ';
 
    const query =
-    `SELECT id, nome, 
-      empresa FROM Atividades ${whereClause}`
+    `SELECT idmoeda, nome, sigla, 
+      empresa FROM moeda ${whereClause}`
 
    const result = await request.query(query);
 
@@ -70,8 +70,8 @@ const getAtividades = async (req, res) => {
   }
 };
 
-// Obter uma atividade pelo ID
-const getAtividadeById = async (req, res) => {
+// Obter uma moeda pelo ID
+const getMoedaById = async (req, res) => {
   try {
     const { empresa, nome } = req.query;
 
@@ -85,15 +85,15 @@ const getAtividadeById = async (req, res) => {
       .request()
       .input('id', req.params.id)
       .query(
-        `SELECT id, nome, 
-          empresa FROM atividades  WHERE id = @id ORDER BY nome`
+        `SELECT id, nome, sigla,
+          empresa FROM moeda  WHERE idmoeda = @id ORDER BY nome`
       );
 
     //  .query('SELECT * FROM atividades  WHERE id = @id');
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
-      res.status(404).send('Atividade não encontrada');
+      res.status(404).send('Moeda não encontrada');
     }
 
   } catch (error) {
@@ -101,77 +101,89 @@ const getAtividadeById = async (req, res) => {
   }
 };
 
-// Criar uma nova atividade
-const createAtividade = async (req, res) => {
+// Criar uma nova moeda
+const createMoeda = async (req, res) => {
   try {
     const {
-      nome, empresa
+      nome, empresa, sigla, codiso, intsingular, intplural, decsingular, decplural
     } = req.body;
 
     const pool = await poolPromise;
     await pool
       .request()
       .input('nome', nome)
+      .input('sigla', sigla)
+      .input('codiso', codiso)
+      .input('intsingular', intsingular)
+      .input('intplural', intplural)
+      .input('decsingular', decsingular)
+      .input('decplural', decplural)
       .input('empresa', empresa)
       .query(
-        `INSERT INTO atividades (
-          nome, empresa
+        `INSERT INTO moeda (
+          nome, empresa, sigla, codiso, intsingular, intplural, decsingular, decplural
         ) VALUES (
-          @nome, @empresa
+          @nome, @empresa, @sigla, @codiso, @intsingular, @intplural, @decsingular, @decplural
         )`
       );
 
-    res.status(201).json({ success: true, message: 'Atividade criada com sucesso' });
+    res.status(201).json({ success: true, message: 'Moeda criada com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 
-// Atualizar uma atividade existente
-const updateAtividade = async (req, res) => {
+// Atualizar uma moeda existente
+const updateMoeda = async (req, res) => {
   try {
     const {
-      nome, 
+      nome, sigla, codiso, intsingular, intplural, decsingular, decplural
     } = req.body;
 
     const pool = await poolPromise;
     await pool
       .request()
-      .input('id', req.params.id)
+      .input('idmoeda', req.params.idmoeda)
       .input('nome', nome)
+      .input('sigla', sigla)
+      .input('codiso', codiso)
+      .input('intsingular', intsingular)
+      .input('intplural', intplural)
+      .input('decsingular', decsingular)
+      .input('decplural', decplural)
       .query(
-        `UPDATE atividades SET
+        `UPDATE moeda SET
           nome = @nome
-        WHERE id = @id`
+        WHERE idmoeda = @idmoeda`
       );
 
-    res.json({ success: true, message: 'Atividade atualizada com sucesso' });
+    res.json({ success: true, message: 'Moeda atualizada com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 
-// Deletar uma atividade
-const deleteAtividade = async (req, res) => {
+// Deletar uma moeda
+const deleteMoeda = async (req, res) => {
   try {
     const pool = await poolPromise;
     await pool
       .request()
-      .input('id', req.params.id)
-      .query('DELETE FROM atividades WHERE id = @id');
-    res.json({ success: true, message: 'Atividade deletada com sucesso' });
+      .input('idmoeda', req.params.idmoeda)
+      .query('DELETE FROM moeda WHERE idmoeda = @idmoeda');
+    res.json({ success: true, message: 'Moeda deletada com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 module.exports = {
-  getAtividades,
-  getAtividadeById,
-  createAtividade,
-  updateAtividade,
-  deleteAtividade,
-  getAtividadesDropDown,
+  getMoedas,
+  getMoedaById,
+  createMoeda,
+  updateMoeda,
+  deleteMoeda,
+  getMoedasDropDown,
 };

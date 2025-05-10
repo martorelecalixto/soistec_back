@@ -267,4 +267,47 @@ router.put('/:idfilial', filiaisController.updateFilial);
  */
 router.delete('/:idfilial', filiaisController.deleteFilial);
 
+/**
+ * @swagger
+ * /api/filiais:
+ *   get:
+ *     summary: Lista filiais com filtros opcionais
+ *     tags: [Filiais]
+ *     parameters:
+ *       - in: query
+ *         name: empresa
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Nome da empresa (obrigatório)
+ *       - in: query
+ *         name: idfilial
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: ID da filial
+ *       - in: query
+ *         name: nome
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Nome da filial
+ *     responses:
+ *       200:
+ *         description: Lista de filiais
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   idfilial:
+ *                     type: integer
+ *                   nome:
+ *                     type: string
+ */
+router.get('/', filiaisController.getFiliaisDropDown);
+
+
 module.exports = router;
