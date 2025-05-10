@@ -21,7 +21,7 @@ const getClientesDropDown = async (req, res) => {
       whereClause += ' ORDER BY nome ';
 
       const query =
-          `SELECT identidade AS id, nome
+          `SELECT identidade, nome
             FROM entidades ${whereClause}`
 
       const result = await request.query(query);

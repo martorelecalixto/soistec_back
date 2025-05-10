@@ -20,7 +20,7 @@ const getMoedasDropDown = async (req, res) => {
       whereClause += ' ORDER BY nome ';
 
       const query =
-          `SELECT idmoeda AS id, nome
+          `SELECT idmoeda,  nome
             FROM moeda ${whereClause}`
 
       const result = await request.query(query);

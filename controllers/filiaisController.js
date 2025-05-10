@@ -21,7 +21,7 @@ const getFiliaisDropDown = async (req, res) => {
       whereClause += ' ORDER BY nome ';
 
       const query =
-          `SELECT idfilial AS id, nome
+          `SELECT idfilial, nome
             FROM filiais ${whereClause}`
 
       const result = await request.query(query);
