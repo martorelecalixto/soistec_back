@@ -36,12 +36,18 @@ const getVendasBilhete = async (req, res) => {
     }
 
     if (datainicial) {
-      request.input('datainicial', datainicial);
+      const [diaI, mesI, anoI] = datainicial.split('/');
+      const dataIniConvertida = new Date(`${anoI}-${mesI}-${diaI}`);
+      request.input('datainicial', dataIniConvertida);      
+      //request.input('datainicial', datainicial);
       whereClause += ' AND vendasbilhetes.datavenda >= @datainicial';
     }
 
     if (datafinal) {
-      request.input('datafinal', datafinal);
+      const [diaF, mesF, anoF] = datafinal.split('/');
+      const dataFimConvertida = new Date(`${anoF}-${mesF}-${diaF}`);
+      request.input('datafinal', dataFimConvertida);      
+      //request.input('datafinal', datafinal);
       whereClause += ' AND vendasbilhetes.datavenda <= @datafinal';
     }
 
