@@ -3,7 +3,7 @@ const { poolPromise } = require('../db');
 // Obter todas as vendasbilhete
 const getVendasBilhete = async (req, res) => {
   try {
-    const { empresa } = req.query;
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal } = req.query;
 
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -19,21 +19,33 @@ const getVendasBilhete = async (req, res) => {
     // Parâmetros opcionais
     let whereClause = 'WHERE vendasbilhetes.empresa = @empresa AND vendasbilhetes.id > 0 ';
 
-   // if (nome) {
-   //   whereClause += ' AND datavenda >= @datavenda';
-   //   request.input('datavenda', `${datavenda}`);
-   // }
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND vendasbilhetes.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND vendasbilhetes.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND vendasbilhetes.idmoeda = @idmoeda';
+    }
+
+    if (datainicial) {
+      request.input('datainicial', datainicial);
+      whereClause += ' AND vendasbilhetes.datavenda >= @datainicial';
+    }
+
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND vendasbilhetes.datavenda <= @datafinal';
+    }
 
     whereClause += ' ORDER BY vendasbilhetes.datavenda desc ';
-
-    //SELECT vendasbilhetes.idvenda, vendasbilhetes.datavenda, vendasbilhetes.datavencimento, vendasbilhetes.documento, vendasbilhetes.valortotal,  
-    //vendasbilhetes.descontototal, vendasbilhetes.cartao_sigla, vendasbilhetes.cartao_numero, vendasbilhetes.cartao_mesvencimento,
-    //vendasbilhetes.cartao_anovencimento, vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, 
-    //vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idmoeda, vendasbilhetes.idformapagamento,  vendasbilhetes.idfilial,
-    //vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.chave, vendasbilhetes.excluido, 
-    //vendasbilhetes.idcentrocusto, vendasbilhetes.idgrupo, vendasbilhetes.id, vendasbilhetes.valorentrada, 
-    //vendasbilhetes.empresa
-
 
    const query =
      `SELECT vendasbilhetes.idvenda, ISNULL(vendasbilhetes.valortotal,0) AS valortotal,  
