@@ -325,30 +325,12 @@ router.delete('/:identidade', entidadesController.deleteEntidade);
  * @swagger
  * /api/entidades:
  *   get:
- *     summary: Lista entidades com filtros opcionais
+ *     summary: Lista clientes sem filtros
  *     tags: [Entidades]
  *     parameters:
- *       - in: query
- *         name: empresa
- *         schema:
- *           type: string
- *         required: true
- *         description: Nome da empresa (obrigatório)
- *       - in: query
- *         name: identidade
- *         schema:
- *           type: integer
- *         required: false
- *         description: ID da entidade
- *       - in: query
- *         name: nome
- *         schema:
- *           type: string
- *         required: false
- *         description: Nome da entidade
  *     responses:
  *       200:
- *         description: Lista de entidades
+ *         description: Lista de clientes
  *         content:
  *           application/json:
  *             schema:
