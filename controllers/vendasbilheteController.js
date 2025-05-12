@@ -4,7 +4,7 @@ const { poolPromise } = require('../db');
 const getVendasBilhete = async (req, res) => {
   try {
     const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal } = req.query;
-
+    const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
@@ -34,26 +34,24 @@ const getVendasBilhete = async (req, res) => {
       request.input('idmoeda', idmoeda);
       whereClause += ' AND vendasbilhetes.idmoeda = @idmoeda';
     }
-
+    
     if (datainicial) {
-      const [diaI, mesI, anoI] = datainicial.split('/');
-      const dataIniConvertida = new Date(`${anoI}-${mesI}-${diaI}`);
-      request.input('datainicial', dataIniConvertida);      
-      //request.input('datainicial', datainicial);
+      request.input('datainicial', datainicial);
       whereClause += ' AND vendasbilhetes.datavenda >= @datainicial';
     }
-
+    
     if (datafinal) {
-      const [diaF, mesF, anoF] = datafinal.split('/');
-      const dataFimConvertida = new Date(`${anoF}-${mesF}-${diaF}`);
-      request.input('datafinal', dataFimConvertida);      
-      //request.input('datafinal', datafinal);
+      request.input('datafinal', datafinal);
       whereClause += ' AND vendasbilhetes.datavenda <= @datafinal';
     }
 
+    whereClause += ' GROUP BY vendasbilhetes.idvenda, vendasbilhetes.valortotal,  ' +
+                   ' vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, ' +
+                   ' vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome, formapagamento.nome';
+
     whereClause += ' ORDER BY vendasbilhetes.datavenda desc ';
 
-   const query =
+    const query =
      `SELECT vendasbilhetes.idvenda, ISNULL(vendasbilhetes.valortotal,0) AS valortotal,  
         vendasbilhetes.observacao, ISNULL(vendasbilhetes.solicitante,'') AS solicitante, vendasbilhetes.identidade, 
         vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome AS entidade, formapagamento.nome AS pagamento
@@ -66,10 +64,9 @@ const getVendasBilhete = async (req, res) => {
             entidades entidades_1 ON vendasbilhetes.idvendedor = entidades_1.identidade LEFT OUTER JOIN
             grupos ON vendasbilhetes.idgrupo = grupos.id LEFT OUTER JOIN
             itensvendabilhete ON vendasbilhetes.idvenda = itensvendabilhete.idvenda ${whereClause}  `
-
    const result = await request.query(query);
 
-    res.json(result.recordset);    
+   res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);
   }
