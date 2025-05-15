@@ -1,6 +1,102 @@
 const { poolPromise } = require('../db');
 
 
+// Obter todos os CiaAerea
+const getCiasDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND cia = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Obter todos os emissores
+const getEmissoresDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND emis = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Obter todos os vendedores
+const getVendedoresDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND vend = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Obter todos os clientes
 const getClientesDropDown = async (req, res) => {
   try {
@@ -32,7 +128,6 @@ const getClientesDropDown = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Obter todas as entidades
 const getEntidades = async (req, res) => {
@@ -335,4 +430,7 @@ module.exports = {
   updateEntidade,
   deleteEntidade,
   getClientesDropDown,
+  getVendedoresDropDown,
+  getEmissoresDropDown,
+  getCiasDropDown,
 };

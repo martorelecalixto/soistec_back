@@ -161,4 +161,78 @@ router.put('/:id', itensvendabilheteController.updateItemVendaBilhete);
  */
 router.delete('/:id', itensvendabilheteController.deleteItemVendaBilhete);
 
+/**
+ * @swagger
+ * /api/itensvendabilhete/{id}:
+ *   get:
+ *     summary: Retorna um item de venda pelo ID
+ *     tags: [ItensVendaBilhete]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do item da venda
+ *     responses:
+ *       200:
+ *         description: Forma de pagamento encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *       404:
+ *         description: Forma de pagamento não encontrada
+ */
+router.get('/:id', itensvendabilheteController.getItensVendaBilheteById);
+
+/**
+ * @swagger
+ * /api/itensvendabilhete/{id}:
+ *   delete:
+ *     summary: Remove um item de venda de bilhete
+ *     tags: [ItensVendaBilhete]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do item a ser removido
+ *     responses:
+ *       200:
+ *         description: Item removido com sucesso
+ */
+router.delete('/:id', itensvendabilheteController.deleteItemVendaBilhete);
+
+/**
+ * @swagger
+ * /api/itensvendabilhete/porvenda/{idvenda}:
+ *   get:
+ *     summary: Retorna os itens de uma venda pelo ID da venda
+ *     tags: [ItensVendaBilhete]
+ *     parameters:
+ *       - in: path
+ *         name: idvenda
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: IDVENDA do item da venda
+ *     responses:
+ *       200:
+ *         description: Itens encontrados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *       404:
+ *         description: Itens da venda não encontrados
+ */
+router.get('/porvenda/:idvenda', itensvendabilheteController.getItensVendaBilheteByIdVenda);
+
 module.exports = router;

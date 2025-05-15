@@ -14,6 +14,11 @@ const entidadesRoutes = require('./routes/entidadesRoutes');
 const vendasbilheteRoutes = require('./routes/vendasbilheteRoutes'); 
 const itensvendabilheteRoutes = require('./routes/itensvendabilheteRoutes');
 const moedasRoutes = require('./routes/moedasRoutes');
+const centrocustoRoutes = require('./routes/centrocustoRoutes');
+const formaspagamentoRoutes = require('./routes/formaspagamentoRoutes');
+const planocontaRoutes = require('./routes/planocontaRoutes');
+const gruposRoutes = require('./routes/gruposRoutes');
+const recibosreceberRoutes = require('./routes/recibosreceberRoutes');
 // Swagger
 const setupSwagger = require('./swagger');
 
@@ -33,6 +38,11 @@ app.use('/api/entidades', entidadesRoutes);
 app.use('/api/vendasbilhete', vendasbilheteRoutes); 
 app.use('/api/itensvendabilhete', itensvendabilheteRoutes); 
 app.use('/api/moedas', moedasRoutes); 
+app.use('/api/centrocusto', centrocustoRoutes); 
+app.use('/api/formaspagamento', formaspagamentoRoutes); 
+app.use('/api/planoconta', planocontaRoutes); 
+app.use('/api/grupos', gruposRoutes); 
+app.use('/api/recibosreceber', recibosreceberRoutes); 
 
 // Swagger
 setupSwagger(app);

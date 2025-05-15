@@ -161,6 +161,77 @@ const getItensVendaBilhete = async (req, res) => {
   }
 };
 
+// Obter uma itens venda bilhete pelo ID
+const getItensVendaBilheteById = async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('id', req.params.id)
+      .query(
+        `SELECT 
+                itensvendabilhete.id, itensvendabilhete.quantidade, itensvendabilhete.pax, itensvendabilhete.observacao, itensvendabilhete.bilhete, itensvendabilhete.trecho, itensvendabilhete.tipovoo, itensvendabilhete.valorbilhete, itensvendabilhete.valortaxabilhete,
+                itensvendabilhete.valortaxaservico, itensvendabilhete.valordesconto, itensvendabilhete.valortotal, itensvendabilhete.idvenda, itensvendabilhete.idciaaerea, itensvendabilhete.idoperadora, itensvendabilhete.voo,
+                itensvendabilhete.tipobilhete, itensvendabilhete.cancelado, itensvendabilhete.valorcomisagente, itensvendabilhete.valorcomisvendedor, itensvendabilhete.valorassento,
+                itensvendabilhete.valorcomisemissor, itensvendabilhete.valorfornecedor, itensvendabilhete.valornet, itensvendabilhete.localembarque, itensvendabilhete.dataembarque,
+                itensvendabilhete.horaembarque, itensvendabilhete.localdesembarque, itensvendabilhete.datadesembarque, itensvendabilhete.horadesembarque, itensvendabilhete.chave,
+                entidades.nome AS cia, entidades_1.nome AS operadora
+        FROM            itensvendabilhete LEFT OUTER JOIN
+                                entidades ON itensvendabilhete.idciaaerea = entidades.identidade LEFT OUTER JOIN
+                                entidades entidades_1 ON itensvendabilhete.idoperadora = entidades_1.identidade
+        WHERE itensvendabilhete.idvenda = @idvenda ORDER BY itensvendabilhete.id   
+
+          `
+      );
+
+    if (result.recordset.length > 0) {
+      res.json(result.recordset[0]);
+    } else {
+      res.status(404).send('itens venda não encontrada');
+    }
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+// Obter uma itens venda bilhete pelo ID VENDA
+const getItensVendaBilheteByIdVenda = async (req, res) => {
+  try {
+   
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('idvenda', req.params.idvenda)
+      .query(
+        `SELECT 
+                itensvendabilhete.id, itensvendabilhete.quantidade, itensvendabilhete.pax, itensvendabilhete.observacao, itensvendabilhete.bilhete, itensvendabilhete.trecho, itensvendabilhete.tipovoo, itensvendabilhete.valorbilhete, itensvendabilhete.valortaxabilhete,
+                itensvendabilhete.valortaxaservico, itensvendabilhete.valordesconto, itensvendabilhete.valortotal, itensvendabilhete.idvenda, itensvendabilhete.idciaaerea, itensvendabilhete.idoperadora, itensvendabilhete.voo,
+                itensvendabilhete.tipobilhete, itensvendabilhete.cancelado, itensvendabilhete.valorcomisagente, itensvendabilhete.valorcomisvendedor, itensvendabilhete.valorassento,
+                itensvendabilhete.valorcomisemissor, itensvendabilhete.valorfornecedor, itensvendabilhete.valornet, itensvendabilhete.localembarque, itensvendabilhete.dataembarque,
+                itensvendabilhete.horaembarque, itensvendabilhete.localdesembarque, itensvendabilhete.datadesembarque, itensvendabilhete.horadesembarque, itensvendabilhete.chave,
+                entidades.nome AS cia, entidades_1.nome AS operadora
+        FROM            itensvendabilhete LEFT OUTER JOIN
+                                entidades ON itensvendabilhete.idciaaerea = entidades.identidade LEFT OUTER JOIN
+                                entidades entidades_1 ON itensvendabilhete.idoperadora = entidades_1.identidade
+        WHERE itensvendabilhete.idvenda = @idvenda ORDER BY itensvendabilhete.id   
+
+          `
+      );
+console.log('idvenda: ' + req.query.idvenda);
+
+    if (result.recordset.length > 0) {
+      res.json(result.recordset);
+    } else {
+      res.status(404).send('itens venda não encontrada');
+    }
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+
 // Excluir um item
 const deleteItemVendaBilhete = async (req, res) => {
   try {
@@ -179,5 +250,7 @@ module.exports = {
   createItemVendaBilhete,
   updateItemVendaBilhete,
   getItensVendaBilhete,
-  deleteItemVendaBilhete
+  deleteItemVendaBilhete,
+  getItensVendaBilheteByIdVenda,
+  getItensVendaBilheteById,
 };
