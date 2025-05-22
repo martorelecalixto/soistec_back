@@ -69,7 +69,7 @@ const getVendasBilhete = async (req, res) => {
             grupos ON vendasbilhetes.idgrupo = grupos.id LEFT OUTER JOIN
             itensvendabilhete ON vendasbilhetes.idvenda = itensvendabilhete.idvenda ${whereClause}  `
    const result = await request.query(query);
-
+   //console.log(result.recordset);
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);
@@ -178,7 +178,7 @@ const createVendasBilhete = async (req, res) => {
       .input('id', id)
       .input('valorentrada', valorentrada)
       .query(`
-        INSERT INTO vendasb (
+        INSERT INTO vendasbilhetes (
           datavenda, datavencimento, documento, valortotal, descontototal,
           cartao_sigla, cartao_numero, cartao_mesvencimento, cartao_anovencimento,
           observacao, solicitante, identidade, idvendedor, idemissor, idmoeda,
@@ -204,6 +204,7 @@ const createVendasBilhete = async (req, res) => {
 // Atualizar uma vendas existente
 const updateVendasBilhete = async (req, res) => {
   try {
+   // console.log('ENTROU NA API');
     const {
       datavenda,
       datavencimento,
@@ -232,7 +233,7 @@ const updateVendasBilhete = async (req, res) => {
       id,
       valorentrada
     } = req.body;
-
+    //console.log(req.body);
     const pool = await poolPromise;
     await pool
       .request()
@@ -264,7 +265,7 @@ const updateVendasBilhete = async (req, res) => {
       .input('id', id)
       .input('valorentrada', valorentrada)
       .query(`
-        UPDATE vendasb SET
+        UPDATE vendasbilhetes SET
           datavenda = @datavenda,
           datavencimento = @datavencimento,
           documento = @documento,
@@ -296,6 +297,7 @@ const updateVendasBilhete = async (req, res) => {
 
     res.json({ success: true, message: 'Venda atualizada com sucesso' });
   } catch (error) {
+    console.log(error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -314,6 +316,7 @@ const deleteVendasBilhete = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 module.exports = {
   getVendasBilhete,

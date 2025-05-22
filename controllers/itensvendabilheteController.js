@@ -218,7 +218,7 @@ const getItensVendaBilheteByIdVenda = async (req, res) => {
 
           `
       );
-console.log('idvenda: ' + req.query.idvenda);
+//console.log('idvenda: ' + req.params.idvenda);
 
     if (result.recordset.length > 0) {
       res.json(result.recordset);
