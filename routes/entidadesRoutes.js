@@ -321,4 +321,6 @@ router.put('/:identidade', entidadesController.updateEntidade);
  */
 router.delete('/:identidade', entidadesController.deleteEntidade);
 
+router.get('/:identidade', entidadesController.getEntidadeById);
+
 module.exports = router;

@@ -49,7 +49,8 @@ const getVendasBilhete = async (req, res) => {
                    ' vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, ' +
                    ' vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome, formapagamento.nome, ' +
                    ' vendasbilhetes.datavencimento, vendasbilhetes.idmoeda, vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idformapagamento, ' +
-                   ' vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo ';
+                   ' vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo, ' +
+                   ' entidades_1.nome, entidades_2.nome ';
 
     whereClause += ' ORDER BY vendasbilhetes.datavenda desc ';
 
@@ -58,7 +59,8 @@ const getVendasBilhete = async (req, res) => {
         vendasbilhetes.observacao, ISNULL(vendasbilhetes.solicitante,'') AS solicitante, vendasbilhetes.identidade, 
         vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome AS entidade, formapagamento.nome AS pagamento,
         vendasbilhetes.datavencimento, vendasbilhetes.idmoeda, vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idformapagamento,
-        vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo
+        vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo,
+        entidades_1.nome AS vendedor, entidades_2.nome AS emissor
         FROM vendasbilhetes INNER JOIN
             entidades ON vendasbilhetes.identidade = entidades.identidade LEFT OUTER JOIN
             filiais ON vendasbilhetes.idfilial = filiais.idfilial LEFT OUTER JOIN
@@ -77,6 +79,56 @@ const getVendasBilhete = async (req, res) => {
 };
 
 // Obter uma vendasb pelo ID
+const getVendasBilheteById = async (req, res) => {
+  try {
+    const { idvenda } = req.params;
+
+    if (!idvenda) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "idvenda" é obrigatório.' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('idvenda', idvenda)
+      .query(`
+        SELECT vendasbilhetes.idvenda, ISNULL(vendasbilhetes.valortotal,0) AS valortotal, vendasbilhetes.descontototal, vendasbilhetes.valorentrada,
+            vendasbilhetes.observacao, ISNULL(vendasbilhetes.solicitante,'') AS solicitante, vendasbilhetes.identidade, 
+            vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome AS entidade, formapagamento.nome AS pagamento,
+            vendasbilhetes.datavencimento, vendasbilhetes.idmoeda, vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idformapagamento,
+            vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo,
+            entidades_1.nome AS vendedor, entidades_2.nome AS emissor
+            FROM vendasbilhetes INNER JOIN
+                entidades ON vendasbilhetes.identidade = entidades.identidade LEFT OUTER JOIN
+                filiais ON vendasbilhetes.idfilial = filiais.idfilial LEFT OUTER JOIN
+                moeda ON vendasbilhetes.idmoeda = moeda.idmoeda LEFT OUTER JOIN
+                formapagamento ON vendasbilhetes.idformapagamento = formapagamento.idformapagamento LEFT OUTER JOIN
+                entidades entidades_2 ON vendasbilhetes.idemissor = entidades_2.identidade LEFT OUTER JOIN
+                entidades entidades_1 ON vendasbilhetes.idvendedor = entidades_1.identidade LEFT OUTER JOIN
+                grupos ON vendasbilhetes.idgrupo = grupos.id LEFT OUTER JOIN
+                itensvendabilhete ON vendasbilhetes.idvenda = itensvendabilhete.idvenda   
+        WHERE vendasbilhetes.idvenda = @idvenda
+
+        GROUP BY vendasbilhetes.idvenda, vendasbilhetes.valortotal, vendasbilhetes.descontototal, vendasbilhetes.valorentrada,
+                  vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, 
+                  vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome, formapagamento.nome,
+                  vendasbilhetes.datavencimento, vendasbilhetes.idmoeda, vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idformapagamento, 
+                  vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo,
+                  entidades_1.nome, entidades_2.nome 
+
+      `);
+
+    if (result.recordset.length > 0) {
+      res.json(result.recordset[0]);
+    } else {
+      res.status(404).json({ success: false, message: 'Venda não encontrada.' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/*
 const getVendasBilheteById = async (req, res) => {
   try {
     const { empresa, nome } = req.query;
@@ -115,8 +167,96 @@ const getVendasBilheteById = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
+*/
 
 // Criar uma nova venda
+const createVendasBilhete = async (req, res) => {
+  try {
+    const {
+      datavenda,
+      datavencimento,
+      documento,
+      valortotal,
+      descontototal,
+      cartao_sigla,
+      cartao_numero,
+      cartao_mesvencimento,
+      cartao_anovencimento,
+      observacao,
+      solicitante,
+      identidade,
+      idvendedor,
+      idemissor,
+      idmoeda,
+      idformapagamento,
+      idfilial,
+      idfatura,
+      idreciboreceber,
+      chave,
+      excluido,
+      empresa,
+      idcentrocusto,
+      idgrupo,
+      id,
+      valorentrada
+    } = req.body;
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('datavenda', datavenda)
+      .input('datavencimento', datavencimento)
+      .input('documento', documento)
+      .input('valortotal', valortotal)
+      .input('descontototal', descontototal)
+      .input('cartao_sigla', cartao_sigla)
+      .input('cartao_numero', cartao_numero)
+      .input('cartao_mesvencimento', cartao_mesvencimento)
+      .input('cartao_anovencimento', cartao_anovencimento)
+      .input('observacao', observacao)
+      .input('solicitante', solicitante)
+      .input('identidade', identidade)
+      .input('idvendedor', idvendedor)
+      .input('idemissor', idemissor)
+      .input('idmoeda', idmoeda)
+      .input('idformapagamento', idformapagamento)
+      .input('idfilial', idfilial)
+      .input('idfatura', idfatura)
+      .input('idreciboreceber', idreciboreceber)
+      .input('chave', chave)
+      .input('excluido', excluido)
+      .input('empresa', empresa)
+      .input('idcentrocusto', idcentrocusto)
+      .input('idgrupo', idgrupo)
+      .input('id', id)
+      .input('valorentrada', valorentrada)
+      .query(`
+        INSERT INTO vendasbilhetes (
+          datavenda, datavencimento, documento, valortotal, descontototal,
+          cartao_sigla, cartao_numero, cartao_mesvencimento, cartao_anovencimento,
+          observacao, solicitante, identidade, idvendedor, idemissor, idmoeda,
+          idformapagamento, idfilial, idfatura, idreciboreceber, chave, excluido,
+          empresa, idcentrocusto, idgrupo, id, valorentrada
+        )
+        OUTPUT INSERTED.idvenda
+        VALUES (
+          @datavenda, @datavencimento, @documento, @valortotal, @descontototal,
+          @cartao_sigla, @cartao_numero, @cartao_mesvencimento, @cartao_anovencimento,
+          @observacao, @solicitante, @identidade, @idvendedor, @idemissor, @idmoeda,
+          @idformapagamento, @idfilial, @idfatura, @idreciboreceber, @chave, @excluido,
+          @empresa, @idcentrocusto, @idgrupo, @id, @valorentrada
+        )
+      `);
+
+    const idvenda = result.recordset[0].idvenda;
+
+    res.status(201).json({ success: true, idvenda, message: 'Venda criada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/*
 const createVendasBilhete = async (req, res) => {
   try {
     const {
@@ -199,7 +339,7 @@ const createVendasBilhete = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+*/
 
 // Atualizar uma vendas existente
 const updateVendasBilhete = async (req, res) => {

@@ -87,33 +87,33 @@ const getFiliais = async (req, res) => {
 // Obter uma filial pelo ID
 const getFilialById = async (req, res) => {
   try {
-    const { empresa, nome, cnpjcpf, email } = req.query;
+    const { idfilial } = req.params;
 
-    // Verifica se o parâmetro 'empresa' foi fornecido
-    if (!empresa) {
-      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    if (!idfilial) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "idfilial" é obrigatório.' });
     }
-    
+
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('idfilial', req.params.id)
-      .query(
-        `SELECT idfilial, nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2,
-          redessociais, home, email, linkimagem, logradouro, complemento, numero,
-          estado, cidade, bairro, cep, referencia, valoricms, valoriss, valorcofins,
-          valorpis, valoripi, valorir, valorcsll, valorinss, empresa FROM filiais  WHERE idfilial = @idfilial ORDER BY nome`
-      );
+      .input('idfilial', idfilial)//logradouro, complemento, numero,
+          //estado, cidade, bairro, cep,
+      .query(`
+        SELECT idfilial, nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2,
+          redessociais, home, email, linkimagem,  referencia, valoricms, valoriss, valorcofins,
+          valorpis, valoripi, valorir, valorcsll, valorinss, empresa,
+          isnull(logradouro, '') AS logradouro, isnull(complemento, '') AS complemento, isnull(numero, '') AS numero, 
+          isnull(cep, '') AS cep, isnull(bairro, '') AS bairro, isnull(cidade, '') AS cidade, isnull(estado, '') AS estado
+          FROM filiais  WHERE idfilial = @idfilial 
+      `);
 
-    //  .query('SELECT * FROM filiais  WHERE idfilial = @idfilial');
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
-      res.status(404).send('Filial não encontrada');
+      res.status(404).json({ success: false, message: 'Filial não encontrada.' });
     }
-
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

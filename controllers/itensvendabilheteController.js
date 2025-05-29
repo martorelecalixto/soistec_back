@@ -2,6 +2,7 @@ const { poolPromise } = require('../db');
 
 // Criar um novo item de venda de bilhete
 const createItemVendaBilhete = async (req, res) => {
+
   try {
     const {
       quantidade, pax, observacao, bilhete, trecho, tipovoo, valorbilhete, valortaxabilhete,
@@ -12,7 +13,9 @@ const createItemVendaBilhete = async (req, res) => {
     } = req.body;
 
     const pool = await poolPromise;
-    await pool.request()
+    const result = await pool
+    //await pool.request()
+      .request()
       .input('quantidade', quantidade)
       .input('pax', pax)
       .input('observacao', observacao)
@@ -50,7 +53,9 @@ const createItemVendaBilhete = async (req, res) => {
           tipobilhete, cancelado, valorcomisagente, valorcomisvendedor, valorassento,
           valorcomisemissor, valorfornecedor, valornet, localembarque, dataembarque,
           horaembarque, localdesembarque, datadesembarque, horadesembarque, chave
-        ) VALUES (
+        ) 
+        OUTPUT INSERTED.id  
+        VALUES (
           @quantidade, @pax, @observacao, @bilhete, @trecho, @tipovoo, @valorbilhete, @valortaxabilhete,
           @valortaxaservico, @valordesconto, @valortotal, @idvenda, @idciaaerea, @idoperadora, @voo,
           @tipobilhete, @cancelado, @valorcomisagente, @valorcomisvendedor, @valorassento,
@@ -59,7 +64,9 @@ const createItemVendaBilhete = async (req, res) => {
         )
       `);
 
-    res.status(201).json({ success: true, message: 'Item criado com sucesso' });
+       const id = result.recordset[0].id;
+
+    res.status(201).json({ success: true, id, message: 'Item criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -164,10 +171,16 @@ const getItensVendaBilhete = async (req, res) => {
 // Obter uma itens venda bilhete pelo ID
 const getItensVendaBilheteById = async (req, res) => {
   try {
-    const pool = await poolPromise;
-    const result = await pool
+     const { id } = req.params;
+
+     if (!id) {
+         return res.status(400).json({ success: false, message: 'O parâmetro "id" é obrigatório.' });
+     }
+
+     const pool = await poolPromise;
+     const result = await pool
       .request()
-      .input('id', req.params.id)
+      .input('id', id)
       .query(
         `SELECT 
                 itensvendabilhete.id, itensvendabilhete.quantidade, itensvendabilhete.pax, itensvendabilhete.observacao, itensvendabilhete.bilhete, itensvendabilhete.trecho, itensvendabilhete.tipovoo, itensvendabilhete.valorbilhete, itensvendabilhete.valortaxabilhete,
@@ -179,7 +192,7 @@ const getItensVendaBilheteById = async (req, res) => {
         FROM            itensvendabilhete LEFT OUTER JOIN
                                 entidades ON itensvendabilhete.idciaaerea = entidades.identidade LEFT OUTER JOIN
                                 entidades entidades_1 ON itensvendabilhete.idoperadora = entidades_1.identidade
-        WHERE itensvendabilhete.idvenda = @idvenda ORDER BY itensvendabilhete.id   
+        WHERE itensvendabilhete.id = @id ORDER BY itensvendabilhete.id   
 
           `
       );
@@ -210,7 +223,7 @@ const getItensVendaBilheteByIdVenda = async (req, res) => {
                 itensvendabilhete.tipobilhete, itensvendabilhete.cancelado, itensvendabilhete.valorcomisagente, itensvendabilhete.valorcomisvendedor, itensvendabilhete.valorassento,
                 itensvendabilhete.valorcomisemissor, itensvendabilhete.valorfornecedor, itensvendabilhete.valornet, itensvendabilhete.localembarque, itensvendabilhete.dataembarque,
                 itensvendabilhete.horaembarque, itensvendabilhete.localdesembarque, itensvendabilhete.datadesembarque, itensvendabilhete.horadesembarque, itensvendabilhete.chave,
-                entidades.nome AS cia, entidades_1.nome AS operadora
+                entidades.sigla AS cia, entidades_1.nome AS operadora
         FROM            itensvendabilhete LEFT OUTER JOIN
                                 entidades ON itensvendabilhete.idciaaerea = entidades.identidade LEFT OUTER JOIN
                                 entidades entidades_1 ON itensvendabilhete.idoperadora = entidades_1.identidade

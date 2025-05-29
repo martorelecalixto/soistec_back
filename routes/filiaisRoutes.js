@@ -309,5 +309,6 @@ router.delete('/:idfilial', filiaisController.deleteFilial);
  */
 router.get('/', filiaisController.getFiliaisDropDown);
 
+router.get('/:idfilial', filiaisController.getFilialById);
 
 module.exports = router;

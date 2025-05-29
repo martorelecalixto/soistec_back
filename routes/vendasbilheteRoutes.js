@@ -285,4 +285,6 @@ router.put('/:idvenda', vendasbilheteController.updateVendasBilhete);
  */
 router.delete('/:idvenda', vendasbilheteController.deleteVendasBilhete);
 
+router.get('/:idvenda', vendasbilheteController.getVendasBilheteById);
+
 module.exports = router;

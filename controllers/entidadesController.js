@@ -185,34 +185,86 @@ const getEntidades = async (req, res) => {
 // Obter uma entidade pelo ID
 const getEntidadeById = async (req, res) => {
   try {
-    const { empresa, nome, cnpjcpf, email } = req.query;
+    const { identidade } = req.params;
 
-    // Verifica se o parâmetro 'empresa' foi fornecido
-    if (!empresa) {
-      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    if (!identidade) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "identidade" é obrigatório.' });
     }
-    
+
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('identidade', req.params.id)
-      .query(
-        `SELECT identidade, nome, cnpjcpf, fantasia, celular1, celular2, telefone1, telefone2,
-        datacadastro, datanascimento, email, ativo, [for], cli, vend, emis, mot, gui, cia, ope, hot,
-        sigla, cartao_sigla_1, cartao_numero_1, cartao_mesvencimento_1, cartao_anovencimento_1,
-        cartao_diafechamento_1, cartao_titular_1, cartao_sigla_2, cartao_numero_2, cartao_mesvencimento_2,
-        cartao_anovencimento_2, cartao_diafechamento_2, cartao_titular_2, chave, atividadeid, empresa, seg,
-        ter, loc, sexo, pes, documento, tipodocumento FROM entidades WHERE identidade = @identidade ORDER BY nome`
-      );
+      .input('identidade', identidade)
+      .query(`
+            SELECT 
+                entidades.identidade, 
+                entidades.nome, 
+                entidades.cnpjcpf, 
+                entidades.fantasia, 
+                entidades.celular1, 
+                entidades.celular2, 
+                entidades.telefone1, 
+                entidades.telefone2, 
+                entidades.datacadastro, 
+                entidades.datanascimento, 
+                entidades.email, 
+                entidades.ativo, 
+                entidades.[for], 
+                entidades.cli, 
+                entidades.vend, 
+                entidades.emis, 
+                entidades.mot, 
+                entidades.gui, 
+                entidades.cia, 
+                entidades.ope, 
+                entidades.hot, 
+                entidades.sigla, 
+                entidades.cartao_sigla_1, 
+                entidades.cartao_numero_1, 
+                entidades.cartao_mesvencimento_1, 
+                entidades.cartao_anovencimento_1, 
+                entidades.cartao_diafechamento_1, 
+                entidades.cartao_titular_1, 
+                entidades.cartao_sigla_2, 
+                entidades.cartao_numero_2, 
+                entidades.cartao_mesvencimento_2, 
+                entidades.cartao_anovencimento_2, 
+                entidades.cartao_diafechamento_2, 
+                entidades.cartao_titular_2, 
+                entidades.chave, 
+                entidades.atividadeid, 
+                entidades.empresa, 
+                entidades.seg, 
+                entidades.ter, 
+                entidades.loc, 
+                entidades.sexo, 
+                entidades.pes, 
+                entidades.documento, 
+                entidades.tipodocumento,
+                isnull(entidades_enderecos.logradouro, '') as logradouro,
+                isnull(entidades_enderecos.complemento, '') as complemento,
+                isnull(entidades_enderecos.numero, '') as numero,
+                isnull(entidades_enderecos.cep, '') as cep,
+                isnull(entidades_enderecos.bairro, '') as bairro,
+                isnull(entidades_enderecos.cidade, '') as cidade,
+                isnull(entidades_enderecos.estado, '') as estado
+            FROM 
+                entidades
+            LEFT JOIN 
+                entidades_enderecos 
+                ON entidades.identidade = entidades_enderecos.identidade
+            WHERE 
+                entidades.identidade = @identidade;
+
+      `);
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
-      res.status(404).send('Entidade não encontrada');
+      res.status(404).json({ success: false, message: 'Entidade não encontrada.' });
     }
-
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -407,7 +459,6 @@ const updateEntidade = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Deletar uma entidade
 const deleteEntidade = async (req, res) => {
