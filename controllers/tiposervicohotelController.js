@@ -1,8 +1,8 @@
 const { poolPromise } = require('../db');
 
 
-// Obter todas as acomodacoes
-const getAcomodacoesDropDown = async (req, res) => {
+// Obter todas as TipoServicosHoteis
+const getTipoServicoHoteisDropDown = async (req, res) => {
   try {
       const { empresa } = req.query;
 
@@ -22,11 +22,7 @@ const getAcomodacoesDropDown = async (req, res) => {
 
       const query =
           `SELECT id, nome
-            FROM Acomodacoes ${whereClause}`
-        
-      console.log(query);
-      console.log(await request.query(query));
-      
+            FROM TipoServicosHoteis ${whereClause}`
 
       const result = await request.query(query);
 
@@ -37,8 +33,8 @@ const getAcomodacoesDropDown = async (req, res) => {
   }
 };
 
-// Obter todas as acomodações
-const getAcomodacoes = async (req, res) => {
+// Obter todas as TipoServicosHoteis
+const getTipoServicoHoteis = async (req, res) => {
   try {
     const { empresa, nome } = req.query;
 
@@ -59,7 +55,7 @@ const getAcomodacoes = async (req, res) => {
 
     whereClause += ' ORDER BY nome';
 
-    const query = `SELECT id, nome, empresa FROM acomodacoes ${whereClause}`;
+    const query = `SELECT id, nome, empresa FROM TipoServicosHoteis ${whereClause}`;
 
     const result = await request.query(query);
     res.json(result.recordset);
@@ -68,27 +64,27 @@ const getAcomodacoes = async (req, res) => {
   }
 };
 
-// Obter uma acomodação pelo ID
-const getAcomodacaoById = async (req, res) => {
+// Obter uma TipoServicosHoteis pelo ID
+const getTipoServicoHoteisById = async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool
       .request()
       .input('id', req.params.id)
-      .query('SELECT id, nome, empresa FROM acomodacoes WHERE id = @id');
+      .query('SELECT id, nome, empresa FROM TipoServicosHoteis WHERE id = @id');
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
-      res.status(404).send('Acomodação não encontrada');
+      res.status(404).send('Tipo Serviço não encontrado');
     }
   } catch (error) {
     res.status(500).send(error.message);
   }
 };
 
-// Criar uma nova acomodação
-const createAcomodacao = async (req, res) => {
+// Criar uma nova TipoServicosHoteis
+const createTipoServicoHoteis = async (req, res) => {
   try {
     const { nome, empresa } = req.body;
 
@@ -97,16 +93,16 @@ const createAcomodacao = async (req, res) => {
       .request()
       .input('nome', nome)
       .input('empresa', empresa)
-      .query('INSERT INTO acomodacoes (nome, empresa) VALUES (@nome, @empresa)');
+      .query('INSERT INTO TipoServicosHoteis (nome, empresa) VALUES (@nome, @empresa)');
 
-    res.status(201).json({ success: true, message: 'Acomodação criada com sucesso' });
+    res.status(201).json({ success: true, message: 'Tipo Serviço criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Atualizar uma acomodação existente
-const updateAcomodacao = async (req, res) => {
+// Atualizar uma TipoServicosHoteis existente
+const updateTipoServicoHoteis = async (req, res) => {
   try {
     const { nome } = req.body;
 
@@ -115,34 +111,34 @@ const updateAcomodacao = async (req, res) => {
       .request()
       .input('id', req.params.id)
       .input('nome', nome)
-      .query('UPDATE acomodacoes SET nome = @nome WHERE Id = @id');
+      .query('UPDATE TipoServicosHoteis SET nome = @nome WHERE Id = @id');
 
-    res.json({ success: true, message: 'Acomodação atualizada com sucesso' });
+    res.json({ success: true, message: 'Tipo Serviço atualizado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Deletar uma acomodação
-const deleteAcomodacao = async (req, res) => {
+// Deletar uma TipoServicosHoteis
+const deleteTipoServicoHoteis = async (req, res) => {
   try {
     const pool = await poolPromise;
     await pool
       .request()
       .input('id', req.params.id)
-      .query('DELETE FROM acomodacoes WHERE id = @id');
+      .query('DELETE FROM TipoServicosHoteis WHERE id = @id');
 
-    res.json({ success: true, message: 'Acomodação deletada com sucesso' });
+    res.json({ success: true, message: 'Tipo Serviço deletado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 module.exports = {
-  getAcomodacoes,
-  getAcomodacaoById,
-  createAcomodacao,
-  updateAcomodacao,
-  deleteAcomodacao,
-  getAcomodacoesDropDown,
+  getTipoServicoHoteis,
+  getTipoServicoHoteisById,
+  createTipoServicoHoteis,
+  updateTipoServicoHoteis,
+  deleteTipoServicoHoteis,
+  getTipoServicoHoteisDropDown,
 };

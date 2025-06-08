@@ -224,7 +224,7 @@ router.post('/', formaspagamentoController.createFormaPagamento);
  *       404:
  *         description: Forma de pagamento não encontrada
  */
-router.put('/:id', formaspagamentoController.updateFormaPagamento);
+router.put('/:idformapagamento', formaspagamentoController.updateFormaPagamento);
 
 /**
  * @swagger

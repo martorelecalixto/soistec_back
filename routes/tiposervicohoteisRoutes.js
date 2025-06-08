@@ -1,20 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const acomodacoesController = require('../controllers/acomodacoesController');
+const tiposervicohotelController = require('../controllers/tiposervicohotelController');
 
 /**
  * @swagger
  * tags:
  *   name: Acomodacoes
- *   description: Endpoints para gerenciamento de acomodações
+ *   description: Endpoints para gerenciamento de tipo servicos
  */
 
 /**
  * @swagger
- * /api/acomodacoes:
+ * /api/tiposervico:
  *   get:
- *     summary: Lista acomodações com filtros opcionais
- *     tags: [Acomodacoes]
+ *     summary: Lista tipo servico com filtros opcionais
+ *     tags: [TipoServico]
  *     parameters:
  *       - in: query
  *         name: empresa
@@ -27,10 +27,10 @@ const acomodacoesController = require('../controllers/acomodacoesController');
  *         schema:
  *           type: string
  *         required: false
- *         description: Nome da acomodação
+ *         description: Nome do tipo servico
  *     responses:
  *       200:
- *         description: Lista de acomodações
+ *         description: Lista de tipo servico
  *         content:
  *           application/json:
  *             schema:
@@ -45,24 +45,24 @@ const acomodacoesController = require('../controllers/acomodacoesController');
  *                   empresa:
  *                     type: string
  */
-router.get('/', acomodacoesController.getAcomodacoes);
+router.get('/', tiposervicohotelController.getTipoServicoHoteis);
 
 /**
  * @swagger
- * /api/acomodacoes/{id}:
+ * /api/tiposervico/{id}:
  *   get:
- *     summary: Retorna uma acomodação pelo ID
- *     tags: [Acomodacoes]
+ *     summary: Retorna uma tipo servico pelo ID
+ *     tags: [TipoServico]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID da acomodação
+ *         description: ID da tipo servico
  *     responses:
  *       200:
- *         description: Acomodação encontrada
+ *         description: Tipo servico encontrado
  *         content:
  *           application/json:
  *             schema:
@@ -77,14 +77,14 @@ router.get('/', acomodacoesController.getAcomodacoes);
  *       404:
  *         description: Acomodação não encontrada
  */
-router.get('/:id', acomodacoesController.getAcomodacaoById);
+router.get('/:id', tiposervicohotelController.getTipoServicoHoteisById);
 
 /**
  * @swagger
- * /api/acomodacoes:
+ * /api/tiposervico:
  *   post:
- *     summary: Cria uma nova acomodação
- *     tags: [Acomodacoes]
+ *     summary: Cria uma nova tipo servico
+ *     tags: [TipoServico]
  *     requestBody:
  *       required: true
  *       content:
@@ -101,25 +101,25 @@ router.get('/:id', acomodacoesController.getAcomodacaoById);
  *                 type: string
  *     responses:
  *       201:
- *         description: Acomodação criada com sucesso
+ *         description: Tipo servico criado com sucesso
  *       400:
  *         description: Dados inválidos
  */
-router.post('/', acomodacoesController.createAcomodacao);
+router.post('/', tiposervicohotelController.createTipoServicoHoteis);
 
 /**
  * @swagger
- * /api/acomodacoes/{id}:
+ * /api/tiposervico/{id}:
  *   put:
- *     summary: Atualiza uma acomodação existente
- *     tags: [Acomodacoes]
+ *     summary: Atualiza um tipo servico existente
+ *     tags: [TipoServico]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID da acomodação
+ *         description: ID da tipo servico
  *     requestBody:
  *       required: true
  *       content:
@@ -131,41 +131,41 @@ router.post('/', acomodacoesController.createAcomodacao);
  *                 type: string
  *     responses:
  *       200:
- *         description: Acomodação atualizada com sucesso
+ *         description: Tipo Servico atualizada com sucesso
  *       400:
  *         description: Dados inválidos
  *       404:
- *         description: Acomodação não encontrada
+ *         description: Tipo Servico não encontrada
  */
-router.put('/:id', acomodacoesController.updateAcomodacao);
+router.put('/:id', tiposervicohotelController.updateTipoServicoHoteis);
 
 /**
  * @swagger
- * /api/acomodacoes/{id}:
+ * /api/tiposervico/{id}:
  *   delete:
- *     summary: Remove uma acomodação existente
- *     tags: [Acomodacoes]
+ *     summary: Remove um tipo servico existente
+ *     tags: [TipoServico]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID da acomodação
+ *         description: ID do tipo servico
  *     responses:
  *       200:
- *         description: Acomodação removida com sucesso
+ *         description: Tipo servico removido com sucesso
  *       404:
- *         description: Acomodação não encontrada
+ *         description: Tipo servico não encontrado
  */
-router.delete('/:id', acomodacoesController.deleteAcomodacao);
+router.delete('/:id', tiposervicohotelController.deleteTipoServicoHoteis);
 
 /**
  * @swagger
- * /api/acomodacoes:
+ * /api/tiposervico:
  *   get:
- *     summary: Lista acomodacoes com filtros opcionais
- *     tags: [Acomodacoes]
+ *     summary: Lista tipo servico com filtros opcionais
+ *     tags: [TipoServico]
  *     parameters:
  *       - in: query
  *         name: empresa
@@ -178,16 +178,16 @@ router.delete('/:id', acomodacoesController.deleteAcomodacao);
  *         schema:
  *           type: integer
  *         required: false
- *         description: ID da acomodacao
+ *         description: ID da tipo servico
  *       - in: query
  *         name: nome
  *         schema:
  *           type: string
  *         required: false
- *         description: Nome da acomodacao
+ *         description: Nome da tipo servico
  *     responses:
  *       200:
- *         description: Lista de acomodacoes
+ *         description: Lista de tipo servico
  *         content:
  *           application/json:
  *             schema:
@@ -200,7 +200,6 @@ router.delete('/:id', acomodacoesController.deleteAcomodacao);
  *                   nome:
  *                     type: string
  */
-router.get('/', acomodacoesController.getAcomodacoesDropDown);
-
+router.get('/', tiposervicohotelController.getTipoServicoHoteisDropDown);
 
 module.exports = router;

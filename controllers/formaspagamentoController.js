@@ -71,7 +71,7 @@ const getFormaPagamentoById = async (req, res) => {
     const result = await pool
       .request()
       .input('idformapagamento', req.params.idformapagamento)
-      .query('SELECT idformapagamento, nome, empresa FROM formapagamento WHERE idformapagamento = @idformapagamento');
+      .query('SELECT idformapagamento, nome, gerartitulovenda, debito, credito, empresa FROM formapagamento WHERE idformapagamento = @idformapagamento');
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);

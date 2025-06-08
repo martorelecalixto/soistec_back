@@ -1,20 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const vendasbilheteController = require('../controllers/vendasbilheteController');
+const vendashotelController = require('../controllers/vendashotelController');
 
 /**
  * @swagger
  * tags:
- *   name: VendasBilhetes
- *   description: Endpoints para gerenciamento de vendas
+ *   name: VendasHoteis
+ *   description: Endpoints para gerenciamento de vendas de hotéis
  */
 
 /**
  * @swagger
- * /api/vendasbilhete:
+ * /api/vendashoteis:
  *   get:
- *     summary: Lista vendas com filtros opcionais
- *     tags: [VendasBilhetes]
+ *     summary: Lista vendas de hotéis com filtros opcionais
+ *     tags: [VendasHoteis]
  *     parameters:
  *       - in: query
  *         name: empresa
@@ -30,79 +30,24 @@ const vendasbilheteController = require('../controllers/vendasbilheteController'
  *         description: ID da venda
  *     responses:
  *       200:
- *         description: Lista de vendas
+ *         description: Lista de vendas de hotéis
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
  *                 type: object
- *                 properties:
- *                   idvenda:
- *                     type: integer
- *                   datavenda:
- *                     type: string
- *                     format: date-time
- *                   datavencimento:
- *                     type: string
- *                     format: date-time
- *                   documento:
- *                     type: string
- *                   valortotal:
- *                     type: double
- *                   descontototal:
- *                     type: double
- *                   cartao_sigla:
- *                     type: string
- *                   cartao_numero:
- *                     type: string
- *                   cartao_mesvencimento:
- *                     type: string
- *                   cartao_anovencimento:
- *                     type: string
- *                   observacao:
- *                     type: string
- *                   solicitante:
- *                     type: string
- *                   identidade:
- *                     type: string
- *                   idvendedor:
- *                     type: integer
- *                   idemissor:
- *                     type: integer
- *                   idmoeda:
- *                     type: integer
- *                   idformapagamento:
- *                     type: integer
- *                   idfilial:
- *                     type: integer
- *                   idfatura:
- *                     type: integer
- *                   idreciboreceber:
- *                     type: integer
- *                   chave:
- *                     type: string
- *                   excluido:
- *                     type: boolean
- *                   idcentrocusto:
- *                     type: integer
- *                   idgrupo:
- *                     type: integer
- *                   id:
- *                     type: integer
- *                   valorentrada:
- *                     type: double
- *                   empresa:
- *                     type: string
  */
-router.get('/', vendasbilheteController.getVendasBilhete);
+router.get('/', vendashotelController.getVendasHotel);
+
+router.get('/:idvenda', vendashotelController.getVendasHotelById);
 
 /**
  * @swagger
- * /api/vendasbilhete:
+ * /api/vendashoteis:
  *   post:
- *     summary: Cria uma nova venda
- *     tags: [VendasBilhetes]
+ *     summary: Cria uma nova venda de hotel
+ *     tags: [VendasHoteis]
  *     requestBody:
  *       required: true
  *       content:
@@ -130,6 +75,16 @@ router.get('/', vendasbilheteController.getVendasBilhete);
  *                 type: number
  *               descontototal:
  *                 type: number
+ *               valortaxatotal:
+ *                 type: number
+ *               valoroutrostotal:
+ *                 type: number
+ *               valordutotal:
+ *                 type: number
+ *               valorcomissaototal:
+ *                 type: number
+ *               valorfornecedortotal:
+ *                 type: number
  *               cartao_sigla:
  *                 type: string
  *               cartao_numero:
@@ -143,7 +98,7 @@ router.get('/', vendasbilheteController.getVendasBilhete);
  *               solicitante:
  *                 type: string
  *               identidade:
- *                 type: integer
+ *                 type: string
  *               idvendedor:
  *                 type: integer
  *               idemissor:
@@ -178,14 +133,14 @@ router.get('/', vendasbilheteController.getVendasBilhete);
  *       400:
  *         description: Dados inválidos
  */
-router.post('/', vendasbilheteController.createVendasBilhete);
+router.post('/', vendashotelController.createVendasHotel);
 
 /**
  * @swagger
- * /api/vendasbilhete/{idvenda}:
+ * /api/vendashoteis/{idvenda}:
  *   put:
- *     summary: Atualiza uma venda existente
- *     tags: [VendasBilhetes]
+ *     summary: Atualiza uma venda de hotel existente
+ *     tags: [VendasHoteis]
  *     parameters:
  *       - in: path
  *         name: idvenda
@@ -212,6 +167,16 @@ router.post('/', vendasbilheteController.createVendasBilhete);
  *                 type: number
  *               descontototal:
  *                 type: number
+ *               valortaxatotal:
+ *                 type: number
+ *               valoroutrostotal:
+ *                 type: number
+ *               valordutotal:
+ *                 type: number
+ *               valorcomissaototal:
+ *                 type: number
+ *               valorfornecedortotal:
+ *                 type: number
  *               cartao_sigla:
  *                 type: string
  *               cartao_numero:
@@ -225,7 +190,7 @@ router.post('/', vendasbilheteController.createVendasBilhete);
  *               solicitante:
  *                 type: string
  *               identidade:
- *                 type: integer
+ *                 type: string
  *               idvendedor:
  *                 type: integer
  *               idemissor:
@@ -262,14 +227,14 @@ router.post('/', vendasbilheteController.createVendasBilhete);
  *       404:
  *         description: Venda não encontrada
  */
-router.put('/:idvenda', vendasbilheteController.updateVendasBilhete);
+router.put('/:idvenda', vendashotelController.updateVendasHotel);
 
 /**
  * @swagger
- * /api/vendasbilhete/{idvenda}:
+ * /api/vendashoteis/{idvenda}:
  *   delete:
- *     summary: Remove uma venda existente
- *     tags: [VendasBilhetes]
+ *     summary: Remove uma venda de hotel existente
+ *     tags: [VendasHoteis]
  *     parameters:
  *       - in: path
  *         name: idvenda
@@ -283,10 +248,6 @@ router.put('/:idvenda', vendasbilheteController.updateVendasBilhete);
  *       404:
  *         description: Venda não encontrada
  */
-router.delete('/:idvenda', vendasbilheteController.deleteVendasBilhete);
-
-router.get('/:idvenda', vendasbilheteController.getVendasBilheteById);
-
-router.get('/tembaixa/:idvenda', vendasbilheteController.getTemBaixa);
+router.delete('/:idvenda', vendashotelController.deleteVendasHotel);
 
 module.exports = router;

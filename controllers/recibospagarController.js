@@ -1,7 +1,7 @@
 const { poolPromise } = require('../db');
 
 // Obter todos os recibos
-const getReciboReceber = async (req, res) => {
+const getReciboPagar = async (req, res) => {
   try {
     const { empresa, descricao } = req.query;
 
@@ -22,7 +22,7 @@ const getReciboReceber = async (req, res) => {
 
     whereClause += ' ORDER BY dataemissao DESC';
 
-    const query = `SELECT idrecibo, dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id FROM recibosreceber ${whereClause}`;
+    const query = `SELECT idrecibo, dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id, vendabilheteidvenda FROM recibospagar ${whereClause}`;
     const result = await request.query(query);
 
     res.json(result.recordset);
@@ -32,13 +32,13 @@ const getReciboReceber = async (req, res) => {
 };
 
 // Obter um recibo pelo ID
-const getReciboReceberById = async (req, res) => {
+const getReciboPagarById = async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool
       .request()
       .input('idrecibo', req.params.idrecibo)
-      .query('SELECT idrecibo, dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id FROM recibosreceber WHERE idrecibo = @idrecibo');
+      .query('SELECT idrecibo, dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id, vendabilheteidvenda FROM recibospagar WHERE idrecibo = @idrecibo');
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
@@ -51,12 +51,12 @@ const getReciboReceberById = async (req, res) => {
 };
 
 // Criar um novo recibo
-const createReciboReceber = async (req, res) => {
+const createReciboPagar = async (req, res) => {
   try {
-    const { dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, empresa, tipo, id } = req.body;
+    const { dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, empresa, tipo, id, vendabilheteidvenda } = req.body;
 
     const pool = await poolPromise;
-    const result = await pool
+    await pool
       .request()
       .input('dataemissao', dataemissao)
       .input('descricao', descricao)
@@ -68,26 +68,21 @@ const createReciboReceber = async (req, res) => {
       .input('empresa', empresa)
       .input('tipo', tipo)
       .input('id', id)
-      .query(`INSERT INTO recibosreceber 
-        (dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, empresa, tipo, Id) 
-        OUTPUT INSERTED.idrecibo
-        VALUES (@dataemissao, @descricao, @valor, @identidade, @idmoeda, @idfilial, @chave, @empresa, @tipo, @id)`);
+      .input('vendabilheteidvenda', vendabilheteidvenda)
+      .query(`INSERT INTO recibospagar 
+        (dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, empresa, tipo, Id, vendabilheteidvenda)
+        VALUES (@dataemissao, @descricao, @valor, @identidade, @idmoeda, @idfilial, @chave, @empresa, @tipo, @id, @vendabilheteidvenda)`);
 
-    const idrecibo = result.recordset[0].idrecibo;
-
-    res.status(201).json({ success: true, idrecibo, message: 'Recibo criado com sucesso' });
-
+    res.status(201).json({ success: true, message: 'Recibo criado com sucesso' });
   } catch (error) {
-    console.error('Erro ao criar recibo:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
 // Atualizar um recibo existente
-const updateReciboReceber = async (req, res) => {
+const updateReciboPagar = async (req, res) => {
   try {
-    const { dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id } = req.body;
+    const { dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id, vendabilheteidvenda } = req.body;
 
     const pool = await poolPromise;
     await pool
@@ -102,7 +97,8 @@ const updateReciboReceber = async (req, res) => {
       .input('chave', chave)
       .input('tipo', tipo)
       .input('id', id)
-      .query(`UPDATE recibosreceber SET 
+      .input('vendabilheteidvenda', vendabilheteidvenda)
+      .query(`UPDATE recibospagar SET 
         dataemissao = @dataemissao,
         descricao = @descricao,
         valor = @valor,
@@ -112,7 +108,8 @@ const updateReciboReceber = async (req, res) => {
         chave = @chave,
         empresa = @empresa,
         tipo = @tipo,
-        id = @id
+        id = @id,
+        vendabilheteidvenda = @vendabilheteidvenda
         WHERE idrecibo = @idrecibo`);
 
     res.json({ success: true, message: 'Recibo atualizado com sucesso' });
@@ -122,13 +119,13 @@ const updateReciboReceber = async (req, res) => {
 };
 
 // Deletar um recibo
-const deleteReciboReceber = async (req, res) => {
+const deleteReciboPagar = async (req, res) => {
   try {
     const pool = await poolPromise;
     await pool
       .request()
       .input('idrecibo', req.params.idrecibo)
-      .query('DELETE FROM recibosreceber WHERE idrecibo = @idrecibo');
+      .query('DELETE FROM recibospagar WHERE idrecibo = @idrecibo');
 
     res.json({ success: true, message: 'Recibo deletado com sucesso' });
   } catch (error) {
@@ -137,7 +134,7 @@ const deleteReciboReceber = async (req, res) => {
 };
 
 // Obter recibos para dropdown (ex: apenas ID e descrição)
-const getReciboReceberDropDown = async (req, res) => {
+const getReciboPagarDropDown = async (req, res) => {
   try {
     const { empresa } = req.query;
 
@@ -149,7 +146,7 @@ const getReciboReceberDropDown = async (req, res) => {
     const request = pool.request();
     request.input('empresa', empresa);
 
-    const query = `SELECT idrecibo, Descricao FROM recibosreceber WHERE empresa = @empresa ORDER BY dataemissao DESC`;
+    const query = `SELECT idrecibo, Descricao FROM recibospagar WHERE empresa = @empresa ORDER BY dataemissao DESC`;
 
     const result = await request.query(query);
 
@@ -160,10 +157,10 @@ const getReciboReceberDropDown = async (req, res) => {
 };
 
 module.exports = {
-  getReciboReceber,
-  getReciboReceberById,
-  createReciboReceber,
-  updateReciboReceber,
-  deleteReciboReceber,
-  getReciboReceberDropDown,
+  getReciboPagar,
+  getReciboPagarById,
+  createReciboPagar,
+  updateReciboPagar,
+  deleteReciboPagar,
+  getReciboPagarDropDown,
 };

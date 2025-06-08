@@ -7,10 +7,10 @@ const getClientes = async (req, res) => {
     const pool = await poolPromise;
     const result = await pool.request().query(`
       SELECT 
-        IdCliente, Desconto, PrazoFaturamento, 
-        Dia_Faturamento_1, Dia_Faturamento_2, EntidadeID 
-      FROM Clientes 
-      ORDER BY IdCliente
+        idcliente, desconto, prazofaturamento, 
+        dia_faturamento_1, dia_faturamento_2, entidadeid 
+      FROM clientes 
+      ORDER BY idcliente
     `);
     res.json(result.recordset);
   } catch (error) {
@@ -24,13 +24,13 @@ const getClienteById = async (req, res) => {
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('id', req.params.id)
+      .input('idcliente', req.params.idcliente)
       .query(`
         SELECT 
-          IdCliente, Desconto, PrazoFaturamento, 
-          Dia_Faturamento_1, Dia_Faturamento_2, EntidadeID 
+          idcliente, desconto, prazofaturamento, 
+          dia_faturamento_1, dia_faturamento_2, entidadeid 
         FROM Clientes 
-        WHERE IdCliente = @id
+        WHERE idcliente = @idcliente
       `);
     
     if (result.recordset.length > 0) {
@@ -46,21 +46,21 @@ const getClienteById = async (req, res) => {
 // Criar cliente
 const createCliente = async (req, res) => {
   try {
-    const { Desconto, PrazoFaturamento, Dia_Faturamento_1, Dia_Faturamento_2, EntidadeID } = req.body;
+    const { desconto, prazofaturamento, dia_faturamento_1, dia_faturamento_2, entidadeid } = req.body;
 
     const pool = await poolPromise;
     await pool
       .request()
-      .input('Desconto', Desconto)
-      .input('PrazoFaturamento', PrazoFaturamento)
-      .input('Dia_Faturamento_1', Dia_Faturamento_1)
-      .input('Dia_Faturamento_2', Dia_Faturamento_2)
-      .input('EntidadeID', EntidadeID)
+      .input('desconto', desconto)
+      .input('prazofaturamento', prazofaturamento)
+      .input('dia_faturamento_1', dia_faturamento_1)
+      .input('dia_faturamento_2', dia_faturamento_2)
+      .input('entidadeid', entidadeid)
       .query(`
-        INSERT INTO Clientes (
-          Desconto, PrazoFaturamento, Dia_Faturamento_1, Dia_Faturamento_2, EntidadeID
+        INSERT INTO clientes (
+          desconto, prazofaturamento, dia_faturamento_1, dia_faturamento_2, entidadeid
         ) VALUES (
-          @Desconto, @PrazoFaturamento, @Dia_Faturamento_1, @Dia_Faturamento_2, @EntidadeID
+          @desconto, @prazofaturamento, @dia_faturamento_1, @dia_faturamento_2, @entidadeid
         )
       `);
 
@@ -73,25 +73,25 @@ const createCliente = async (req, res) => {
 // Atualizar cliente
 const updateCliente = async (req, res) => {
   try {
-    const { Desconto, PrazoFaturamento, Dia_Faturamento_1, Dia_Faturamento_2, EntidadeID } = req.body;
+    const { desconto, prazofaturamento, dia_faturamento_1, dia_faturamento_2, entidadeid } = req.body;
 
     const pool = await poolPromise;
     await pool
       .request()
-      .input('id', req.params.id)
-      .input('Desconto', Desconto)
-      .input('PrazoFaturamento', PrazoFaturamento)
-      .input('Dia_Faturamento_1', Dia_Faturamento_1)
-      .input('Dia_Faturamento_2', Dia_Faturamento_2)
-      .input('EntidadeID', EntidadeID)
+      .input('idcliente', req.params.idcliente)
+      .input('desconto', desconto)
+      .input('prazofaturamento', prazofaturamento)
+      .input('dia_faturamento_1', dia_faturamento_1)
+      .input('dia_faturamento_2', dia_faturamento_2)
+      .input('entidadeid', entidadeid)
       .query(`
-        UPDATE Clientes SET
-          Desconto = @Desconto,
-          PrazoFaturamento = @PrazoFaturamento,
-          Dia_Faturamento_1 = @Dia_Faturamento_1,
-          Dia_Faturamento_2 = @Dia_Faturamento_2,
-          EntidadeID = @EntidadeID
-        WHERE IdCliente = @id
+        UPDATE clientes SET
+          desconto = @desconto,
+          prazofaturamento = @prazofaturamento,
+          dia_faturamento_1 = @dia_faturamento_1,
+          dia_faturamento_2 = @dia_faturamento_2,
+          entidadeid = @entidadeid
+        WHERE idcliente = @idcliente
       `);
 
     res.json({ success: true, message: 'Cliente atualizado com sucesso' });
@@ -107,7 +107,7 @@ const deleteCliente = async (req, res) => {
     await pool
       .request()
       .input('id', req.params.id)
-      .query('DELETE FROM Clientes WHERE IdCliente = @id');
+      .query('DELETE FROM clientes WHERE idcliente = @id');
 
     res.json({ success: true, message: 'Cliente deletado com sucesso' });
   } catch (error) {

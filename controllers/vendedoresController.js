@@ -1,7 +1,7 @@
 const { poolPromise } = require('../db');
 
-// Obter todos os emissores
-const getEmissores = async (req, res) => {
+// Obter todos os vendedores
+const getVendedores = async (req, res) => {
   try {
     const { entidade } = req.query;
 
@@ -14,10 +14,10 @@ const getEmissores = async (req, res) => {
     request.input('entidadeid', entidade);
 
     const result = await request.query(`
-      SELECT idemissor, percomisnac, percomisint, entidadeid, percomissernac, percomisserint
-      FROM emissores
+      SELECT id, percomisnac, percomisint, entidadeid, percomissernac, percomisserint
+      FROM vendedores
       WHERE entidadeid = @entidadeid
-      ORDER BY idemissor
+      ORDER BY id
     `);
 
     res.json(result.recordset);
@@ -26,31 +26,31 @@ const getEmissores = async (req, res) => {
   }
 };
 
-// Obter um emissor pelo ID
-const getEmissorById = async (req, res) => {
+// Obter um vendedor pelo ID
+const getVendedorById = async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('idemissor', req.params.idemissor)
+      .input('id', req.params.id)
       .query(`
-        SELECT idemissor, percomisnac, percomisint, entidadeid, percomissernac, percomisserint
-        FROM emissores
-        WHERE idemissor = @idemissor
+        SELECT id, percomisnac, percomisint, entidadeid, percomissernac, percomisserint
+        FROM vendedores
+        WHERE id = @id
       `);
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
-      res.status(404).send('Emissor não encontrado');
+      res.status(404).send('Vendedor não encontrado');
     }
   } catch (error) {
     res.status(500).send(error.message);
   }
 };
 
-// Criar um novo emissor
-const createEmissor = async (req, res) => {
+// Criar um novo vendedor
+const createVendedor = async (req, res) => {
   try {
     const { percomisnac, percomisint, entidadeid, percomissernac, percomisserint  } = req.body;
 
@@ -63,68 +63,68 @@ const createEmissor = async (req, res) => {
       .input('percomissernac', percomissernac)
       .input('percomisserint', percomisserint)
       .query(`
-        INSERT INTO emissores (
+        INSERT INTO vendedores (
           percomisnac, percomisint, entidadeid, percomissernac, percomisserint 
         ) VALUES (
           @percomisnac, @percomisint, @entidadeid, @percomissernac, @percomisserint
         )
       `);
 
-    res.status(201).json({ success: true, message: 'Emissor criado com sucesso' });
+    res.status(201).json({ success: true, message: 'Vendedor criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Atualizar um emissor existente
-const updateEmissor = async (req, res) => {
+// Atualizar um vendedor existente
+const updateVendedor = async (req, res) => {
   try {
     const { percomisnac, percomisint, entidadeid, percomissernac, percomisserint  } = req.body;
 
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idemissor', req.params.idemissor)
+      .input('id', req.params.id)
       .input('percomisnac', percomisnac)
       .input('percomisint', percomisint)
       .input('entidadeid', entidadeid)
       .input('percomissernac', percomissernac)
       .input('percomisserint', percomisserint)
       .query(`
-        UPDATE emissores SET
+        UPDATE vendedores SET
           percomisnac = @percomisnac,
           percomisnac = @percomisnac,
           entidadeid = @entidadeid,
           percomissernac = @percomissernac,
           percomisserint = @percomisserint
-        WHERE idemissor = @idemissor
+        WHERE id = @id
       `);
 
-    res.json({ success: true, message: 'Emissor atualizado com sucesso' });
+    res.json({ success: true, message: 'Vendedor atualizado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Deletar um emissor
-const deleteEmissor = async (req, res) => {
+// Deletar um vendedor
+const deleteVendedor = async (req, res) => {
   try {
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idemissor', req.params.idemissor)
-      .query('DELETE FROM emissores WHERE idemissor = @idemissor');
+      .input('id', req.params.id)
+      .query('DELETE FROM vendedores WHERE id = @id');
 
-    res.json({ success: true, message: 'Emissor deletado com sucesso' });
+    res.json({ success: true, message: 'Vendedor deletado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 module.exports = {
-  getEmissores,
-  getEmissorById,
-  createEmissor,
-  updateEmissor,
-  deleteEmissor,
+  getVendedores,
+  getVendedorById,
+  createVendedor,
+  updateVendedor,
+  deleteVendedor,
 };

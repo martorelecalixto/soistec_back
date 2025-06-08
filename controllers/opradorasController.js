@@ -1,194 +1,659 @@
 const { poolPromise } = require('../db');
 
-// Obter todas as operadoras
-const getOpradoras = async (req, res) => {
+
+// Obter todos os operadora
+const getOperadora = async (req, res) => {
   try {
-    const { entidadeid } = req.query;
-
-    if (!entidadeid) {
-      return res.status(400).json({ success: false, message: 'O parâmetro "entidadeid" é obrigatório.' });
-    }
-
     const pool = await poolPromise;
-    const request = pool.request();
-    request.input('entidadeid', entidadeid);
-
-    const result = await request.query(`
+    const result = await pool.request().query(`
       SELECT 
-        idoperadora AS idoperadora,
-        prazofaturamento AS prazofaturamento,
-        percomisnac AS percomisnac,
-        percomisint AS percomisint,
-        overnac AS overnac,
-        overint AS overint,
-        liqaddtarifanaciv AS liqaddtarifanaciv,
-        liqaddtaxanaciv AS liqaddtaxanaciv,
-        liqadddunaciv AS liqadddunaciv,
-        liqaddcomissaonaciv AS liqaddcomissaonaciv,
-        liqaddovernaciv AS liqaddovernaciv,
-        liqaddtarifanaccc AS liqaddtarifanaccc,
-        liqaddtaxanaccc AS liqaddtaxanaccc,
-        liqadddunaccc AS liqadddunaccc,
-        liqaddcomissaonaccc AS liqaddcomissaonaccc,
-        liqaddovernaccc AS liqaddovernaccc,
-        liqaddtarifaintiv AS liqaddtarifaintiv,
-        liqaddtaxaintiv AS liqaddtaxaintiv,
-        liqaddduintiv AS liqaddduintiv,
-        liqaddcomissaointiv AS liqaddcomissaointiv,
-        liqaddoverintiv AS liqaddoverintiv,
-        liqaddtarifaintcc AS liqaddtarifaintcc,
-        liqaddtaxaintcc AS liqaddtaxaintcc,
-        liqaddduintcc AS liqaddduintcc,
-        liqaddcomissaointcc AS liqaddcomissaointcc,
-        liqaddoverintcc AS liqaddoverintcc,
-        liqdedtarifanaciv AS liqdedtarifanaciv,
-        liqdedtaxanaciv AS liqdedtaxanaciv,
-        liqdeddunaciv AS liqdeddunaciv,
-        liqdedcomissaonaciv AS liqdedcomissaonaciv,
-        liqdedovernaciv AS liqdedovernaciv,
-        liqdedtarifanaccc AS liqdedtarifanaccc,
-        liqdedtaxanaccc AS liqdedtaxanaccc,
-        liqdeddunaccc AS liqdeddunaccc,
-        liqdedcomissaonaccc AS liqdedcomissaonaccc,
-        liqdedovernaccc AS liqdedovernaccc,
-        liqdedtarifaintiv AS liqdedtarifaintiv,
-        liqdedtaxaintiv AS liqdedtaxaintiv,
-        liqdedduintiv AS liqdedduintiv,
-        liqdedcomissaointiv AS liqdedcomissaointiv,
-        liqdedoverintiv AS liqdedoverintiv,
-        liqdedtarifaintcc AS liqdedtarifaintcc,
-        liqdedtaxaintcc AS liqdedtaxaintcc,
-        liqdedduintcc AS liqdedduintcc,
-        liqdedcomissaointcc AS liqdedcomissaointcc,
-        liqdedoverintcc AS liqdedoverintcc,
-        valorininac1 AS valorininac1,
-        valorfinnac1 AS valorfinnac1,
-        valornac1 AS valornac1,
-        percnac1 AS percnac1,
-        valorininac2 AS valorininac2,
-        valorfinnac2 AS valorfinnac2,
-        valornac2 AS valornac2,
-        percnac2 AS percnac2,
-        valoriniint1 AS valoriniint1,
-        valorfinint1 AS valorfinint1,
-        valorint1 AS valorint1,
-        percint1 AS percint1,
-        valoriniint2 AS valoriniint2,
-        valorfinint2 AS valorfinint2,
-        valorint2 AS valorint2,
-        percint2 AS percint2,
-        entidadeid AS entidadeid,
-        percomisservico AS percomisservico,
-        percomisservicoint AS percomisservicoint,
-        percomisvendnaereo AS percomisvendnaereo,
-        percomisvendiaereo AS percomisvendiaereo,
-        percomisemisnaereo AS percomisemisnaereo,
-        percomisemisiaereo AS percomisemisiaereo,
-        percomisvendnservico AS percomisvendnservico,
-        percomisvendiservico AS percomisvendiservico,
-        percomisemisnservico AS percomisemisnservico,
-        percomisemisiservico AS percomisemisiservico
-      FROM opradoras
-      WHERE entidadeid = @entidadeid
+        idciaaerea,
+        percomisnac,
+        percomisint,
+        overnac,
+        overint,
+        liqaddtarifanaciv,
+        liqaddtaxanaciv,
+        liqadddunaciv,
+        liqaddcomissaonaciv,
+        liqaddovernaciv,
+        liqaddtarifanaccc,
+        liqaddtaxanaccc,
+        liqadddunaccc,
+        liqaddcomissaonaccc,
+        liqaddovernaccc,
+        liqaddtarifaintiv,
+        liqaddtaxaintiv,
+        liqaddduintiv,
+        liqaddcomissaointiv,
+        liqaddoverintiv,
+        liqaddtarifaintcc,
+        liqaddtaxaintcc,
+        liqaddduintcc,
+        liqaddcomissaointcc,
+        liqaddoverintcc,
+        liqdedtarifanaciv,
+        liqdedtaxanaciv,
+        liqdeddunaciv,
+        liqdedcomissaonaciv,
+        liqdedovernaciv,
+        liqdedtarifanaccc,
+        liqdedtaxanaccc,
+        liqdeddunaccc,
+        liqdedcomissaonaccc,
+        liqdedovernaccc,
+        liqdedtarifaintiv,
+        liqdedtaxaintiv,
+        liqdedduintiv,
+        liqdedcomissaointiv,
+        liqdedoverintiv,
+        liqdedtarifaintcc,
+        liqdedtaxaintcc,
+        liqdedduintcc,
+        liqdedcomissaointcc,
+        liqdedoverintcc,
+        valorininac1,
+        valorfinnac1,
+        valornac1,
+        percnac1,
+        valorininac2,
+        valorfinnac2,
+        valornac2,
+        percnac2,
+        valoriniint1,
+        valorfinint1,
+        valorint1,
+        percint1,
+        valoriniint2,
+        valorfinint2,
+        valorint2,
+        percint2,
+        entidadeid
+      FROM opradoras 
       ORDER BY idoperadora
     `);
-
     res.json(result.recordset);
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Obter uma operadora pelo ID
-const getOpradoraById = async (req, res) => {
+// Obter operadora por ID
+const getOperadoraById = async (req, res) => {
   try {
     const pool = await poolPromise;
-    const result = await pool.request()
-      .input('id', req.params.id)
-      .query('SELECT * FROM opradoras WHERE idoperadora = @id');
-
+    const result = await pool
+      .request()
+      .input('idoperadora', req.params.idoperadora)
+      .query(`
+        SELECT 
+            idoperadora,
+            percomisnac,
+            percomisint,
+            overnac,
+            overint,
+            liqaddtarifanaciv,
+            liqaddtaxanaciv,
+            liqadddunaciv,
+            liqaddcomissaonaciv,
+            liqaddovernaciv,
+            liqaddtarifanaccc,
+            liqaddtaxanaccc,
+            liqadddunaccc,
+            liqaddcomissaonaccc,
+            liqaddovernaccc,
+            liqaddtarifaintiv,
+            liqaddtaxaintiv,
+            liqaddduintiv,
+            liqaddcomissaointiv,
+            liqaddoverintiv,
+            liqaddtarifaintcc,
+            liqaddtaxaintcc,
+            liqaddduintcc,
+            liqaddcomissaointcc,
+            liqaddoverintcc,
+            liqdedtarifanaciv,
+            liqdedtaxanaciv,
+            liqdeddunaciv,
+            liqdedcomissaonaciv,
+            liqdedovernaciv,
+            liqdedtarifanaccc,
+            liqdedtaxanaccc,
+            liqdeddunaccc,
+            liqdedcomissaonaccc,
+            liqdedovernaccc,
+            liqdedtarifaintiv,
+            liqdedtaxaintiv,
+            liqdedduintiv,
+            liqdedcomissaointiv,
+            liqdedoverintiv,
+            liqdedtarifaintcc,
+            liqdedtaxaintcc,
+            liqdedduintcc,
+            liqdedcomissaointcc,
+            liqdedoverintcc,
+            valorininac1,
+            valorfinnac1,
+            valornac1,
+            percnac1,
+            valorininac2,
+            valorfinnac2,
+            valornac2,
+            percnac2,
+            valoriniint1,
+            valorfinint1,
+            valorint1,
+            percint1,
+            valoriniint2,
+            valorfinint2,
+            valorint2,
+            percint2,
+            entidadeid
+          FROM opradoras 
+        WHERE idoperadora = @idoperadora
+      `);
+    
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
-      res.status(404).send('Operadora não encontrada');
+      res.status(404).json({ success: false, message: 'Operadora não encontrado' });
     }
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Criar uma nova operadora
-const createOpradora = async (req, res) => {
+// Criar operadora
+const createOperadora = async (req, res) => {
   try {
-    const body = req.body;
+    const { 
+            percomisnac,
+            percomisint,
+            overnac,
+            overint,
+            liqaddtarifanaciv,
+            liqaddtaxanaciv,
+            liqadddunaciv,
+            liqaddcomissaonaciv,
+            liqaddovernaciv,
+            liqaddtarifanaccc,
+            liqaddtaxanaccc,
+            liqadddunaccc,
+            liqaddcomissaonaccc,
+            liqaddovernaccc,
+            liqaddtarifaintiv,
+            liqaddtaxaintiv,
+            liqaddduintiv,
+            liqaddcomissaointiv,
+            liqaddoverintiv,
+            liqaddtarifaintcc,
+            liqaddtaxaintcc,
+            liqaddduintcc,
+            liqaddcomissaointcc,
+            liqaddoverintcc,
+            liqdedtarifanaciv,
+            liqdedtaxanaciv,
+            liqdeddunaciv,
+            liqdedcomissaonaciv,
+            liqdedovernaciv,
+            liqdedtarifanaccc,
+            liqdedtaxanaccc,
+            liqdeddunaccc,
+            liqdedcomissaonaccc,
+            liqdedovernaccc,
+            liqdedtarifaintiv,
+            liqdedtaxaintiv,
+            liqdedduintiv,
+            liqdedcomissaointiv,
+            liqdedoverintiv,
+            liqdedtarifaintcc,
+            liqdedtaxaintcc,
+            liqdedduintcc,
+            liqdedcomissaointcc,
+            liqdedoverintcc,
+            valorininac1,
+            valorfinnac1,
+            valornac1,
+            percnac1,
+            valorininac2,
+            valorfinnac2,
+            valornac2,
+            percnac2,
+            valoriniint1,
+            valorfinint1,
+            valorint1,
+            percint1,
+            valoriniint2,
+            valorfinint2,
+            valorint2,
+            percint2,
+            entidadeid
+
+     } = req.body;
 
     const pool = await poolPromise;
-    const request = pool.request();
+    await pool
+      .request()
+      .input('percomisnac', percomisnac)
+      .input('percomisint', percomisint)
+      .input('overnac', overnac)
+      .input('overint', overint)
+      .input('liqaddtarifanaciv', liqaddtarifanaciv)
+      .input('liqaddtaxanaciv', liqaddtaxanaciv)
+      .input('liqadddunaciv', liqadddunaciv)
+      .input('liqaddcomissaonaciv', liqaddcomissaonaciv)
+      .input('liqaddovernaciv', liqaddovernaciv)
+      .input('liqaddtarifanaccc', liqaddtarifanaccc)
+      .input('liqaddtaxanaccc', liqaddtaxanaccc)
+      .input('liqadddunaccc', liqadddunaccc)
+      .input('liqaddcomissaonaccc', liqaddcomissaonaccc)
+      .input('liqaddovernaccc', liqaddovernaccc)
+      .input('liqaddtarifaintiv', liqaddtarifaintiv)
+      .input('liqaddtaxaintiv', liqaddtaxaintiv)
+      .input('liqaddduintiv', liqaddduintiv)
+      .input('liqaddcomissaointiv', liqaddcomissaointiv)
+      .input('liqaddoverintiv', liqaddoverintiv)
+      .input('liqaddtarifaintcc', liqaddtarifaintcc)
+      .input('liqaddtaxaintcc', liqaddtaxaintcc)
+      .input('liqaddduintcc', liqaddduintcc)
+      .input('liqaddcomissaointcc', liqaddcomissaointcc)
+      .input('liqaddoverintcc', liqaddoverintcc)
+      .input('liqdedtarifanaciv', liqdedtarifanaciv)
+      .input('liqdedtaxanaciv', liqdedtaxanaciv)
+      .input('liqdeddunaciv', liqdeddunaciv)
+      .input('liqdedcomissaonaciv', liqdedcomissaonaciv)
+      .input('liqdedovernaciv', liqdedovernaciv)
+      .input('liqdedtarifanaccc', liqdedtarifanaccc)
+      .input('liqdedtaxanaccc', liqdedtaxanaccc)
+      .input('liqdeddunaccc', liqdeddunaccc)
+      .input('liqdedcomissaonaccc', liqdedcomissaonaccc)
+      .input('liqdedovernaccc', liqdedovernaccc)
+      .input('liqdedtarifaintiv', liqdedtarifaintiv)
+      .input('liqdedtaxaintiv', liqdedtaxaintiv)
+      .input('liqdedduintiv', liqdedduintiv)
+      .input('liqdedcomissaointiv', liqdedcomissaointiv)
+      .input('liqdedoverintiv', liqdedoverintiv)
+      .input('liqdedtarifaintcc', liqdedtarifaintcc)
+      .input('liqdedtaxaintcc', liqdedtaxaintcc)
+      .input('liqdedduintcc', liqdedduintcc)
+      .input('liqdedcomissaointcc', liqdedcomissaointcc)
+      .input('liqdedoverintcc', liqdedoverintcc)
+      .input('valorininac1', valorininac1)
+      .input('valorfinnac1', valorfinnac1)
+      .input('valornac1', valornac1)
+      .input('percnac1', percnac1)
+      .input('valorininac2', valorininac2)
+      .input('valorfinnac2', valorfinnac2)
+      .input('valornac2', valornac2)
+      .input('percnac2', percnac2)
+      .input('valoriniint1', valoriniint1)
+      .input('valorfinint1', valorfinint1)
+      .input('valorint1', valorint1)
+      .input('percint1', percint1)
+      .input('valoriniint2', valoriniint2)
+      .input('valorfinint2', valorfinint2)
+      .input('valorint2', valorint2)
+      .input('percint2', percint2)
+      .input('entidadeid', entidadeid)
+      .query(`
+        INSERT INTO opradoras (
+                  percomisnac,
+                  percomisint,
+                  overnac,
+                  overint,
+                  liqaddtarifanaciv,
+                  liqaddtaxanaciv,
+                  liqadddunaciv,
+                  liqaddcomissaonaciv,
+                  liqaddovernaciv,
+                  liqaddtarifanaccc,
+                  liqaddtaxanaccc,
+                  liqadddunaccc,
+                  liqaddcomissaonaccc,
+                  liqaddovernaccc,
+                  liqaddtarifaintiv,
+                  liqaddtaxaintiv,
+                  liqaddduintiv,
+                  liqaddcomissaointiv,
+                  liqaddoverintiv,
+                  liqaddtarifaintcc,
+                  liqaddtaxaintcc,
+                  liqaddduintcc,
+                  liqaddcomissaointcc,
+                  liqaddoverintcc,
+                  liqdedtarifanaciv,
+                  liqdedtaxanaciv,
+                  liqdeddunaciv,
+                  liqdedcomissaonaciv,
+                  liqdedovernaciv,
+                  liqdedtarifanaccc,
+                  liqdedtaxanaccc,
+                  liqdeddunaccc,
+                  liqdedcomissaonaccc,
+                  liqdedovernaccc,
+                  liqdedtarifaintiv,
+                  liqdedtaxaintiv,
+                  liqdedduintiv,
+                  liqdedcomissaointiv,
+                  liqdedoverintiv,
+                  liqdedtarifaintcc,
+                  liqdedtaxaintcc,
+                  liqdedduintcc,
+                  liqdedcomissaointcc,
+                  liqdedoverintcc,
+                  valorininac1,
+                  valorfinnac1,
+                  valornac1,
+                  percnac1,
+                  valorininac2,
+                  valorfinnac2,
+                  valornac2,
+                  percnac2,
+                  valoriniint1,
+                  valorfinint1,
+                  valorint1,
+                  percint1,
+                  valoriniint2,
+                  valorfinint2,
+                  valorint2,
+                  percint2,
+                  entidadeid      
 
-    // Inserir todos os campos dinamicamente
-    const columns = Object.keys(body);
-    const values = columns.map(col => `@${col}`).join(', ');
-    const inputs = columns.map(col => {
-      request.input(col, body[col]);
-      return col;
-    }).join(', ');
+        ) VALUES (
+                @percomisnac,
+                @percomisint,
+                @overnac,
+                @overint,
+                @liqaddtarifanaciv,
+                @liqaddtaxanaciv,
+                @liqadddunaciv,
+                @liqaddcomissaonaciv,
+                @liqaddovernaciv,
+                @liqaddtarifanaccc,
+                @liqaddtaxanaccc,
+                @liqadddunaccc,
+                @liqaddcomissaonaccc,
+                @liqaddovernaccc,
+                @liqaddtarifaintiv,
+                @liqaddtaxaintiv,
+                @liqaddduintiv,
+                @liqaddcomissaointiv,
+                @liqaddoverintiv,
+                @liqaddtarifaintcc,
+                @liqaddtaxaintcc,
+                @liqaddduintcc,
+                @liqaddcomissaointcc,
+                @liqaddoverintcc,
+                @liqdedtarifanaciv,
+                @liqdedtaxanaciv,
+                @liqdeddunaciv,
+                @liqdedcomissaonaciv,
+                @liqdedovernaciv,
+                @liqdedtarifanaccc,
+                @liqdedtaxanaccc,
+                @liqdeddunaccc,
+                @liqdedcomissaonaccc,
+                @liqdedovernaccc,
+                @liqdedtarifaintiv,
+                @liqdedtaxaintiv,
+                @liqdedduintiv,
+                @liqdedcomissaointiv,
+                @liqdedoverintiv,
+                @liqdedtarifaintcc,
+                @liqdedtaxaintcc,
+                @liqdedduintcc,
+                @liqdedcomissaointcc,
+                @liqdedoverintcc,
+                @valorininac1,
+                @valorfinnac1,
+                @valornac1,
+                @percnac1,
+                @valorininac2,
+                @valorfinnac2,
+                @valornac2,
+                @percnac2,
+                @valoriniint1,
+                @valorfinint1,
+                @valorint1,
+                @percint1,
+                @valoriniint2,
+                @valorfinint2,
+                @valorint2,
+                @percint2,
+                @entidadeid         
 
-    const query = `
-      INSERT INTO opradoras (${inputs})
-      VALUES (${values})
-    `;
+        )
+      `);
 
-    await request.query(query);
-    res.status(201).json({ success: true, message: 'Operadora criada com sucesso' });
+    res.status(201).json({ success: true, message: 'Operadora criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Atualizar operadora
-const updateOpradora = async (req, res) => {
+const updateOperadora = async (req, res) => {
   try {
-    const body = req.body;
-    const id = req.params.id;
+    const { 
+            percomisnac,
+            percomisint,
+            overnac,
+            overint,
+            liqaddtarifanaciv,
+            liqaddtaxanaciv,
+            liqadddunaciv,
+            liqaddcomissaonaciv,
+            liqaddovernaciv,
+            liqaddtarifanaccc,
+            liqaddtaxanaccc,
+            liqadddunaccc,
+            liqaddcomissaonaccc,
+            liqaddovernaccc,
+            liqaddtarifaintiv,
+            liqaddtaxaintiv,
+            liqaddduintiv,
+            liqaddcomissaointiv,
+            liqaddoverintiv,
+            liqaddtarifaintcc,
+            liqaddtaxaintcc,
+            liqaddduintcc,
+            liqaddcomissaointcc,
+            liqaddoverintcc,
+            liqdedtarifanaciv,
+            liqdedtaxanaciv,
+            liqdeddunaciv,
+            liqdedcomissaonaciv,
+            liqdedovernaciv,
+            liqdedtarifanaccc,
+            liqdedtaxanaccc,
+            liqdeddunaccc,
+            liqdedcomissaonaccc,
+            liqdedovernaccc,
+            liqdedtarifaintiv,
+            liqdedtaxaintiv,
+            liqdedduintiv,
+            liqdedcomissaointiv,
+            liqdedoverintiv,
+            liqdedtarifaintcc,
+            liqdedtaxaintcc,
+            liqdedduintcc,
+            liqdedcomissaointcc,
+            liqdedoverintcc,
+            valorininac1,
+            valorfinnac1,
+            valornac1,
+            percnac1,
+            valorininac2,
+            valorfinnac2,
+            valornac2,
+            percnac2,
+            valoriniint1,
+            valorfinint1,
+            valorint1,
+            percint1,
+            valoriniint2,
+            valorfinint2,
+            valorint2,
+            percint2,
+            entidadeid
+    } = req.body;
 
     const pool = await poolPromise;
-    const request = pool.request().input('id', id);
+    await pool
+      .request()
+      .input('idoperadora', req.params.idoperadora)
+      .input('percomisnac', percomisnac)
+      .input('percomisint', percomisint)
+      .input('overnac', overnac)
+      .input('overint', overint)
+      .input('liqaddtarifanaciv', liqaddtarifanaciv)
+      .input('liqaddtaxanaciv', liqaddtaxanaciv)
+      .input('liqadddunaciv', liqadddunaciv)
+      .input('liqaddcomissaonaciv', liqaddcomissaonaciv)
+      .input('liqaddovernaciv', liqaddovernaciv)
+      .input('liqaddtarifanaccc', liqaddtarifanaccc)
+      .input('liqaddtaxanaccc', liqaddtaxanaccc)
+      .input('liqadddunaccc', liqadddunaccc)
+      .input('liqaddcomissaonaccc', liqaddcomissaonaccc)
+      .input('liqaddovernaccc', liqaddovernaccc)
+      .input('liqaddtarifaintiv', liqaddtarifaintiv)
+      .input('liqaddtaxaintiv', liqaddtaxaintiv)
+      .input('liqaddduintiv', liqaddduintiv)
+      .input('liqaddcomissaointiv', liqaddcomissaointiv)
+      .input('liqaddoverintiv', liqaddoverintiv)
+      .input('liqaddtarifaintcc', liqaddtarifaintcc)
+      .input('liqaddtaxaintcc', liqaddtaxaintcc)
+      .input('liqaddduintcc', liqaddduintcc)
+      .input('liqaddcomissaointcc', liqaddcomissaointcc)
+      .input('liqaddoverintcc', liqaddoverintcc)
+      .input('liqdedtarifanaciv', liqdedtarifanaciv)
+      .input('liqdedtaxanaciv', liqdedtaxanaciv)
+      .input('liqdeddunaciv', liqdeddunaciv)
+      .input('liqdedcomissaonaciv', liqdedcomissaonaciv)
+      .input('liqdedovernaciv', liqdedovernaciv)
+      .input('liqdedtarifanaccc', liqdedtarifanaccc)
+      .input('liqdedtaxanaccc', liqdedtaxanaccc)
+      .input('liqdeddunaccc', liqdeddunaccc)
+      .input('liqdedcomissaonaccc', liqdedcomissaonaccc)
+      .input('liqdedovernaccc', liqdedovernaccc)
+      .input('liqdedtarifaintiv', liqdedtarifaintiv)
+      .input('liqdedtaxaintiv', liqdedtaxaintiv)
+      .input('liqdedduintiv', liqdedduintiv)
+      .input('liqdedcomissaointiv', liqdedcomissaointiv)
+      .input('liqdedoverintiv', liqdedoverintiv)
+      .input('liqdedtarifaintcc', liqdedtarifaintcc)
+      .input('liqdedtaxaintcc', liqdedtaxaintcc)
+      .input('liqdedduintcc', liqdedduintcc)
+      .input('liqdedcomissaointcc', liqdedcomissaointcc)
+      .input('liqdedoverintcc', liqdedoverintcc)
+      .input('valorininac1', valorininac1)
+      .input('valorfinnac1', valorfinnac1)
+      .input('valornac1', valornac1)
+      .input('percnac1', percnac1)
+      .input('valorininac2', valorininac2)
+      .input('valorfinnac2', valorfinnac2)
+      .input('valornac2', valornac2)
+      .input('percnac2', percnac2)
+      .input('valoriniint1', valoriniint1)
+      .input('valorfinint1', valorfinint1)
+      .input('valorint1', valorint1)
+      .input('percint1', percint1)
+      .input('valoriniint2', valoriniint2)
+      .input('valorfinint2', valorfinint2)
+      .input('valorint2', valorint2)
+      .input('percint2', percint2)
+      .input('entidadeid', entidadeid)
+      .query(`
+        UPDATE opradoras SET
+            percomisnac = @percomisnac,
+            percomisint = @percomisint,
+            overnac = @overnac,
+            overint = @overint,
+            liqaddtarifanaciv = @liqaddtarifanaciv,
+            liqaddtaxanaciv = @liqaddtaxanaciv,
+            liqadddunaciv = @liqadddunaciv,
+            liqaddcomissaonaciv = @liqaddcomissaonaciv,
+            liqaddovernaciv = @liqaddovernaciv,
+            liqaddtarifanaccc = @liqaddtarifanaccc,
+            liqaddtaxanaccc = @liqaddtaxanaccc,
+            liqadddunaccc = @liqadddunaccc,
+            liqaddcomissaonaccc = @liqaddcomissaonaccc,
+            liqaddovernaccc = @liqaddovernaccc,
+            liqaddtarifaintiv = @liqaddtarifaintiv,
+            liqaddtaxaintiv = @liqaddtaxaintiv,
+            liqaddduintiv = @liqaddduintiv,
+            liqaddcomissaointiv = @liqaddcomissaointiv,
+            liqaddoverintiv = @liqaddoverintiv,
+            liqaddtarifaintcc = @liqaddtarifaintcc,
+            liqaddtaxaintcc = @liqaddtaxaintcc,
+            liqaddduintcc = @liqaddduintcc,
+            liqaddcomissaointcc = @liqaddcomissaointcc,
+            liqaddoverintcc = @liqaddoverintcc,
+            liqdedtarifanaciv = @liqdedtarifanaciv,
+            liqdedtaxanaciv = @liqdedtaxanaciv,
+            liqdeddunaciv = @liqdeddunaciv,
+            liqdedcomissaonaciv = @liqdedcomissaonaciv,
+            liqdedovernaciv = @liqdedovernaciv,
+            liqdedtarifanaccc = @liqdedtarifanaccc,
+            liqdedtaxanaccc = @liqdedtaxanaccc,
+            liqdeddunaccc = @liqdeddunaccc,
+            liqdedcomissaonaccc = @liqdedcomissaonaccc,
+            liqdedovernaccc = @liqdedovernaccc,
+            liqdedtarifaintiv = @liqdedtarifaintiv,
+            liqdedtaxaintiv = @liqdedtaxaintiv,
+            liqdedduintiv = @liqdedduintiv,
+            liqdedcomissaointiv = @liqdedcomissaointiv,
+            liqdedoverintiv = @liqdedoverintiv,
+            liqdedtarifaintcc = @liqdedtarifaintcc,
+            liqdedtaxaintcc = @liqdedtaxaintcc,
+            liqdedduintcc = @liqdedduintcc,
+            liqdedcomissaointcc = @liqdedcomissaointcc,
+            liqdedoverintcc = @liqdedoverintcc,
+            valorininac1 = @valorininac1,
+            valorfinnac1 = @valorfinnac1,
+            valornac1 = @valornac1,
+            percnac1 = @percnac1,
+            valorininac2 = @valorininac2,
+            valorfinnac2 = @valorfinnac2,
+            valornac2 = @valornac2,
+            percnac2 = @percnac2,
+            valoriniint1 = @valoriniint1,
+            valorfinint1 = @valorfinint1,
+            valorint1 = @valorint1,
+            percint1 = @percint1,
+            valoriniint2 = @valoriniint2,
+            valorfinint2 = @valorfinint2,
+            valorint2 = @valorint2,
+            percint2 = @percint2,
+            entidadeid = @entidadeid
+        WHERE idoperadora = @idoperadora
+      `);
 
-    const setClauses = Object.keys(body).map(key => {
-      request.input(key, body[key]);
-      return `${key} = @${key}`;
-    }).join(', ');
-
-    const query = `
-      UPDATE opradoras SET ${setClauses}
-      WHERE idoperadora = @id
-    `;
-
-    await request.query(query);
-    res.json({ success: true, message: 'Operadora atualizada com sucesso' });
+    res.json({ success: true, message: 'Operadora atualizado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Deletar operadora
-const deleteOpradora = async (req, res) => {
+const deleteOperadora = async (req, res) => {
   try {
     const pool = await poolPromise;
-    await pool.request()
-      .input('id', req.params.id)
-      .query('DELETE FROM opradoras WHERE idoperadora = @id');
+    await pool
+      .request()
+      .input('idoperadora', req.params.idoperadora)
+      .query('DELETE FROM opradoras WHERE idoperadora = @idoperadora');
 
-    res.json({ success: true, message: 'Operadora deletada com sucesso' });
+    res.json({ success: true, message: 'Operadora deletado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 module.exports = {
-  getOpradoras,
-  getOpradoraById,
-  createOpradora,
-  updateOpradora,
-  deleteOpradora
+  getOperadora,
+  getOperadoraById,
+  createOperadora,
+  updateOperadora,
+  deleteOperadora,
 };

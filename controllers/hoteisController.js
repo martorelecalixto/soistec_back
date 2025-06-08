@@ -11,13 +11,13 @@ const getHoteis = async (req, res) => {
 
     const pool = await poolPromise;
     const request = pool.request();
-    request.input('EntidadeID', entidade);
+    request.input('entidadeid', entidade);
 
     const query = `
-      SELECT IdHotel, PerComis, PrazoFaturamento, EntidadeID, PerComisInt
-      FROM Hoteis
-      WHERE EntidadeID = @EntidadeID
-      ORDER BY IdHotel DESC
+      SELECT idhotel, percomis, prazofaturamento, entidadeid, percomisint
+      FROM hoteis
+      WHERE entidadeid = @entidadeid
+      ORDER BY idhotel DESC
     `;
 
     const result = await request.query(query);
@@ -33,11 +33,11 @@ const getHotelById = async (req, res) => {
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('id', req.params.id)
+      .input('idhotel', req.params.idhotel)
       .query(`
-        SELECT IdHotel, PerComis, PrazoFaturamento, EntidadeID, PerComisInt
-        FROM Hoteis
-        WHERE IdHotel = @id
+        SELECT idhotel, percomis, prazofaturamento, entidadeid, percomisint
+        FROM hoteis
+        WHERE idhotel = @idhotel
       `);
 
     if (result.recordset.length > 0) {
@@ -53,18 +53,18 @@ const getHotelById = async (req, res) => {
 // Criar um novo hotel
 const createHotel = async (req, res) => {
   try {
-    const { PerComis, PrazoFaturamento, EntidadeID, PerComisInt } = req.body;
+    const { percomis, prazofaturamento, entidadeid, percomisint } = req.body;
 
     const pool = await poolPromise;
     await pool
       .request()
-      .input('PerComis', PerComis)
-      .input('PrazoFaturamento', PrazoFaturamento)
-      .input('EntidadeID', EntidadeID)
-      .input('PerComisInt', PerComisInt)
+      .input('percomis', percomis)
+      .input('prazofaturamento', prazofaturamento)
+      .input('entidadeid', entidadeid)
+      .input('percomisint', percomisint)
       .query(`
-        INSERT INTO Hoteis (PerComis, PrazoFaturamento, EntidadeID, PerComisInt)
-        VALUES (@PerComis, @PrazoFaturamento, @EntidadeID, @PerComisInt)
+        INSERT INTO hoteis (percomis, prazofaturamento, entidadeid, percomisint)
+        VALUES (@percomis, @prazofaturamento, @entidadeid, @percomisint)
       `);
 
     res.status(201).json({ success: true, message: 'Hotel criado com sucesso' });
@@ -76,23 +76,23 @@ const createHotel = async (req, res) => {
 // Atualizar um hotel existente
 const updateHotel = async (req, res) => {
   try {
-    const { PerComis, PrazoFaturamento, EntidadeID, PerComisInt } = req.body;
+    const { percomis, prazofaturamento, entidadeid, percomisint } = req.body;
 
     const pool = await poolPromise;
     await pool
       .request()
-      .input('id', req.params.id)
-      .input('PerComis', PerComis)
-      .input('PrazoFaturamento', PrazoFaturamento)
-      .input('EntidadeID', EntidadeID)
-      .input('PerComisInt', PerComisInt)
+      .input('idhotel', req.params.idhotel)
+      .input('percomis', percomis)
+      .input('prazofaturamento', prazofaturamento)
+      .input('entidadeid', entidadeid)
+      .input('percomisint', percomisint)
       .query(`
         UPDATE Hoteis
-        SET PerComis = @PerComis,
-            PrazoFaturamento = @PrazoFaturamento,
-            EntidadeID = @EntidadeID,
-            PerComisInt = @PerComisInt
-        WHERE IdHotel = @id
+        SET percomis = @opercomis,
+            prazofaturamento = @prazofaturamento,
+            entidadeid = @entidadeid,
+            percomisint = @percomisint
+        WHERE IdHotel = @idhotel
       `);
 
     res.json({ success: true, message: 'Hotel atualizado com sucesso' });
@@ -107,8 +107,8 @@ const deleteHotel = async (req, res) => {
     const pool = await poolPromise;
     await pool
       .request()
-      .input('id', req.params.id)
-      .query('DELETE FROM Hoteis WHERE IdHotel = @id');
+      .input('idhotel', req.params.idhotel)
+      .query('DELETE FROM hoteis WHERE idhotel = @idhotel');
 
     res.json({ success: true, message: 'Hotel deletado com sucesso' });
   } catch (error) {

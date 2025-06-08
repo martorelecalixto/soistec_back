@@ -129,6 +129,38 @@ const getClientesDropDown = async (req, res) => {
   }
 };
 
+// Obter todos os fornecedores
+const getFornecedoresDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND [for] = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Obter todas as entidades
 const getEntidades = async (req, res) => {
   try {
@@ -484,4 +516,5 @@ module.exports = {
   getVendedoresDropDown,
   getEmissoresDropDown,
   getCiasDropDown,
+  getFornecedoresDropDown,
 };
