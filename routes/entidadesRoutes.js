@@ -323,4 +323,50 @@ router.delete('/:identidade', entidadesController.deleteEntidade);
 
 router.get('/:identidade', entidadesController.getEntidadeById);
 
+
+router.post('/ciaaerea', entidadesController.createCiaAerea);
+
+router.put('/ciaaerea/:idciaaerea', entidadesController.updateCiaAerea);
+
+router.delete('/ciaaerea/:idciaaerea', entidadesController.deleteCiaAerea);
+
+router.get('/ciaaerea/:identidade', entidadesController.getCiaAereaById);
+
+
+router.post('/operadora', entidadesController.createOperadora);
+
+router.put('/operadora/:idoperadora', entidadesController.updateOperadora);
+
+router.delete('/operadora/:idoperadora', entidadesController.deleteOperadora);
+
+router.get('/operadora/:identidade', entidadesController.getOperadoraById);
+
+
+router.post('/vendedor', entidadesController.createVendedor);
+
+router.put('/vendedor/:id', entidadesController.updateVendedor);
+
+router.delete('/vendedor/:id', entidadesController.deleteVendedor);
+
+router.get('/vendedor/:identidade', entidadesController.getVendedorById);
+
+
+router.post('/emissor', entidadesController.createEmissor);
+
+router.put('/emissor/:idemissor', entidadesController.updateEmissor);
+
+router.delete('/emissor/:idemissor', entidadesController.deleteEmissor);
+
+router.get('/emissor/:identidade', entidadesController.getEmissorById);
+
+
+router.post('/hotel', entidadesController.createHotel);
+
+router.put('/hotel/:idhotel', entidadesController.updateHotel);
+
+router.delete('/hotel/:idhotel', entidadesController.deleteHotel);
+
+router.get('/hotel/:identidade', entidadesController.getHotelById);
+
+
 module.exports = router;

@@ -9,6 +9,7 @@ const getVendasBilhete = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+    
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
@@ -342,7 +343,7 @@ const updateVendasBilhete = async (req, res) => {
 
     res.json({ success: true, message: 'Venda atualizada com sucesso' });
   } catch (error) {
-    console.log(error.message);
+    
     res.status(500).json({ success: false, message: error.message });
   }
 };

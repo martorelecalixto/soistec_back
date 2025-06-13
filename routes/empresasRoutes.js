@@ -259,4 +259,6 @@ router.put('/:idempresa', empresasController.updateEmpresa);
  */
 router.delete('/:idempresa', empresasController.deleteEmpresa);
 
+router.get('/:idempresa', empresasController.getEmpresaById);
+
 module.exports = router;

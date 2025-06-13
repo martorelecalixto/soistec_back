@@ -53,17 +53,16 @@ const getEmpresas = async (req, res) => {
 // Obter uma empresa pelo ID
 const getEmpresaById = async (req, res) => {
   try {
-    const { empresa, nome, cnpjcpf, email } = req.query;
+    const { idempresa } = req.params;
 
-    // Verifica se o parâmetro 'empresa' foi fornecido
-    if (!empresa) {
-      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    if (!idempresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "idempresa" é obrigatório.' });
     }
-    
+
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('idempresa', req.params.id)
+      .input('idempresa', idempresa)
       .query(
         `SELECT idempresa, nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2,
           redessociais, home, email, linkimagem, logradouro, complemento, numero,
@@ -71,15 +70,13 @@ const getEmpresaById = async (req, res) => {
           receptivo, financeiro, advocaticio, bloqueado FROM empresa  WHERE idempresa = @idempresa ORDER BY nome`
       );
 
-    //  .query('SELECT * FROM empresas  WHERE idempresa = @idempresa');
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
-      res.status(404).send('Empresa não encontrada');
+      res.status(404).json({ success: false, message: 'Empresa não encontrada.' });
     }
-
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
