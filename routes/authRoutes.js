@@ -63,4 +63,13 @@ router.post('/login', authController.login);
  */
 router.post('/logout', authController.logout);
 
+router.get('/', authController.getUsuarios);
+
+router.post('/', authController.createUsuario);
+
+router.put('/:idusuario', authController.updateUsuario);
+
+router.delete('/:idusuario', authController.deleteUsuario);
+
+
 module.exports = router;

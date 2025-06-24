@@ -53,25 +53,25 @@ const getEmpresas = async (req, res) => {
 // Obter uma empresa pelo ID
 const getEmpresaById = async (req, res) => {
   try {
-    const { idempresa } = req.params;
+    const { empresa } = req.params;
 
-    if (!idempresa) {
+    if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "idempresa" é obrigatório.' });
     }
 
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('idempresa', idempresa)
+      .input('empresa', empresa)
       .query(
         `SELECT idempresa, nome, cnpjcpf, razaosocial, celular1, celular2, telefone1, telefone2,
           redessociais, home, email, linkimagem, logradouro, complemento, numero,
           estado, cidade, bairro, cep, referencia, codigoempresa, licenca, emissivo,
-          receptivo, financeiro, advocaticio, bloqueado FROM empresa  WHERE idempresa = @idempresa ORDER BY nome`
+          receptivo, financeiro, advocaticio, bloqueado FROM empresa  WHERE codigoempresa =  @empresa ORDER BY nome`
       );
 
     if (result.recordset.length > 0) {
-      res.json(result.recordset[0]);
+      res.json(result.recordset[0]); 
     } else {
       res.status(404).json({ success: false, message: 'Empresa não encontrada.' });
     }
