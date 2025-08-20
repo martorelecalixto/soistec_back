@@ -498,7 +498,6 @@ const updateEntidade = async (req, res) => {
 
     res.json({ success: true, message: 'Entidade atualizada com sucesso' });
   } catch (error) {
-    
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -2220,6 +2219,190 @@ const deleteHotel = async (req, res) => {
 
 };
 
+// Obter os endereços da entidade pelo ID
+const getEnderecoById = async (req, res) => {
+  try {
+    const { identidade } = req.params;
+
+    if (!identidade) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "identidade" é obrigatório.' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('identidade', identidade)
+      .query(`
+            SELECT 
+                entidades_enderecos.idendereco, entidades_enderecos.identidade, 
+                isnull(entidades_enderecos.logradouro, '') as logradouro,
+                isnull(entidades_enderecos.complemento, '') as complemento,
+                isnull(entidades_enderecos.numero, '') as numero,
+                isnull(entidades_enderecos.cep, '') as cep,
+                isnull(entidades_enderecos.bairro, '') as bairro,
+                isnull(entidades_enderecos.cidade, '') as cidade,
+                isnull(entidades_enderecos.estado, '') as estado,
+                ativo, referencia, selecionado
+            FROM 
+                entidades_enderecos 
+            WHERE 
+                entidades_enderecos.identidade = @identidade;
+
+      `);
+
+    if (result.recordset.length > 0) {
+      res.json(result.recordset);
+    } else {
+      res.status(404).json({ success: false, message: 'Endereço da Entidade não encontrado.' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Criar um novo endereço para a entidade
+const createEndereco = async (req, res) => {
+  try {
+    const {
+      identidade, logradouro, complemento, numero, cep, bairro, cidade, estado,
+      ativo, referencia, selecionado
+  } = req.body;
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('identidade', identidade)
+      .input('logradouro', logradouro)
+      .input('complemento', complemento)
+      .input('numero', numero)
+      .input('cep', cep)
+      .input('bairro', bairro)
+      .input('cidade', cidade)
+      .input('estado', estado)
+      .input('ativo', ativo)
+      .input('referencia', referencia)
+      .input('selecionado', selecionado)
+      .query(
+        `INSERT INTO entidades_enderecos (
+          identidade, logradouro, complemento, numero, cep, bairro, cidade,
+          estado, ativo, referencia, selecionado
+        ) 
+        OUTPUT INSERTED.idendereco  
+        VALUES (
+          @identidade, @logradouro, @complemento, @numero, @cep, @bairro, @cidade,
+          @estado, @ativo, @referencia, @selecionado
+        )`
+      );
+
+    const id = result.recordset[0].identidade;
+
+    res.status(201).json({ success: true, id, message: 'endereço criado com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+
+  }
+};
+
+// Atualizar um endereço da entidade existente
+const updateEndereco = async (req, res) => {
+  try {
+    const {
+      identidade, logradouro, complemento, numero, cep, bairro, cidade, estado,
+      ativo, referencia, selecionado
+    } = req.body;
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input('idendereco', req.params.idendereco)
+      .input('identidade', identidade)
+      .input('logradouro', logradouro)
+      .input('complemento', complemento)
+      .input('numero', numero)
+      .input('cep', cep)
+      .input('bairro', bairro)
+      .input('cidade', cidade)
+      .input('estado', estado)
+      .input('ativo', ativo)
+      .input('referencia', referencia)
+      .input('selecionado', selecionado)
+      .query(
+        `UPDATE entidades_enderecos SET
+          identidade = @identidade,
+          logradouro = @logradouro,
+          complemento = @complemento,
+          numero = @numero,
+          cep = @cep,
+          bairro = @bairro,
+          cidade = @cidade,
+          estado = @estado,
+          ativo = @ativo,
+          referencia = @referencia,
+          selecionado = @selecionado
+        WHERE idendereco = @idendereco`
+      );
+
+    res.json({ success: true, message: 'Endereço atualizado com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Deletar um endereço da entidade
+const deleteEndereco = async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input('idendereco', req.params.idendereco)
+      .query('DELETE FROM entidades_enderecos WHERE idendereco = @idendereco');
+    res.json({ success: true, message: 'Endereço deletado com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+
+
+
+};
+
+// Obter uma endereço pelo ID ENTIDADE
+const getEnderecoByIdEntidade = async (req, res) => {
+  try {
+   
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('identidade', req.params.identidade)
+      .query(
+        `SELECT 
+                entidades_enderecos.idendereco, entidades_enderecos.identidade, 
+                isnull(entidades_enderecos.logradouro, '') as logradouro,
+                isnull(entidades_enderecos.complemento, '') as complemento,
+                isnull(entidades_enderecos.numero, '') as numero,
+                isnull(entidades_enderecos.cep, '') as cep,
+                isnull(entidades_enderecos.bairro, '') as bairro,
+                isnull(entidades_enderecos.cidade, '') as cidade,
+                isnull(entidades_enderecos.estado, '') as estado,
+                ativo, referencia, selecionado
+            FROM 
+                entidades_enderecos 
+            WHERE 
+                entidades_enderecos.identidade = @identidade          
+
+          `
+      );
+
+    if (result.recordset.length > 0) {
+      res.json(result.recordset);
+    } else {
+      res.status(404).send('endereço não encontrada');
+    }
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+
 
 module.exports = {
   getEntidades,
@@ -2252,4 +2435,9 @@ module.exports = {
   updateHotel,
   getHotelById,
   deleteHotel,
+  getEnderecoById,
+  createEndereco,
+  updateEndereco,
+  deleteEndereco,
+  getEnderecoByIdEntidade
 };

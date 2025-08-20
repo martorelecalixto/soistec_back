@@ -1,4 +1,5 @@
 const { poolPromise } = require('../db');
+const { v4: uuidv4 } = require('uuid');
 
 // Obter todos os titulos receber
 const getTituloReceber = async (req, res) => {
@@ -36,16 +37,16 @@ const getTituloReceber = async (req, res) => {
     }
     
     if (datainicial) {
-      request.input('datainicial', datainicial);
-      whereClause += ' AND titulosreceber.dataemissao >= @datainicial';
+      request.input('datainicial', datainicial); // Formata a data para incluir hora
+      whereClause += ' AND titulosreceber.datavencimento >= @datainicial';
     }
     
     if (datafinal) {
       request.input('datafinal', datafinal);
-      whereClause += ' AND titulosreceber.dataemissao <= @datafinal';
+      whereClause += ' AND titulosreceber.datavencimento <= @datafinal';
     }
-
-    whereClause += ' ORDER BY titulosreceber.dataemissao desc ';
+    
+    whereClause += ' ORDER BY titulosreceber.datavencimento desc ';
 
     const query =
      `
@@ -100,12 +101,15 @@ const getTituloReceber = async (req, res) => {
 // Obter um titulo receber pelo ID
 const getTituloReceberById = async (req, res) => {
   try {
+//console.log('entrou');
     const { idtitulo } = req.params;
+
+    //console.log('ID Titulo Receber: ' + req.params.idtitulo);
 
     if (!idtitulo) {
       return res.status(400).json({ success: false, message: 'O parâmetro "idtitulo" é obrigatório.' });
     }
-
+//console.log('PASSOU');
     const pool = await poolPromise;
     const result = await pool
       .request()
@@ -152,7 +156,8 @@ const getTituloReceberById = async (req, res) => {
                             FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento
             WHERE idtitulo = @idtitulo
       `);
-
+//console.log('TITULO RECEBER ID: ' + idtitulo);
+  //  console.log(result.recordset);
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
@@ -172,12 +177,18 @@ const getTituloReceberByVendaBilhete = async (req, res) => {
       return res.status(400).json({ success: false, message: 'O parâmetro "idtitulo" é obrigatório.' });
     }
 
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'idvenda' foi fornecido  
     const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .input('idvenda',  req.params.idvenda)
-      .query(`
-          SELECT 
+    const request = pool.request();
+    request.input('idvenda', idvenda);
+
+    //const result = await pool
+     // .request()
+     // .input('idvenda',  req.params.idvenda)
+     // .query(`
+     const query =
+          `SELECT 
             TitulosReceber.idtitulo,
             TitulosReceber.dataemissao,
             TitulosReceber.datavencimento,
@@ -217,19 +228,58 @@ const getTituloReceberByVendaBilhete = async (req, res) => {
                             Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
                             FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento
             WHERE idvendabilhete = @idvenda
-      `);
+      `;
 
-    if (result.recordset.length > 0) {
-      res.json(result.recordset);//res.json(result.recordset[0]);
-    } else {
-      res.status(404).json({ success: false, message: 'titulo não encontrado.' });
-    }
-
+   const result = await request.query(query);
+   res.json(result.recordset);    
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// Obter baixa receber pelo IDTitulo
+const getBaixaReceberByTitulo = async (req, res) => {
+  try {
+    const { idtitulo } = req.params;
+
+    if (!idtitulo) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "idtitulo" é obrigatório.' });
+    }
+
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'idtitulo' foi fornecido  
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input('idtitulo', idtitulo);
+
+     const query =
+          `
+            SELECT        
+              BaixasReceber.idtituloreceber,  
+              BaixasReceber.id, 
+              Isnull(BaixasReceber.idlancamento,0) AS idlancamento,
+              BaixasReceber.observacao, 
+              BaixasReceber.valorpago, 
+              BaixasReceber.descontopago, 
+              BaixasReceber.juropago, 
+              BaixasReceber.databaixa, 
+              Bancos.Nome AS banco, 
+              ContasBancarias.numeroconta, 
+              FormaPagamento.Nome AS operacaobancaria
+            FROM     TitulosReceber INNER JOIN
+                    BaixasReceber ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber INNER JOIN
+                    Bancos ON BaixasReceber.IdBanco = Bancos.IdBanco INNER JOIN
+                    ContasBancarias ON BaixasReceber.IdContaBancaria = ContasBancarias.IdContaBancaria INNER JOIN
+                    FormaPagamento ON BaixasReceber.IdOperacaoBancaria = FormaPagamento.IdFormaPagamento
+         WHERE BaixasReceber.IdTituloReceber = @idtitulo
+      `;
+
+   const result = await request.query(query);
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // Criar um novo titulo
 const createTituloReceber = async (req, res) => {
@@ -454,29 +504,14 @@ const updateTituloReceber = async (req, res) => {
             descricao = @descricao,
             documento = @documento,
             valor = @valor,
-            valorpago = @valorpago,
-            descontopago = @descontopago,
-            juropago = @juropago,
             parcela = @parcela,
-            idvendabilhete = @idvendabilhete,
-            idvendahotel = @idvendahotel,
-            idvendapacote = @idvendapacote,
-            idfatura = @idfatura,
             identidade = @identidade,
             idmoeda = @idmoeda,
             idformapagamento = @idformapagamento,
             idplanoconta = @idplanoconta,
             idcentrocusto = @idcentrocusto,
             idfilial = @idfilial,
-            chave = @chave,
-            empresa = @empresa,
             comissao = @comissao,
-            idnotacredito = @idnotacredito,
-            idnotadebito = @idnotadebito,
-            idreembolso = @idreembolso,
-            id = @id,
-            idnf = @idnf,
-            numeronf = @numeronf,
             titulovalorentrada = @titulovalorentrada
           WHERE idtitulo = @idtitulo
       `);
@@ -533,13 +568,238 @@ const deleteTituloReceberByVendaHotel = async (req, res) => {
   }
 };
 
+// Deletar uma baixa
+const deleteBaixaReceber = async (req, res) => {
+  try {
+    console.log('Deletando Baixa Receber ANTIGA');
+
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input('id', req.params.id)
+      .query('DELETE FROM baixasreceber WHERE id = @id');
+
+    res.json({ success: true, message: 'Baixa deletada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Deletar uma baixa
+const deleteBaixasReceber = async (req, res) => {
+  try {
+    console.log('Deletando Baixa Receber');
+    const { id, idlancamento, idtituloreceber, valorpago, descontopago, juropago } = req.query;
+    const sql = require('mssql');
+
+    /*
+await pool
+  .request()
+  .input('id', sql.Int, id)
+  .query('DELETE FROM baixasreceber WHERE id = @id');
+
+await pool
+  .request()
+  .input('idlancamento', sql.Int, idlancamento)
+  .query('DELETE FROM lancamentos WHERE idlancamento = @idlancamento');
+
+await pool
+  .request()
+  .input('valorpago', sql.Decimal(18,2), valorpago)
+  .input('descontopago', sql.Decimal(18,2), descontopago)
+  .input('juropago', sql.Decimal(18,2), juropago)
+  .input('idtituloreceber', sql.Int, idtituloreceber)
+  .query(`
+    UPDATE titulosreceber SET
+        valorpago = valorpago - @valorpago,
+        descontopago = descontopago - @descontopago,
+        juropago = juropago - @juropago
+      WHERE idtitulo = @idtituloreceber
+  `);
+*/
+
+    //request.input('id', id);
+
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input('id', id)
+      .query('DELETE FROM baixasreceber WHERE id = @id');
+
+      console.log('Baixa Receber Deletada: ' + id);
+
+    const poolLanc = await poolPromise;
+    await poolLanc
+      .request()
+      .input('idlancamento', idlancamento)
+      .query('DELETE FROM lancamentos WHERE idlancamento = @idlancamento');
+
+      console.log('Lançamento Deletado: ' + idlancamento);
+
+    //**************TITULO RECEBER*************** */ 
+    const poolRec = await poolPromise;
+    const resultRec = await poolRec
+      .request()
+      .input('valorpago', valorpago)
+      .input('descontopago', descontopago)
+      .input('juropago', juropago)
+      .input('idtituloreceber', idtituloreceber)
+      .query(`
+        UPDATE titulosreceber SET
+            valorpago = valorpago - @valorpago,
+            descontopago = descontopago - @descontopago,
+            juropago = juropago - @juropago
+          WHERE idtitulo =  @idtituloreceber
+      `);
+
+      console.log('Titulo Receber Atualizado: ' + idtituloreceber);
+
+    res.json({ success: true, message: 'Baixa deletada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Criar um nova baixa
+const createBaixaReceber = async (req, res) => {
+  try {
+
+    const {
+          databaixa,
+          observacao,
+          valorpago,
+          descontopago,
+          juropago,
+          idtituloreceber,
+          idbanco,
+          idcontabancaria,
+          idoperacaobancaria, 
+          empresa
+    } = req.body;
+
+    //**************LANCAMENTO***************** */
+
+    const poolLanc = await poolPromise;
+    const resultLanc = await poolLanc
+      .request()
+      .input('databaixa', databaixa)
+      .input('observacao', observacao)
+      .input('valorpago', valorpago)
+      .input('descontopago', descontopago)
+      .input('juropago', juropago)
+      .input('idbanco', idbanco)
+      .input('idcontabancaria', idcontabancaria)
+      .input('idoperacaobancaria', idoperacaobancaria)
+      .input('chave', uuidv4())
+      .input('empresa', empresa)
+      .query(`
+        INSERT INTO lancamentos (
+            datapagamento,
+            observacao,
+            valorpago,
+            descontopago,
+            juropago,
+            idbanco,
+            idcontabancaria,
+            idoperacaobancaria,
+            chave,
+            empresa
+        )
+        OUTPUT INSERTED.idlancamento
+        VALUES (
+            @databaixa,
+            @observacao,
+            @valorpago,
+            @descontopago,
+            @juropago,
+            @idbanco,
+            @idcontabancaria,
+            @idoperacaobancaria,
+            @chave,
+            @empresa
+        )
+      `);
+    const idlancamento = resultLanc.recordset[0].idlancamento;
+
+    //**************BAIXA RECEBER*************** */ 
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('databaixa', databaixa)
+      .input('observacao', observacao)
+      .input('valorpago', valorpago)
+      .input('descontopago', descontopago)
+      .input('juropago', juropago)
+      .input('idtituloreceber', idtituloreceber)
+      .input('idbanco', idbanco)
+      .input('idcontabancaria', idcontabancaria)
+      .input('idlancamento', idlancamento)
+      .input('idoperacaobancaria', idoperacaobancaria)
+      .input('empresa', empresa)
+      .query(`
+        INSERT INTO baixasreceber (
+            databaixa,
+            observacao,
+            valorpago,
+            descontopago,
+            juropago,
+            idtituloreceber,
+            idbanco,
+            idcontabancaria,
+            idlancamento,
+            idoperacaobancaria,
+            empresa
+        )
+        OUTPUT INSERTED.id
+        VALUES (
+            @databaixa,
+            @observacao,
+            @valorpago,
+            @descontopago,
+            @juropago,
+            @idtituloreceber,
+            @idbanco,
+            @idcontabancaria,
+            @idlancamento,
+            @idoperacaobancaria,
+            @empresa
+        )
+      `);
+    const idbaixa = result.recordset[0].id;
+
+    //**************TITULO RECEBER*************** */ 
+    const poolRec = await poolPromise;
+    const resultRec = await poolRec
+      .request()
+      .input('valorpago', valorpago)
+      .input('descontopago', descontopago)
+      .input('juropago', juropago)
+      .input('idtituloreceber', idtituloreceber)
+      .query(`
+        UPDATE titulosreceber SET
+            valorpago = valorpago + @valorpago,
+            descontopago = descontopago + @descontopago,
+            juropago = juropago + @juropago
+          WHERE idtitulo =  @idtituloreceber
+      `);
+
+    res.status(201).json({ success: true, idbaixa, message: 'baixa criada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getTituloReceber,
   getTituloReceberById,
   getTituloReceberByVendaBilhete,
+  getBaixaReceberByTitulo,
   createTituloReceber,
   updateTituloReceber,
   deleteTituloReceber,
   deleteTituloReceberByVendaBilhete,
   deleteTituloReceberByVendaHotel,
+  deleteBaixaReceber,
+  createBaixaReceber,
+  deleteBaixasReceber,
 };

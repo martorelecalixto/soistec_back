@@ -238,6 +238,7 @@ const getItensVendaBilheteByIdVenda = async (req, res) => {
     } else {
       res.status(404).send('itens venda não encontrada');
     }
+    
 
   } catch (error) {
     res.status(500).send(error.message);

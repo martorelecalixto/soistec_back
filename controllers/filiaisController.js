@@ -254,6 +254,7 @@ const updateFilial = async (req, res) => {
 
     res.json({ success: true, message: 'Filial atualizada com sucesso' });
   } catch (error) {
+    console.error('Erro ao atualizar filial:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

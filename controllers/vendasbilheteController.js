@@ -75,6 +75,9 @@ const getVendasBilhete = async (req, res) => {
                               Grupos ON VendasBilhetes.IdGrupo = Grupos.Id LEFT OUTER JOIN
                               ItensVendaBilhete ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda ${whereClause}  `
    const result = await request.query(query);
+   //console.log('DATA::', datainicial, datafinal);  
+   //console.log('result::', result.recordset);
+   //console.log('QUERY::', query);
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);
@@ -134,6 +137,7 @@ const getVendasBilheteById = async (req, res) => {
 // Obter baixa dos títulos da venda
 const getTemBaixa = async (req, res) => {
   try {
+
     const { idvenda } = req.params;
 
     if (!idvenda) {

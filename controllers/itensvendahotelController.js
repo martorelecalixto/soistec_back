@@ -345,7 +345,7 @@ const getItensVendaHotelByIdVenda = async (req, res) => {
 
           `
       );
-console.log('getItensVendaHotelByIdVenda idvenda: ->' + req.params.idvenda);
+//console.log('getItensVendaHotelByIdVenda idvenda: ->' + req.params.idvenda);
 
     if (result.recordset.length > 0) {
       res.json(result.recordset);

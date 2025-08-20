@@ -369,4 +369,14 @@ router.delete('/hotel/:idhotel', entidadesController.deleteHotel);
 router.get('/hotel/:identidade', entidadesController.getHotelById);
 
 
+router.post('/endereco', entidadesController.createEndereco);
+
+router.put('/endereco/:idendereco', entidadesController.updateEndereco);
+
+router.delete('/endereco/:idendereco', entidadesController.deleteEndereco);
+
+router.get('/endereco/:identidade', entidadesController.getEnderecoByIdEntidade);
+
+//router.get('/endereco/:idendereco', entidadesController.getEnderecoById);
+
 module.exports = router;

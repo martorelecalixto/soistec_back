@@ -82,7 +82,10 @@ const getVendasHotel = async (req, res) => {
                 '    entidades.nome, ' +
                 '    formapagamento.nome, ' +
                 '    entidades_1.nome, ' +
-                '    entidades_2.nome ';
+                '    entidades_2.nome, '+
+                '    recibosreceber.id, '+
+                '    faturas.id,'+
+                '    titulosreceber.valorpago';
 
     whereClause += ' ORDER BY vendashoteis.datavenda desc, vendashoteis.id ';
 
@@ -121,20 +124,25 @@ const getVendasHotel = async (req, res) => {
             vendashoteis.idgrupo,
             vendashoteis.id,
             vendashoteis.valorentrada,
-          entidades.nome AS entidade,
-          formapagamento.nome AS pagamento,
-          entidades_1.nome AS vendedor,
-          entidades_2.nome AS emissor
-        FROM vendashoteis INNER JOIN
-            entidades ON vendashoteis.identidade = entidades.identidade LEFT OUTER JOIN
-            filiais ON vendashoteis.idfilial = filiais.idfilial LEFT OUTER JOIN
-            moeda ON vendashoteis.idmoeda = moeda.idmoeda LEFT OUTER JOIN
-            formapagamento ON vendashoteis.idformapagamento = formapagamento.idformapagamento LEFT OUTER JOIN
-            entidades entidades_2 ON vendashoteis.idemissor = entidades_2.identidade LEFT OUTER JOIN
-            entidades entidades_1 ON vendashoteis.idvendedor = entidades_1.identidade LEFT OUTER JOIN
-            grupos ON vendashoteis.idgrupo = grupos.id LEFT OUTER JOIN
-            itensvendabilhete ON vendashoteis.idvenda = itensvendabilhete.idvenda
-            ${whereClause}  `
+            entidades.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            entidades_1.nome AS vendedor,
+            entidades_2.nome AS emissor,
+            recibosreceber.id AS recibo, 
+            faturas.id AS fatura, 
+            ISNULL(titulosreceber.valorpago,0) AS valorpago
+        FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                        FormaPagamento RIGHT OUTER JOIN
+                        vendashoteis INNER JOIN
+                        Entidades ON vendashoteis.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                        TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel ON FormaPagamento.IdFormaPagamento = vendashoteis.IdFormaPagamento LEFT OUTER JOIN
+                        Entidades AS entidades_1 ON vendashoteis.IdVendedor = entidades_1.IdEntidade ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
+                        Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                        Faturas ON vendashoteis.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                        Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                        RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                        Grupos ON vendashoteis.IdGrupo = Grupos.Id LEFT OUTER JOIN
+                        ItensVendaHotel ON vendashoteis.IdVenda = ItensVendaHotel.IdVenda ${whereClause}  `
    const result = await request.query(query);
    //console.log(result.recordset);
    res.json(result.recordset);    
@@ -253,7 +261,6 @@ const getVendasHotelById = async (req, res) => {
   }
 };
 
-
 // Criar uma nova venda
 const createVendasHotel = async (req, res) => {
   try {
@@ -354,7 +361,6 @@ const createVendasHotel = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Atualizar uma vendas existente
 const updateVendasHotel = async (req, res) => {
@@ -472,7 +478,6 @@ const updateVendasHotel = async (req, res) => {
   }
 };
 
-
 // Deletar uma vendas
 const deleteVendasHotel = async (req, res) => {
   try {
@@ -487,6 +492,63 @@ const deleteVendasHotel = async (req, res) => {
   }
 };
 
+// Obter baixa dos títulos da venda
+const getTemBaixa = async (req, res) => {
+  try {
+    const tembaixa = false
+
+    const { idvenda } = req.params;
+
+    if (!idvenda) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "idvenda" é obrigatório.' });
+    }
+
+    const pool = await poolPromise;
+    const result1 = await pool
+      .request()
+      .input('idvenda', idvenda)
+      .query(`
+          SELECT    COUNT(IDTITULO) AS qtd
+          FROM            TitulosReceber
+          WHERE ISNULL(ValorPago,0) > 0 
+          AND IdVendaHotel = @idvenda
+      `);
+
+    if (result1.recordset.length > 0) {
+      tembaixa = true;
+    }
+
+    const result2 = await pool
+      .request()
+      .input('idvenda', idvenda)
+      .query(`
+          SELECT    COUNT(IDTITULO) AS qtd
+          FROM            TitulosReceber
+          WHERE ISNULL(ValorPago,0) > 0 
+          AND IdVendaHotel = @idvenda
+      `);
+
+    if (result2.recordset.length > 0) {
+      tembaixa = true;
+    }
+    if (tembaixa) {
+      res.json({ qtd: 1 });
+    } else {
+      res.status(404).json({ success: false, message: 'Venda não encontrada.' });
+    }
+    
+      /*
+    if (result.recordset.length > 0) {
+      res.json(result.recordset[0]);
+    } else {
+      res.status(404).json({ success: false, message: 'Venda não encontrada.' });
+    }*/
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 module.exports = {
   getVendasHotel,
@@ -494,4 +556,5 @@ module.exports = {
   createVendasHotel,
   updateVendasHotel,
   deleteVendasHotel,
+  getTemBaixa,
 };

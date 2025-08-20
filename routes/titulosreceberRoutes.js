@@ -84,71 +84,34 @@ router.get('/:idtitulo', titulosreceberController.getTituloReceberById);
 
 router.get('/porvendabilhete/:idvenda', titulosreceberController.getTituloReceberByVendaBilhete);
 
-/**
- * @swagger
- * /api/titulosreceber/{idtitulo}:
- *   delete:
- *     summary: Remove um título a receber existente
- *     tags: [TitulosReceber]
- *     parameters:
- *       - in: path
- *         name: idtitulo
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do título
- *     responses:
- *       200:
- *         description: Título removido com sucesso
- *       404:
- *         description: Título não encontrado
- */
-router.delete('/:idtitulo', titulosreceberController.deleteTituloReceber);
+//router.delete('/:idtitulo', titulosreceberController.deleteTituloReceber);
 
-/**
- * @swagger
- * /api/titulosreceber/porvendabilhete/{idvendabilhete}:
- *   delete:
- *     summary: Remove um título a receber existente
- *     tags: [TitulosReceber]
- *     parameters:
- *       - in: path
- *         name: idvendabilhete
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do título
- *     responses:
- *       200:
- *         description: Título removido com sucesso
- *       404:
- *         description: Título não encontrado
- */
-router.delete('/porvendabilhete/:idvenda', titulosreceberController.deleteTituloReceberByVendaBilhete);
+//router.delete('/porvendabilhete/:idvenda', titulosreceberController.deleteTituloReceberByVendaBilhete);
 
-/**
- * @swagger
- * /api/titulosreceber/{idvendahotel}:
- *   delete:
- *     summary: Remove um título a receber existente
- *     tags: [TitulosReceber]
- *     parameters:
- *       - in: path
- *         name: idvendahotel
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do título
- *     responses:
- *       200:
- *         description: Título removido com sucesso
- *       404:
- *         description: Título não encontrado
- */
-router.delete('/:idvendahotel', titulosreceberController.deleteTituloReceberByVendaHotel);
+//router.delete('/:idvendahotel', titulosreceberController.deleteTituloReceberByVendaHotel);
 
 router.post('/', titulosreceberController.createTituloReceber);
 
 router.put('/:idtitulo', titulosreceberController.updateTituloReceber);
+
+router.get('/baixasreceber/:idtitulo', titulosreceberController.getBaixaReceberByTitulo);
+
+router.post('/baixasreceber', titulosreceberController.createBaixaReceber);
+
+//router.delete('/baixasreceber/:id', titulosreceberController.deleteBaixaReceber);
+
+//router.delete('/baixasrec', titulosreceberController.deleteBaixasReceber);
+
+
+// 1) rotas 100% estáticas primeiro
+router.delete('/baixasrec', titulosreceberController.deleteBaixasReceber);
+
+// 2) rotas com caminho fixo + param
+router.delete('/baixasreceber/:id', titulosreceberController.deleteBaixaReceber);
+router.delete('/porvendabilhete/:idvenda', titulosreceberController.deleteTituloReceberByVendaBilhete);
+router.delete('/vendahotel/:idvendahotel', titulosreceberController.deleteTituloReceberByVendaHotel); // <-- mudou
+
+// 3) por último a rota genérica (com regex numérica)
+router.delete('/:idtitulo', titulosreceberController.deleteTituloReceber);
 
 module.exports = router;
