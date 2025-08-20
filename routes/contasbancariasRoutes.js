@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const contasbancariasController = require('../controllers/contasBancariasController');
+const contasbancariasController = require('../controllers/contasbancariasController');
 
 router.get('/', contasbancariasController.getContasBancarias);
 
