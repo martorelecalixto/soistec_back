@@ -3,19 +3,16 @@ const router = express.Router();
 const titulospagarController = require('../controllers/titulospagarController');
 
 
+router.get('/lancamentos', titulospagarController.getTituloPagarLancamento);
+router.get('/porvendabilhete/:idvenda', titulospagarController.getTituloPagarByVendaBilhete);
+router.get('/baixaspagar/:idtitulo', titulospagarController.getBaixaPagarByTitulo);
+router.get('/:idtitulo', titulospagarController.getTituloPagarById);
 router.get('/', titulospagarController.getTituloPagar);
 
-router.get('/:idtitulo', titulospagarController.getTituloPagarById);
-
-router.get('/porvendabilhete/:idvenda', titulospagarController.getTituloPagarByVendaBilhete);
-
+router.post('/baixaspagar', titulospagarController.createBaixaPagar);
 router.post('/', titulospagarController.createTituloPagar);
 
 router.put('/:idtitulo', titulospagarController.updateTituloPagar);
-
-router.get('/baixaspagar/:idtitulo', titulospagarController.getBaixaPagarByTitulo);
-
-router.post('/baixaspagar', titulospagarController.createBaixaPagar);
 
 // 1) rotas 100% estáticas primeiro
 router.delete('/baixaspag', titulospagarController.deleteBaixasPagar);

@@ -707,6 +707,101 @@ const createBaixaPagar = async (req, res) => {
   }
 };
 
+// Obter todos os titulos pagar
+const getTituloPagarLancamento = async (req, res) => {
+  try {
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal  } = req.query;
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
+
+    // Parâmetros obrigatórios
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('empresa', empresa);
+
+    // Parâmetros opcionais
+    let whereClause = 'WHERE titulospagar.empresa = @empresa AND titulospagar.id > 0 ';
+
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND titulospagar.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND titulospagar.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND titulospagar.idmoeda = @idmoeda';
+    }
+    
+    if (datainicial) {
+      request.input('datainicial', datainicial); // Formata a data para incluir hora
+      whereClause += ' AND titulospagar.datavencimento >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND titulospagar.datavencimento <= @datafinal';
+    }
+    
+    whereClause += ' AND titulospagar.valor > titulospagar.valorpago ';
+    whereClause += ' ORDER BY titulospagar.datavencimento desc ';
+
+    const query =
+     `
+        SELECT 
+            TitulosPagar.idtitulo,
+            TitulosPagar.dataemissao,
+            TitulosPagar.datavencimento,
+            TitulosPagar.datacompetencia,
+            TitulosPagar.descricao,
+            TitulosPagar.documento,
+            ISNULL(TitulosPagar.valor,0) AS valor,
+            ISNULL(TitulosPagar.valorpago,0) AS valorpago, 
+            ISNULL(TitulosPagar.descontopago,0) AS descontopago,
+            ISNULL(TitulosPagar.juropago,0) AS juropago,
+            TitulosPagar.parcela,
+            TitulosPagar.idvendabilhete,
+            TitulosPagar.idvendahotel,
+            TitulosPagar.idvendapacote,
+            TitulosPagar.identidade,
+            TitulosPagar.idmoeda,
+            TitulosPagar.idformapagamento,
+            TitulosPagar.idplanoconta,
+            TitulosPagar.idcentrocusto,
+            TitulosPagar.idfilial,
+            TitulosPagar.chave,
+            TitulosPagar.empresa,
+            TitulosPagar.idnotacredito,
+            TitulosPagar.idnotadebito,
+            TitulosPagar.idreembolso,
+            TitulosPagar.id,
+            entidades.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            planoconta.nome AS planoconta,
+            'PAGAR' AS tipo,
+            CAST(0 AS BIT) AS selecionado
+            FROM            TitulosPagar LEFT OUTER JOIN
+                            PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
+                            Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                            FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+
+            ${whereClause}  `
+   const result = await request.query(query);
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
 module.exports = {
   getTituloPagar,
   getTituloPagarById,
@@ -720,4 +815,5 @@ module.exports = {
   deleteBaixaPagar,
   createBaixaPagar,
   deleteBaixasPagar,
+  getTituloPagarLancamento
 };

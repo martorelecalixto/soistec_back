@@ -84,17 +84,21 @@ const getContasBancarias = async (req, res) => {
     request.input('empresa', empresa);
 
     // Parâmetros opcionais
-    let whereClause = 'WHERE empresa = @empresa';
+    let whereClause = 'WHERE ContasBancarias.empresa = @empresa';
 
     if (numeroconta) {
-      whereClause += ' AND numeroconta LIKE @numeroconta';
+      whereClause += ' AND ContasBancarias.numeroconta LIKE @numeroconta';
       request.input('numeroconta', `%${numeroconta}%`);
     }
 
-    whereClause += ' ORDER BY numeroconta ';
+    whereClause += ' ORDER BY ContasBancarias.numeroconta ';
 
    const query =
-    `SELECT idcontabancaria, numeroconta, digitoconta, titularconta, numeroagencia, digitoagencia, valorinicial, saldo, idbanco, idmoeda,  empresa FROM contasbancarias ${whereClause}`
+    `SELECT ContasBancarias.idcontabancaria, (isnull(ContasBancarias.numeroconta,'') + ' ' + isnull(ContasBancarias.digitoconta,'')) AS numeroconta, ContasBancarias.digitoconta, 
+      ContasBancarias.titularconta, (isnull(ContasBancarias.numeroagencia,'') + ' ' + isnull(ContasBancarias.digitoagencia,'')) AS numeroagencia, ContasBancarias.digitoagencia, 
+      ContasBancarias.valorinicial, ContasBancarias.saldo, ContasBancarias.idbanco, ContasBancarias.idmoeda,  ContasBancarias.empresa, Bancos.nome AS banco
+    FROM            ContasBancarias INNER JOIN   Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco
+    ${whereClause}`
 
    const result = await request.query(query);
 
@@ -138,10 +142,11 @@ const getContaBancariaById = async (req, res) => {
 // Criar uma nova conta bancaria
 const createContaBancaria = async (req, res) => {
   try {
+    //console.log('createContaBancaria', req.body);
     const {
       numeroconta, digitoconta, titularconta, numeroagencia, digitoagencia, valorinicial, saldo, idbanco, idmoeda, empresa
     } = req.body;
-
+    //console.log('empresa', empresa);
     const pool = await poolPromise;
     await pool
       .request()
@@ -157,12 +162,12 @@ const createContaBancaria = async (req, res) => {
       .input('empresa', empresa)
       .query(
         `INSERT INTO contasbancarias (
-          nome, numeroconta, digitoconta, titularconta, numeroagencia, digitoagencia, valorinicial, saldo, idbanco, idmoeda, empresa
+          numeroconta, digitoconta, titularconta, numeroagencia, digitoagencia, valorinicial, saldo, idbanco, idmoeda, empresa
         ) VALUES (
-          @nome, @numeroconta, @digitoconta, @titularconta, @numeroagencia, @digitoagencia, @valorinicial, @saldo, @idbanco, @idmoeda, @empresa
+          @numeroconta, @digitoconta, @titularconta, @numeroagencia, @digitoagencia, @valorinicial, @saldo, @idbanco, @idmoeda, @empresa
         )`
       );
-
+    //console.log('Conta bancaria criada com sucesso');
     res.status(201).json({ success: true, message: 'Conta bancaria criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

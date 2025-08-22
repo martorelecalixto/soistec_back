@@ -789,6 +789,107 @@ const createBaixaReceber = async (req, res) => {
   }
 };
 
+// Obter todos os titulos receber
+const getTituloReceberLancamento = async (req, res) => {
+  try {
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal  } = req.query;
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
+
+    // Parâmetros obrigatórios
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('empresa', empresa);
+
+    // Parâmetros opcionais
+    let whereClause = 'WHERE titulosreceber.empresa = @empresa AND titulosreceber.id > 0 ';
+
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND titulosreceber.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND titulosreceber.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND titulosreceber.idmoeda = @idmoeda';
+    }
+    
+    if (datainicial) {
+      request.input('datainicial', datainicial); // Formata a data para incluir hora
+      whereClause += ' AND titulosreceber.datavencimento >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND titulosreceber.datavencimento <= @datafinal';
+    }
+    
+    whereClause += ' AND titulosreceber.valor > titulosreceber.valorpago ';
+
+    whereClause += ' ORDER BY titulosreceber.datavencimento desc ';
+
+    const query =
+     `
+        SELECT 
+            TitulosReceber.idtitulo,
+            TitulosReceber.dataemissao,
+            TitulosReceber.datavencimento,
+            TitulosReceber.datacompetencia,
+            TitulosReceber.descricao,
+            TitulosReceber.documento,
+            ISNULL(TitulosReceber.valor,0) AS valor,
+            ISNULL(TitulosReceber.valorpago,0) AS valorpago,
+            ISNULL(TitulosReceber.descontopago,0) AS descontopago,
+            ISNULL(TitulosReceber.juropago,0) AS juropago,
+            TitulosReceber.parcela,
+            TitulosReceber.idvendabilhete,
+            TitulosReceber.idvendahotel,
+            TitulosReceber.idvendapacote,
+            TitulosReceber.idfatura,
+            TitulosReceber.identidade,
+            TitulosReceber.idmoeda,
+            TitulosReceber.idformapagamento,
+            TitulosReceber.idplanoconta,
+            TitulosReceber.idcentrocusto,
+            TitulosReceber.idfilial,
+            TitulosReceber.chave,
+            TitulosReceber.empresa,
+            TitulosReceber.comissao,
+            TitulosReceber.idnotacredito,
+            TitulosReceber.idnotadebito,
+            TitulosReceber.idreembolso,
+            TitulosReceber.id,
+            TitulosReceber.idnf,
+            TitulosReceber.numeronf,
+            TitulosReceber.titulovalorentrada,
+            entidades.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            planoconta.nome AS planoconta,
+            'RECEBER' AS tipo,
+            CAST(0 AS BIT) AS selecionado
+            FROM            TitulosReceber LEFT OUTER JOIN
+                            PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
+                            Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                            FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+
+            ${whereClause}  `
+   const result = await request.query(query);
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
 module.exports = {
   getTituloReceber,
   getTituloReceberById,
@@ -802,4 +903,5 @@ module.exports = {
   deleteBaixaReceber,
   createBaixaReceber,
   deleteBaixasReceber,
+  getTituloReceberLancamento
 };
