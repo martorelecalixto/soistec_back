@@ -426,7 +426,6 @@ const createTituloReceber = async (req, res) => {
   }
 };
 
-
 // Atualizar um titulo existente
 const updateTituloReceber = async (req, res) => {
   try {
@@ -523,7 +522,6 @@ const updateTituloReceber = async (req, res) => {
   }
 };
 
-
 // Deletar um titulo
 const deleteTituloReceber = async (req, res) => {
   try {
@@ -537,7 +535,6 @@ const deleteTituloReceber = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Deletar titulos da venda bilhete
 const deleteTituloReceberByVendaBilhete = async (req, res) => {
@@ -591,34 +588,6 @@ const deleteBaixasReceber = async (req, res) => {
     console.log('Deletando Baixa Receber');
     const { id, idlancamento, idtituloreceber, valorpago, descontopago, juropago } = req.query;
     const sql = require('mssql');
-
-    /*
-await pool
-  .request()
-  .input('id', sql.Int, id)
-  .query('DELETE FROM baixasreceber WHERE id = @id');
-
-await pool
-  .request()
-  .input('idlancamento', sql.Int, idlancamento)
-  .query('DELETE FROM lancamentos WHERE idlancamento = @idlancamento');
-
-await pool
-  .request()
-  .input('valorpago', sql.Decimal(18,2), valorpago)
-  .input('descontopago', sql.Decimal(18,2), descontopago)
-  .input('juropago', sql.Decimal(18,2), juropago)
-  .input('idtituloreceber', sql.Int, idtituloreceber)
-  .query(`
-    UPDATE titulosreceber SET
-        valorpago = valorpago - @valorpago,
-        descontopago = descontopago - @descontopago,
-        juropago = juropago - @juropago
-      WHERE idtitulo = @idtituloreceber
-  `);
-*/
-
-    //request.input('id', id);
 
     const pool = await poolPromise;
     await pool
@@ -674,6 +643,7 @@ const createBaixaReceber = async (req, res) => {
           idbanco,
           idcontabancaria,
           idoperacaobancaria, 
+          idfilial,
           empresa
     } = req.body;
 
@@ -690,6 +660,7 @@ const createBaixaReceber = async (req, res) => {
       .input('idbanco', idbanco)
       .input('idcontabancaria', idcontabancaria)
       .input('idoperacaobancaria', idoperacaobancaria)
+      .input('idfilial', idfilial)
       .input('chave', uuidv4())
       .input('empresa', empresa)
       .query(`
@@ -702,6 +673,7 @@ const createBaixaReceber = async (req, res) => {
             idbanco,
             idcontabancaria,
             idoperacaobancaria,
+            idfilial,
             chave,
             empresa
         )
@@ -715,6 +687,7 @@ const createBaixaReceber = async (req, res) => {
             @idbanco,
             @idcontabancaria,
             @idoperacaobancaria,
+            @idfilial,
             @chave,
             @empresa
         )
@@ -735,6 +708,7 @@ const createBaixaReceber = async (req, res) => {
       .input('idcontabancaria', idcontabancaria)
       .input('idlancamento', idlancamento)
       .input('idoperacaobancaria', idoperacaobancaria)
+      .input('idfilial', idfilial)
       .input('empresa', empresa)
       .query(`
         INSERT INTO baixasreceber (
@@ -748,6 +722,7 @@ const createBaixaReceber = async (req, res) => {
             idcontabancaria,
             idlancamento,
             idoperacaobancaria,
+            idfilial,
             empresa
         )
         OUTPUT INSERTED.id
@@ -762,6 +737,7 @@ const createBaixaReceber = async (req, res) => {
             @idcontabancaria,
             @idlancamento,
             @idoperacaobancaria,
+            @idfilial,
             @empresa
         )
       `);
@@ -784,6 +760,154 @@ const createBaixaReceber = async (req, res) => {
       `);
 
     res.status(201).json({ success: true, idbaixa, message: 'baixa criada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Criar várias baixas
+const createBaixasReceberGenerica = async (req, res) => {
+  try {
+    const baixas = req.body; // espera receber um array de objetos
+
+    if (!Array.isArray(baixas)) {
+      return res.status(400).json({ success: false, message: 'O body deve ser uma lista de baixas' });
+    }
+
+    const resultados = [];
+
+    for (const baixa of baixas) {
+      const {
+        databaixa,
+        observacao,
+        valorpago,
+        descontopago,
+        juropago,
+        idtituloreceber,
+        idbanco,
+        idcontabancaria,
+        idoperacaobancaria,
+        idfilial,
+        empresa
+      } = baixa;
+
+      //************** LANCAMENTO ***************** */
+      const poolLanc = await poolPromise;
+      const resultLanc = await poolLanc
+        .request()
+        .input('databaixa', databaixa)
+        .input('observacao', observacao)
+        .input('valorpago', valorpago)
+        .input('descontopago', descontopago)
+        .input('juropago', juropago)
+        .input('idbanco', idbanco)
+        .input('idcontabancaria', idcontabancaria)
+        .input('idoperacaobancaria', idoperacaobancaria)
+        .input('idfilial', idfilial)
+        .input('chave', uuidv4())
+        .input('empresa', empresa)
+        .query(`
+          INSERT INTO lancamentos (
+              datapagamento,
+              observacao,
+              valorpago,
+              descontopago,
+              juropago,
+              idbanco,
+              idcontabancaria,
+              idoperacaobancaria,
+              idfilial,
+              chave,
+              empresa
+          )
+          OUTPUT INSERTED.idlancamento
+          VALUES (
+              @databaixa,
+              @observacao,
+              @valorpago,
+              @descontopago,
+              @juropago,
+              @idbanco,
+              @idcontabancaria,
+              @idoperacaobancaria,
+              @idfilial,
+              @chave,
+              @empresa
+          )
+        `);
+      const idlancamento = resultLanc.recordset[0].idlancamento;
+
+      //************** BAIXA RECEBER *************** */ 
+      const pool = await poolPromise;
+      const result = await pool
+        .request()
+        .input('databaixa', databaixa)
+        .input('observacao', observacao)
+        .input('valorpago', valorpago)
+        .input('descontopago', descontopago)
+        .input('juropago', juropago)
+        .input('idtituloreceber', idtituloreceber)
+        .input('idbanco', idbanco)
+        .input('idcontabancaria', idcontabancaria)
+        .input('idlancamento', idlancamento)
+        .input('idoperacaobancaria', idoperacaobancaria)
+        .input('idfilial', idfilial)
+        .input('empresa', empresa)
+        .query(`
+          INSERT INTO baixasreceber (
+              databaixa,
+              observacao,
+              valorpago,
+              descontopago,
+              juropago,
+              idtituloreceber,
+              idbanco,
+              idcontabancaria,
+              idlancamento,
+              idoperacaobancaria,
+              idfilial, 
+              empresa
+          )
+          OUTPUT INSERTED.id
+          VALUES (
+              @databaixa,
+              @observacao,
+              @valorpago,
+              @descontopago,
+              @juropago,
+              @idtituloreceber,
+              @idbanco,
+              @idcontabancaria,
+              @idlancamento,
+              @idoperacaobancaria,
+              @idfilial,
+              @empresa
+          )
+        `);
+      const idbaixa = result.recordset[0].id;
+
+      //************** TITULO RECEBER *************** */ 
+      const poolRec = await poolPromise;
+      await poolRec
+        .request()
+        .input('valorpago', valorpago)
+        .input('descontopago', descontopago)
+        .input('juropago', juropago)
+        .input('idtituloreceber', idtituloreceber)
+        .query(`
+          UPDATE titulosreceber SET
+              valorpago = valorpago + @valorpago,
+              descontopago = descontopago + @descontopago,
+              juropago = juropago + @juropago
+          WHERE idtitulo = @idtituloreceber
+        `);
+
+      resultados.push({ idbaixa, idlancamento, idtituloreceber });
+    }
+
+    //res.status(201).json({ success: true, resultados, message: 'Baixas criadas com sucesso' });
+    res.status(201).json({ success: true, message: 'Baixas criadas com sucesso' });
+
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -851,6 +975,7 @@ const getTituloReceberLancamento = async (req, res) => {
             ISNULL(TitulosReceber.valorpago,0) AS valorpago,
             ISNULL(TitulosReceber.descontopago,0) AS descontopago,
             ISNULL(TitulosReceber.juropago,0) AS juropago,
+            (ISNULL(TitulosReceber.valor,0) - ISNULL(TitulosReceber.valorpago,0)) AS valoraberto,
             TitulosReceber.parcela,
             TitulosReceber.idvendabilhete,
             TitulosReceber.idvendahotel,
@@ -903,5 +1028,6 @@ module.exports = {
   deleteBaixaReceber,
   createBaixaReceber,
   deleteBaixasReceber,
-  getTituloReceberLancamento
+  getTituloReceberLancamento,
+  createBaixasReceberGenerica
 };

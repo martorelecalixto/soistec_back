@@ -592,6 +592,7 @@ const createBaixaPagar = async (req, res) => {
           idbanco,
           idcontabancaria,
           idoperacaobancaria, 
+          idfilial,
           empresa
     } = req.body;
 
@@ -602,12 +603,13 @@ const createBaixaPagar = async (req, res) => {
       .request()
       .input('databaixa', databaixa)
       .input('observacao', observacao)
-      .input('valorpago', valorpago)
+      .input('valorpago', valorpago * (-1))
       .input('descontopago', descontopago)
       .input('juropago', juropago)
       .input('idbanco', idbanco)
       .input('idcontabancaria', idcontabancaria)
       .input('idoperacaobancaria', idoperacaobancaria)
+      .input('idfilial', idfilial)
       .input('chave', uuidv4())
       .input('empresa', empresa)
       .query(`
@@ -620,6 +622,7 @@ const createBaixaPagar = async (req, res) => {
             idbanco,
             idcontabancaria,
             idoperacaobancaria,
+            idfilial,
             chave,
             empresa
         )
@@ -633,6 +636,7 @@ const createBaixaPagar = async (req, res) => {
             @idbanco,
             @idcontabancaria,
             @idoperacaobancaria,
+            @idfilial,
             @chave,
             @empresa
         )
@@ -653,6 +657,7 @@ const createBaixaPagar = async (req, res) => {
       .input('idcontabancaria', idcontabancaria)
       .input('idlancamento', idlancamento)
       .input('idoperacaobancaria', idoperacaobancaria)
+      .input('idfilial', idfilial)
       .input('empresa', empresa)
       .query(`
         INSERT INTO baixaspagar (
@@ -666,6 +671,7 @@ const createBaixaPagar = async (req, res) => {
             idcontabancaria,
             idlancamento,
             idoperacaobancaria,
+            idfilial,
             empresa
         )
         OUTPUT INSERTED.id
@@ -680,6 +686,7 @@ const createBaixaPagar = async (req, res) => {
             @idcontabancaria,
             @idlancamento,
             @idoperacaobancaria,
+            @idfilial,
             @empresa
         )
       `);
@@ -702,6 +709,154 @@ const createBaixaPagar = async (req, res) => {
       `);
 
     res.status(201).json({ success: true, idbaixa, message: 'baixa criada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Criar várias baixas
+const createBaixasPagarGenerica = async (req, res) => {
+  try {
+    const baixas = req.body; // espera receber um array de objetos
+
+    if (!Array.isArray(baixas)) {
+      return res.status(400).json({ success: false, message: 'O body deve ser uma lista de baixas' });
+    }
+
+    const resultados = [];
+
+    for (const baixa of baixas) {
+      const {
+        databaixa,
+        observacao,
+        valorpago,
+        descontopago,
+        juropago,
+        idtitulopagar,
+        idbanco,
+        idcontabancaria,
+        idoperacaobancaria,
+        idfilial,
+        empresa
+      } = baixa;
+
+      //************** LANCAMENTO ***************** */
+      const poolLanc = await poolPromise;
+      const resultLanc = await poolLanc
+        .request()
+        .input('databaixa', databaixa)
+        .input('observacao', observacao)
+        .input('valorpago', valorpago * (-1))
+        .input('descontopago', descontopago)
+        .input('juropago', juropago)
+        .input('idbanco', idbanco)
+        .input('idcontabancaria', idcontabancaria)
+        .input('idoperacaobancaria', idoperacaobancaria)
+        .input('idfilial', idfilial)        
+        .input('chave', uuidv4())
+        .input('empresa', empresa)
+        .query(`
+          INSERT INTO lancamentos (
+              datapagamento,
+              observacao,
+              valorpago,
+              descontopago,
+              juropago,
+              idbanco,
+              idcontabancaria,
+              idoperacaobancaria,
+              idfilial,
+              chave,
+              empresa
+          )
+          OUTPUT INSERTED.idlancamento
+          VALUES (
+              @databaixa,
+              @observacao,
+              @valorpago,
+              @descontopago,
+              @juropago,
+              @idbanco,
+              @idcontabancaria,
+              @idoperacaobancaria,
+              @idfilial,
+              @chave,
+              @empresa
+          )
+        `);
+      const idlancamento = resultLanc.recordset[0].idlancamento;
+
+      //************** BAIXA RECEBER *************** */ 
+      const pool = await poolPromise;
+      const result = await pool
+        .request()
+        .input('databaixa', databaixa)
+        .input('observacao', observacao)
+        .input('valorpago', valorpago)
+        .input('descontopago', descontopago)
+        .input('juropago', juropago)
+        .input('idtitulopagar', idtitulopagar)
+        .input('idbanco', idbanco)
+        .input('idcontabancaria', idcontabancaria)
+        .input('idlancamento', idlancamento)
+        .input('idoperacaobancaria', idoperacaobancaria)
+        .input('idfilial', idfilial)
+        .input('empresa', empresa)
+        .query(`
+          INSERT INTO baixaspagar (
+              databaixa,
+              observacao,
+              valorpago,
+              descontopago,
+              juropago,
+              idtitulopagar,
+              idbanco,
+              idcontabancaria,
+              idlancamento,
+              idoperacaobancaria,
+              idfilial,
+              empresa
+          )
+          OUTPUT INSERTED.id
+          VALUES (
+              @databaixa,
+              @observacao,
+              @valorpago,
+              @descontopago,
+              @juropago,
+              @idtitulopagar,
+              @idbanco,
+              @idcontabancaria,
+              @idlancamento,
+              @idoperacaobancaria,
+              @idfilial,
+              @empresa
+          )
+        `);
+      const idbaixa = result.recordset[0].id;
+
+      //************** TITULO PAGAR *************** */ 
+      const poolPag = await poolPromise;
+      await poolPag
+        .request()
+        .input('valorpago', valorpago)
+        .input('descontopago', descontopago)
+        .input('juropago', juropago)
+        .input('idtitulopagar', idtitulopagar)
+        .query(`
+          UPDATE titulospagar SET
+              valorpago = valorpago + @valorpago,
+              descontopago = descontopago + @descontopago,
+              juropago = juropago + @juropago
+          WHERE idtitulo = @idtitulopagar
+        `);
+
+      resultados.push({ idbaixa, idlancamento, idtitulopagar });
+    }
+
+    //res.status(201).json({ success: true, resultados, message: 'Baixas criadas com sucesso' });
+    res.status(201).json({ success: true, message: 'Baixas criadas com sucesso' });
+
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -768,6 +923,7 @@ const getTituloPagarLancamento = async (req, res) => {
             ISNULL(TitulosPagar.valorpago,0) AS valorpago, 
             ISNULL(TitulosPagar.descontopago,0) AS descontopago,
             ISNULL(TitulosPagar.juropago,0) AS juropago,
+            (ISNULL(TitulosPagar.valor,0) - ISNULL(TitulosPagar.valorpago,0)) AS valoraberto,
             TitulosPagar.parcela,
             TitulosPagar.idvendabilhete,
             TitulosPagar.idvendahotel,
@@ -815,5 +971,6 @@ module.exports = {
   deleteBaixaPagar,
   createBaixaPagar,
   deleteBaixasPagar,
-  getTituloPagarLancamento
+  getTituloPagarLancamento,
+  createBaixasPagarGenerica
 };

@@ -8,8 +8,9 @@ router.get('/porvendabilhete/:idvenda', titulosreceberController.getTituloRecebe
 router.get('/:idtitulo', titulosreceberController.getTituloReceberById);
 router.get('/', titulosreceberController.getTituloReceber);
 
-router.post('/', titulosreceberController.createTituloReceber);
 router.post('/baixasreceber', titulosreceberController.createBaixaReceber);
+router.post('/baixasrecebergenerica', titulosreceberController.createBaixasReceberGenerica);
+router.post('/', titulosreceberController.createTituloReceber);
 
 router.put('/:idtitulo', titulosreceberController.updateTituloReceber);
 

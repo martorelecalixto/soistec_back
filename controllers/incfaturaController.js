@@ -5,6 +5,7 @@ const incFatura = async (req, res) => {
   const pool = await poolPromise; // ✅ usa o pool compartilhado
   let atualizado = false;
   let valorAtualizado = 0;
+  //console.log('ID da empresa recebido:', idempresa);
  
   while (!atualizado) {
     const transaction = new sql.Transaction(pool);
