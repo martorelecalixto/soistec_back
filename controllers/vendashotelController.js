@@ -210,7 +210,7 @@ const getVendasHotelById = async (req, res) => {
               entidades entidades_2 ON vendashoteis.idemissor = entidades_2.identidade LEFT OUTER JOIN
               entidades entidades_1 ON vendashoteis.idvendedor = entidades_1.identidade LEFT OUTER JOIN
               grupos ON vendashoteis.idgrupo = grupos.id LEFT OUTER JOIN
-              itensvendabilhete ON vendashoteis.idvenda = itensvendabilhete.idvenda
+              itensvendahotel ON vendashoteis.idvenda = itensvendahotel.idvenda
 
           GROUP BY 
               vendashoteis.idvenda,
@@ -549,6 +549,423 @@ const getTemBaixa = async (req, res) => {
   }
 };
 
+// Obter relatorios analítico de vendas hoteis
+const getRelatoriosAnalitico = async (req, res) => {
+  try {
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
+      vencimentoinicial, vencimentofinal, idformapagamento, idvendedor, idemissor,  idgrupo,
+      servicoinicial, servicofinal, faturainicial, faturafinal, pax, tipo, idoperadora
+     } = req.query;
+    const sql = require('mssql');
+    //console.log('REQUISIÇÃO::', req.query);
+    //console.log('EMPRESA::', empresa);
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
+    
+
+    // Parâmetros obrigatórios
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('empresa', empresa);
+
+    // Parâmetros opcionais
+    let whereClause = 'WHERE vendashoteis.empresa = @empresa AND vendashoteis.id > 0 ';
+
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND vendashoteis.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND vendashoteis.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND vendashoteis.idmoeda = @idmoeda';
+    }
+    
+    if (idgrupo) {
+      request.input('idgrupo', idgrupo);
+      whereClause += ' AND vendashoteis.idgrupo = @idgrupo';
+    }
+
+    if (idformapagamento) {
+      request.input('idformapagamento', idformapagamento);
+      whereClause += ' AND vendashoteis.idformapagamento = @idformapagamento';
+    }
+
+    if (idvendedor) {
+      request.input('idvendedor', idvendedor);
+      whereClause += ' AND vendashoteis.idvendedor = @idvendedor';
+    }
+
+    if (idemissor) {
+      request.input('idemissor', idemissor);
+      whereClause += ' AND vendashoteis.idemissor = @idemissor';
+    }
+
+    if (datainicial) {
+      request.input('datainicial', datainicial);
+      whereClause += ' AND vendashoteis.datavenda >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND vendashoteis.datavenda <= @datafinal';
+    }
+
+    if (vencimentoinicial) {
+      request.input('vencimentoinicial', vencimentoinicial);
+      whereClause += ' AND vendashoteis.datavencimento >= @vencimentoinicial';
+    }
+    
+    if (vencimentofinal) {
+      request.input('vencimentofinal', vencimentofinal);
+      whereClause += ' AND vendashoteis.datavencimento <= @vencimentofinal';
+    }
+
+    if (pax) {
+      request.input('pax', `%${pax}%`);
+      whereClause += ' AND ItensVendaHotel.pax LIKE @pax';
+    }
+
+    if (servicoinicial) {
+      request.input('servicoinicial', servicoinicial);
+      whereClause += ' AND vendashoteis.id >= @servicoinicial';
+    }
+    
+    if (servicofinal) {
+      request.input('servicofinal', servicofinal);
+      whereClause += ' AND vendashoteis.id <= @servicofinal';
+    }
+
+    if (faturainicial) {
+      request.input('faturainicial', faturainicial);
+      whereClause += ' AND Faturas.id >= @faturainicial';
+    }
+    
+    if (faturafinal) {
+      request.input('faturafinal', faturafinal);
+      whereClause += ' AND Faturas.id <= @faturafinal';
+    }
+
+    if (idoperadora) {
+      request.input('idoperadora', idoperadora);
+      whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
+    }
+
+    if(tipo == 'Cliente')
+        whereClause += ' ORDER BY Entidades_3.nome, vendashoteis.datavenda, vendashoteis.id '
+    else
+    if(tipo == 'Emissao')
+      whereClause += ' ORDER BY vendashoteis.datavenda, Entidades_3.nome, vendashoteis.id '
+    else
+    if(tipo == 'Vencimento')
+      whereClause += ' ORDER BY vendashoteis.datavencimento, Entidades_3.nome, vendashoteis.id '
+    else
+    if(tipo == 'Emissor')
+      whereClause += ' ORDER BY Entidades_2.nome, vendashoteis.datavenda, vendashoteis.id '
+    else
+    if(tipo == 'Vendedor')
+      whereClause += ' ORDER BY Entidades_1.nome, vendashoteis.datavenda, vendashoteis.id '
+    else
+    if(tipo == 'Operadora')
+      whereClause += ' ORDER BY Entidades_4.nome, vendashoteis.datavenda, vendashoteis.id ';
+
+    const query =
+     `SELECT        ItensVendaHotel.id, 
+                    vendashoteis.Id AS idvenda, 
+                    entidades_3.Nome AS entidade, 
+                    FormaPagamento.Nome AS pagamento, 
+                    vendashoteis.datavenda AS dataemissao, 
+                    vendashoteis.datavencimento, 
+                    isnull(RecibosReceber.Id,0) AS idrecibo, 
+                    isnull(Faturas.Id,0) AS idfatura, 
+                    Entidades_4.Nome AS operadora, 
+                    Entidades.Nome AS fornecedor, 
+                    Entidades_1.Nome AS vendedor, 
+                    Entidades_2.Nome AS emissor, 
+                    ItensVendaHotel.pax, 
+                    (isnull(ItensVendaHotel.pax,'')+ ' ' + isnull(ItensVendaHotel.descricao,'')+ ' ') AS descricao, 
+                    isnull(ItensVendaHotel.valorhotel,0) AS valor, 
+                    isnull(ItensVendaHotel.valortaxa,0) AS valortaxa,
+                    isnull(ItensVendaHotel.valorcomissao,0) AS valorservico, 
+                    isnull(ItensVendaHotel.valoroutros,0) AS valoroutros
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      vendashoteis INNER JOIN
+                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
+                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
+                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
+                              
+    ${whereClause}  `
+   const result = await request.query(query);
+   //console.log('DATA::', datainicial, datafinal);  
+   //console.log('result::', result.recordset);
+   //console.log('QUERY::', query);
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+// Obter relatorios sintetico de vendas hoteis
+const getRelatoriosSintetico = async (req, res) => {
+  try {
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
+      vencimentoinicial, vencimentofinal, idformapagamento, idvendedor, idemissor,  idgrupo,
+      servicoinicial, servicofinal, faturainicial, faturafinal, pax, tipo, idoperadora
+     } = req.query;
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
+    
+
+    // Parâmetros obrigatórios
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('empresa', empresa);
+
+    // Parâmetros opcionais
+    let whereClause = 'WHERE vendashoteis.empresa = @empresa AND vendashoteis.id > 0 ';
+
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND vendashoteis.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND vendashoteis.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND vendashoteis.idmoeda = @idmoeda';
+    }
+    
+    if (idgrupo) {
+      request.input('idgrupo', idgrupo);
+      whereClause += ' AND vendashoteis.idgrupo = @idgrupo';
+    }
+
+    if (idformapagamento) {
+      request.input('idformapagamento', idformapagamento);
+      whereClause += ' AND vendashoteis.idformapagamento = @idformapagamento';
+    }
+
+    if (idvendedor) {
+      request.input('idvendedor', idvendedor);
+      whereClause += ' AND vendashoteis.idvendedor = @idvendedor';
+    }
+
+    if (idemissor) {
+      request.input('idemissor', idemissor);
+      whereClause += ' AND vendashoteis.idemissor = @idemissor';
+    }
+
+    if (datainicial) {
+      request.input('datainicial', datainicial);
+      whereClause += ' AND vendashoteis.datavenda >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND vendashoteis.datavenda <= @datafinal';
+    }
+
+    if (vencimentoinicial) {
+      request.input('vencimentoinicial', vencimentoinicial);
+      whereClause += ' AND vendashoteis.datavencimento >= @vencimentoinicial';
+    }
+    
+    if (vencimentofinal) {
+      request.input('vencimentofinal', vencimentofinal);
+      whereClause += ' AND vendashoteis.datavencimento <= @vencimentofinal';
+    }
+
+    if (pax) {
+      request.input('pax', `%${pax}%`);
+      whereClause += ' AND ItensVendaHotel.pax LIKE @pax';
+    }
+
+    if (servicoinicial) {
+      request.input('servicoinicial', servicoinicial);
+      whereClause += ' AND vendashoteis.id >= @servicoinicial';
+    }
+    
+    if (servicofinal) {
+      request.input('servicofinal', servicofinal);
+      whereClause += ' AND vendashoteis.id <= @servicofinal';
+    }
+
+    if (faturainicial) {
+      request.input('faturainicial', faturainicial);
+      whereClause += ' AND Faturas.id >= @faturainicial';
+    }
+    
+    if (faturafinal) {
+      request.input('faturafinal', faturafinal);
+      whereClause += ' AND Faturas.id <= @faturafinal';
+    }
+
+    if (idoperadora) {
+      request.input('idoperadora', idoperadora);
+      whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
+    }
+
+    if(tipo == 'Operadora'){
+    whereClause +=  ' GROUP BY vendashoteis.id, ' +
+                    '   vendashoteis.observacao,  ' +
+                    '		vendashoteis.solicitante, ' +
+                    '   vendashoteis.datavenda,  ' +
+                    '		Entidades_3.nome,  ' +
+                    '		Entidades_4.nome,  ' +
+                    '		formapagamento.nome, ' + 
+                    '		filiais.nome, ' +
+                    '   vendashoteis.datavencimento,  ' +
+                    '   entidades_1.nome,  ' +
+                    '		entidades_2.nome,  ' +
+                    '		recibosreceber.id,  ' +
+                    '		faturas.id,  ' +
+                    '		titulosreceber.valorpago ';
+    }else{
+    whereClause +=  ' GROUP BY vendashoteis.id, ' +
+                    '   vendashoteis.observacao,  ' +
+                    '		vendashoteis.solicitante, ' +
+                    '   vendashoteis.datavenda,  ' +
+                    '		Entidades_3.nome,  ' +
+                    '		formapagamento.nome, ' + 
+                    '		filiais.nome, ' +
+                    '   vendashoteis.datavencimento,  ' +
+                    '   entidades_1.nome,  ' +
+                    '		entidades_2.nome,  ' +
+                    '		recibosreceber.id,  ' +
+                    '		faturas.id,  ' +
+                    '		titulosreceber.valorpago ';
+    }
+
+    if(tipo == 'Cliente')
+        whereClause += ' ORDER BY Entidades_3.nome, vendashoteis.datavenda, vendashoteis.id '
+    else
+    if(tipo == 'Emissao')
+      whereClause += ' ORDER BY vendashoteis.datavenda, Entidades_3.nome, vendashoteis.id '
+    else
+    if(tipo == 'Vencimento')
+      whereClause += ' ORDER BY vendashoteis.datavencimento, Entidades_3.nome, vendashoteis.id '
+    else
+    if(tipo == 'Emissor')
+      whereClause += ' ORDER BY Entidades_2.nome, vendashoteis.datavenda, vendashoteis.id '
+    else
+    if(tipo == 'Vendedor')
+      whereClause += ' ORDER BY Entidades_1.nome, vendashoteis.datavenda, vendashoteis.id '
+    else
+    if(tipo == 'Operadora')
+      whereClause += ' ORDER BY Entidades_4.nome, vendashoteis.datavenda, vendashoteis.id ';
+
+    if(tipo == 'Operadora'){
+    const query =
+     `SELECT      vendashoteis.id, 
+                  vendashoteis.observacao, 
+                  ISNULL(vendashoteis.solicitante,'') AS solicitante, 
+                  Entidades_3.nome AS entidade, 
+                  formapagamento.nome AS pagamento,
+                  vendashoteis.datavenda AS dataemissao, 
+                  vendashoteis.datavencimento,  
+                  entidades_1.nome AS vendedor, 
+                  entidades_2.nome AS emissor, 
+                  entidades_4.nome AS operadora,
+                  filiais.nome AS filial,
+                  isnull(recibosreceber.id,0) AS idrecibo, 
+                  isnull(faturas.id,0) AS idfatura, 
+                  ISNULL(titulosreceber.valorpago,0) AS valorpago,
+                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valorassento		
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      vendashoteis INNER JOIN
+                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
+                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
+                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
+        ${whereClause}  `
+    }else{
+    const query =
+     `SELECT      vendashoteis.id, 
+                  vendashoteis.observacao, 
+                  ISNULL(vendashoteis.solicitante,'') AS solicitante, 
+                  Entidades_3.nome AS entidade, 
+                  formapagamento.nome AS pagamento,
+                  vendashoteis.datavenda AS dataemissao, 
+                  vendashoteis.datavencimento,  
+                  entidades_1.nome AS vendedor, 
+                  entidades_2.nome AS emissor, 
+                  filiais.nome AS filial,
+                  isnull(recibosreceber.id,0) AS idrecibo, 
+                  isnull(faturas.id,0) AS idfatura, 
+                  ISNULL(titulosreceber.valorpago,0) AS valorpago,
+                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valorassento		
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      vendashoteis INNER JOIN
+                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
+                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
+                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
+        ${whereClause}  `
+    }
+   const result = await request.query(query);
+   //console.log('DATA::', datainicial, datafinal);  
+   console.log('result::', result.recordset);
+   console.log('QUERY::', query);
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
 
 module.exports = {
   getVendasHotel,
@@ -557,4 +974,6 @@ module.exports = {
   updateVendasHotel,
   deleteVendasHotel,
   getTemBaixa,
+  getRelatoriosAnalitico,
+  getRelatoriosSintetico
 };

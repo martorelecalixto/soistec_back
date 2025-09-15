@@ -135,83 +135,85 @@ const createItemVendaHotel = async (req, res) => {
 const updateItemVendaHotel = async (req, res) => {
   try {
     const {
-      quantidade, pax, observacao, bilhete, trecho, tipovoo, valorbilhete, valortaxabilhete,
-      valortaxaservico, valordesconto, valortotal, idvenda, idciaaerea, idoperadora, voo,
-      tipobilhete, cancelado, valorcomisagente, valorcomisvendedor, valorassento,
-      valorcomisemissor, valorfornecedor, valornet, localembarque, dataembarque,
-      horaembarque, localdesembarque, datadesembarque, horadesembarque, chave
+      quantidade, quantidadediarias, pax, observacao, descricao, periodoini, periodofin,
+      datavencimento, datavencimentofor, valorhotel, valortaxa, valordu, valordesconto,
+      valoroutros, valorcomissao, valorfornecedor, idvenda, idfornecedor, idoperadora,
+      tiposervicohotelid, valorcomisvendedor, idacomodacao, chave, valorcomisemissor,
+      valorextras, tiposervico
     } = req.body;
+
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'ID inválido' });
+    }
+
+   // console.log('updateItemVendaHotel id: -> ' + id);
 
     const pool = await poolPromise;
     await pool.request()
-      .input('id', req.params.id)
-      .input('quantidade', quantidade)
-      .input('pax', pax)
-      .input('observacao', observacao)
-      .input('bilhete', bilhete)
-      .input('trecho', trecho)
-      .input('tipovoo', tipovoo)
-      .input('valorbilhete', valorbilhete)
-      .input('valortaxabilhete', valortaxabilhete)
-      .input('valortaxaservico', valortaxaservico)
-      .input('valordesconto', valordesconto)
-      .input('valortotal', valortotal)
-      .input('idvenda', idvenda)
-      .input('idciaaerea', idciaaerea)
-      .input('idoperadora', idoperadora)
-      .input('voo', voo)
-      .input('tipobilhete', tipobilhete)
-      .input('cancelado', cancelado)
-      .input('valorcomisagente', valorcomisagente)
-      .input('valorcomisvendedor', valorcomisvendedor)
-      .input('valorassento', valorassento)
-      .input('valorcomisemissor', valorcomisemissor)
-      .input('valorfornecedor', valorfornecedor)
-      .input('valornet', valornet)
-      .input('localembarque', localembarque)
-      .input('dataembarque', dataembarque)
-      .input('horaembarque', horaembarque)
-      .input('localdesembarque', localdesembarque)
-      .input('datadesembarque', datadesembarque)
-      .input('horadesembarque', horadesembarque)
-      .input('chave', chave)
+      .input('id', id)
+      .input('quantidade', quantidade ?? null)
+      .input('quantidadediarias', quantidadediarias ?? null)
+      .input('pax', pax ?? null)
+      .input('observacao', observacao ?? null)
+      .input('descricao', descricao ?? null)
+      .input('periodoini', periodoini ?? null)
+      .input('periodofin', periodofin ?? null)
+      .input('datavencimento', datavencimento ?? null)
+      .input('datavencimentofor', datavencimentofor ?? null)
+      .input('valorhotel', valorhotel ?? null)
+      .input('valortaxa', valortaxa ?? null)
+      .input('valordu', valordu ?? null)
+      .input('valordesconto', valordesconto ?? null)
+      .input('valoroutros', valoroutros ?? null)
+      .input('valorcomissao', valorcomissao ?? null)
+      .input('valorfornecedor', valorfornecedor ?? null)
+      .input('idvenda', idvenda ?? null)
+      .input('idfornecedor', idfornecedor ?? null)
+      .input('idoperadora', idoperadora ?? null)
+      .input('tiposervicohotelid', tiposervicohotelid ?? null)
+      .input('valorcomisvendedor', valorcomisvendedor ?? null)
+      .input('idacomodacao', idacomodacao ?? null)
+      .input('chave', chave ?? null)
+      .input('valorcomisemissor', valorcomisemissor ?? null)
+      .input('valorextras', valorextras ?? null)
+      .input('tiposervico', tiposervico ?? null)
       .query(`
-        UPDATE itensvendabilhete SET
+        UPDATE itensvendahotel SET
           quantidade = @quantidade,
+          quantidadediarias = @quantidadediarias,
           pax = @pax,
-          observacao = @observacao,
-          bilhete = @bilhete,
-          trecho = @trecho,
-          tipovoo = @tipovoo,
-          valorbilhete = @valorbilhete,
-          valortaxabilhete = @valortaxabilhete,
-          valortaxaservico = @valortaxaservico,
+          observacao = @observacao, 
+          descricao = @descricao,
+          periodoini = @periodoini,
+          periodofin = @periodofin,
+          datavencimento = @datavencimento,
+          datavencimentofor = @datavencimentofor,
+          valorhotel = @valorhotel,
+          valortaxa = @valortaxa,
+          valordu = @valordu,
           valordesconto = @valordesconto,
-          valortotal = @valortotal,
-          idvenda = @idvenda,
-          idciaaerea = @idciaaerea,
-          idoperadora = @idoperadora,
-          voo = @voo,
-          tipobilhete = @tipobilhete,
-          cancelado = @cancelado,
-          valorcomisagente = @valorcomisagente,
-          valorcomisvendedor = @valorcomisvendedor,
-          valorassento = @valorassento,
-          valorcomisemissor = @valorcomisemissor,
+          valoroutros = @valoroutros,
+          valorcomissao = @valorcomissao,
           valorfornecedor = @valorfornecedor,
-          valornet = @valornet,
-          localembarque = @localembarque,
-          dataembarque = @dataembarque,
-          horaembarque = @horaembarque,
-          localdesembarque = @localdesembarque,
-          datadesembarque = @datadesembarque,
-          horadesembarque = @horadesembarque,
-          chave = @chave
+          idvenda = @idvenda,
+          idfornecedor = @idfornecedor,
+          idoperadora = @idoperadora,
+          tiposervicohotelid = @tiposervicohotelid,
+          valorcomisvendedor = @valorcomisvendedor,
+          idacomodacao = @idacomodacao,
+          chave = @chave,
+          valorcomisemissor = @valorcomisemissor,
+          valorextras = @valorextras,
+          tiposervico = @tiposervico
         WHERE id = @id
       `);
 
+   // console.log('Item atualizado com sucesso id: -> ' + id);
     res.json({ success: true, message: 'Item atualizado com sucesso' });
+
   } catch (error) {
+    console.error('Erro no updateItemVendaHotel:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -357,7 +359,6 @@ const getItensVendaHotelByIdVenda = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
-
 
 // Excluir um item
 const deleteItemVendaHotel = async (req, res) => {

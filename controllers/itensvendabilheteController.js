@@ -218,12 +218,13 @@ const getItensVendaBilheteByIdVenda = async (req, res) => {
       .input('idvenda', req.params.idvenda)
       .query(
         `SELECT 
-                itensvendabilhete.id, itensvendabilhete.quantidade, itensvendabilhete.pax, itensvendabilhete.observacao, itensvendabilhete.bilhete, itensvendabilhete.trecho, itensvendabilhete.tipovoo, itensvendabilhete.valorbilhete, itensvendabilhete.valortaxabilhete,
-                itensvendabilhete.valortaxaservico, itensvendabilhete.valordesconto, itensvendabilhete.valortotal, itensvendabilhete.idvenda, itensvendabilhete.idciaaerea, itensvendabilhete.idoperadora, itensvendabilhete.voo,
-                itensvendabilhete.tipobilhete, itensvendabilhete.cancelado, itensvendabilhete.valorcomisagente, itensvendabilhete.valorcomisvendedor, itensvendabilhete.valorassento,
+                itensvendabilhete.id, itensvendabilhete.quantidade, itensvendabilhete.pax, itensvendabilhete.observacao, itensvendabilhete.bilhete, itensvendabilhete.trecho, isnull(itensvendabilhete.tipovoo,'') AS tipovoo, 
+                isnull(itensvendabilhete.valorbilhete,0) as valorbilhete, isnull(itensvendabilhete.valortaxabilhete,0) AS valortaxabilhete,
+                isnull(itensvendabilhete.valortaxaservico,0) AS valortaxaservico, itensvendabilhete.valordesconto, itensvendabilhete.valortotal, itensvendabilhete.idvenda, itensvendabilhete.idciaaerea, itensvendabilhete.idoperadora, itensvendabilhete.voo,
+                itensvendabilhete.tipobilhete, itensvendabilhete.cancelado, itensvendabilhete.valorcomisagente, itensvendabilhete.valorcomisvendedor, isnull(itensvendabilhete.valorassento,0) AS valorassento,
                 itensvendabilhete.valorcomisemissor, itensvendabilhete.valorfornecedor, itensvendabilhete.valornet, itensvendabilhete.localembarque, itensvendabilhete.dataembarque,
                 itensvendabilhete.horaembarque, itensvendabilhete.localdesembarque, itensvendabilhete.datadesembarque, itensvendabilhete.horadesembarque, itensvendabilhete.chave,
-                entidades.sigla AS cia, entidades_1.nome AS operadora
+                isnull(entidades.sigla,'') AS cia, entidades_1.nome AS operadora
         FROM            itensvendabilhete LEFT OUTER JOIN
                                 entidades ON itensvendabilhete.idciaaerea = entidades.identidade LEFT OUTER JOIN
                                 entidades entidades_1 ON itensvendabilhete.idoperadora = entidades_1.identidade

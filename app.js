@@ -12,6 +12,7 @@ const bancosRoutes = require('./routes/bancosRoutes');
 const centrocustoRoutes = require('./routes/centrocustoRoutes');
 const contasbancariasRoutes = require('./routes/contasbancariasRoutes'); 
 const configuracoesRoutes = require('./routes/configuracoesRoutes'); 
+//const vendashotelRoutes = require('./routes/vendashotelRoutes'); 
 const empresasRoutes = require('./routes/empresasRoutes'); 
 const entidadesRoutes = require('./routes/entidadesRoutes'); 
 const filiaisRoutes = require('./routes/filiaisRoutes'); 

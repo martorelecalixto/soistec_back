@@ -2,6 +2,134 @@ const { query } = require('mssql');
 const { poolPromise } = require('../db');
 
 
+// Obter todos os seguradoras
+const getSeguradorasDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND seg = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Obter todos os locadoras
+const getLocadorasDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND loc = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Obter todos os opreradoras
+const getOperadorasDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND ope = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Obter todos os hoteis
+const getHoteisDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND hot = 1';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT identidade, nome
+            FROM entidades ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Obter todos os CiaAerea
 const getCiasDropDown = async (req, res) => {
   try {
@@ -495,7 +623,6 @@ const updateEntidade = async (req, res) => {
           [for] = @for
           WHERE identidade = @identidade`
       );
-
     res.json({ success: true, message: 'Entidade atualizada com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -2264,10 +2391,133 @@ const getEnderecoById = async (req, res) => {
 const createEndereco = async (req, res) => {
   try {
     const {
+      identidade,
+      logradouro,
+      complemento,
+      numero,
+      cep,
+      bairro,
+      cidade,
+      estado,
+      ativo,
+      referencia,
+      selecionado,
+    } = req.body;
+
+    let ativoEnd = 0;
+    let identidadeEnd = 0;
+
+    const pool = await poolPromise;
+
+    // 🔹 Buscar se já existe endereço principal ativo
+    const resultEnd = await pool
+      .request()
+      .input("identidade", identidade)
+      .query(
+        `SELECT idendereco 
+         FROM Entidades_enderecos
+         WHERE identidade = @identidade AND ativo = 1`
+      );
+
+    if (resultEnd.recordset.length === 0) {
+      // não achou endereço principal → este será o principal
+      ativoEnd = 1;
+    } else {
+      // achou endereço principal
+      identidadeEnd = resultEnd.recordset[0].idendereco;
+      // se o novo endereço também deve ser ativo, desativa o anterior
+      if (ativo === 1) {
+        await pool
+          .request()
+          .input("idendereco", identidadeEnd)
+          .query(
+            `UPDATE Entidades_enderecos 
+             SET ativo = 0
+             WHERE idendereco = @idendereco`
+          );
+        ativoEnd = 1;
+      }
+    }
+
+    // 🔹 Inserir o novo endereço
+    const result = await pool
+      .request()
+      .input("identidade", identidade)
+      .input("logradouro", logradouro)
+      .input("complemento", complemento)
+      .input("numero", numero)
+      .input("cep", cep)
+      .input("bairro", bairro)
+      .input("cidade", cidade)
+      .input("estado", estado)
+      .input("ativo", ativoEnd)
+      .input("referencia", referencia)
+      .input("selecionado", selecionado)
+      .query(
+        `INSERT INTO Entidades_enderecos (
+          identidade, logradouro, complemento, numero, cep, bairro, cidade,
+          estado, ativo, referencia, selecionado
+        ) 
+        OUTPUT INSERTED.idendereco  
+        VALUES (
+          @identidade, @logradouro, @complemento, @numero, @cep, @bairro, @cidade,
+          @estado, @ativo, @referencia, @selecionado
+        )`
+      );
+
+    const id = result.recordset[0].idendereco; // campo certo do OUTPUT
+
+    res
+      .status(201)
+      .json({ success: true, id, message: "endereço criado com sucesso" });
+  } catch (error) {
+    console.error("Erro ao criar endereço:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Erro ao criar endereço: " + error.message });
+  }
+};
+
+
+/*
+// Criar um novo endereço para a entidade
+const createEndereco = async (req, res) => {
+  try {
+    const {
       identidade, logradouro, complemento, numero, cep, bairro, cidade, estado,
       ativo, referencia, selecionado
   } = req.body;
+  /*
+  let ativoEnd = 0;
+  let identidadeEnd = 0;
 
+    // 🔹 Buscar as baixas de pagar
+    await pool
+    .request()
+    .input('identidade', identidade)
+    whereClause = ' WHERE Entidades_enderecos.identidade = @identidade AND Entidades_enderecos.ativo = 1';
+    const queryEnd = `
+      SELECT identidade FROM Entidades_enderecos
+      ${whereClause}
+    `;
+    const resultEnd = await request.query(queryEnd);
+    if (resultEnd.recordset.length == 0) {ativoEnd = 1; }//não achou endereço principal
+    else { identidadeEnd = resultEnd.recordset[0].identidade; ativoEnd = 1;}//achou endereço principal
+
+    if((identidadeEnd > 0)&&(ativo == 1)){//se o endereço atual for o principal, então o ja existente tem que deixar de ser
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('identidade', identidadeEnd)
+      .input('ativo', 0)
+      .input('referencia', referencia)
+      .input('selecionado', selecionado)
+      .query(
+        `UPDATE entidades_enderecos set ativo = @ativo
+          WHERE identidade = @identidade `
+      );
+    }
+*//*
     const pool = await poolPromise;
     const result = await pool
       .request()
@@ -2302,6 +2552,7 @@ const createEndereco = async (req, res) => {
 
   }
 };
+*/
 
 // Atualizar um endereço da entidade existente
 const updateEndereco = async (req, res) => {
@@ -2310,6 +2561,7 @@ const updateEndereco = async (req, res) => {
       identidade, logradouro, complemento, numero, cep, bairro, cidade, estado,
       ativo, referencia, selecionado
     } = req.body;
+
     const pool = await poolPromise;
     await pool
       .request()
@@ -2403,7 +2655,6 @@ const getEnderecoByIdEntidade = async (req, res) => {
 };
 
 
-
 module.exports = {
   getEntidades,
   getEntidadeById,
@@ -2415,6 +2666,10 @@ module.exports = {
   getEmissoresDropDown,
   getCiasDropDown,
   getFornecedoresDropDown,
+  getOperadorasDropDown,
+  getHoteisDropDown,
+  getSeguradorasDropDown,
+  getLocadorasDropDown,
   createCiaAerea,
   updateCiaAerea,
   getCiaAereaById,

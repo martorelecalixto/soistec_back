@@ -55,7 +55,12 @@ const getFormasPagamento = async (req, res) => {
 
     whereClause += ' ORDER BY Nome';
 
-    const query = `SELECT idformapagamento, nome, empresa FROM formapagamento ${whereClause}`;
+    const query = `SELECT idformapagamento, nome, empresa, tipo, debito, credito,  
+      gerartitulofatura, gerartitulovenda, baixaautomatica, vendaparcelada, gerarfatura,
+      addtaxanovalor, addassentonovalor, addravnovalor, addcomissaonovalor, gerartituloservicofor,
+      gerartituloservicocomis, idplanocontaaereo, idplanocontaforaereo, idplanocontaservico,
+      idplanocontaforservico, idplanocontacomisservico, idplanocontapacote  
+      FROM formapagamento ${whereClause}`;
 
     const result = await request.query(query);
     res.json(result.recordset);

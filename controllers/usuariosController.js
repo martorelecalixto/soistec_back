@@ -84,6 +84,8 @@ const deleteUsuario = async (req, res) => {
   }
 };
 
+
+
 module.exports = {
   getUsuarios,
   getUsuarioById,

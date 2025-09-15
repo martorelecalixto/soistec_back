@@ -539,17 +539,41 @@ const deleteTituloReceber = async (req, res) => {
 // Deletar titulos da venda bilhete
 const deleteTituloReceberByVendaBilhete = async (req, res) => {
   try {
-    
+    const idVenda = req.params.idvenda; // pega da rota
+
+   // console.log('Deletando Titulos da Venda Bilhete: ' + idVenda);
+
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input('idvendabilhete', idVenda) // passa corretamente
+      .query('DELETE FROM titulosreceber WHERE idvendabilhete = @idvendabilhete');
+
+    res.json({ success: true, message: 'Titulos deletados com sucesso' });
+    //console.log('Titulos Deletados da Venda Bilhete: ' + idVenda);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+/*
+const deleteTituloReceberByVendaBilhete = async (req, res) => {
+  try {
+    console.log('Deletando Titulos da Venda Bilhete: ' + req.params.idvenda);
     const pool = await poolPromise;
     await pool
       .request()
       .input('idvendabilhete', req.params.idvendabilhete)
       .query('DELETE FROM titulosreceber WHERE idvendabilhete = @idvendabilhete');
     res.json({ success: true, message: 'Titulos deletados com sucesso' });
+    console.log('Titulos Deletados da Venda Bilhete: ' + req.params.idvenda);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+*/
 
 // Deletar titulos da venda bilhete
 const deleteTituloReceberByVendaHotel = async (req, res) => {

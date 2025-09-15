@@ -9,6 +9,10 @@ const getGraficoAereo = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+    //console.log('getGraficoAereo:');
+    //console.log('Empresa:', empresa);
+    //console.log('Data Inicial:', datainicial);
+    //console.log('Data Final:', datafinal);
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
@@ -49,6 +53,7 @@ const getGraficoAereo = async (req, res) => {
           END  AS mes,
           sum(valortotal) as valor from VendasBilhetes 
             ${whereClause}  `
+          //  console.log(query);
    //+ '/' + CAST(YEAR(datavenda) AS VARCHAR(4)) 
    const result = await request.query(query);
    res.json(result.recordset);    
@@ -66,6 +71,10 @@ const getGraficoServico = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+    //console.log('getGraficoServico:');
+    //console.log('Empresa:', empresa);
+    //console.log('Data Inicial:', datainicial);
+    //console.log('Data Final:', datafinal);
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
@@ -122,6 +131,11 @@ const getGraficoPagar = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+    //console.log('getGraficoPagar:');
+    //console.log('Empresa:', empresa);
+    //console.log('Data Inicial:', datainicial);
+    //console.log('Data Final:', datafinal);
+
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
@@ -178,6 +192,10 @@ const getGraficoReceber = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+    //console.log('getGraficoReceber:');
+    //console.log('Empresa:', empresa);
+    //console.log('Data Inicial:', datainicial);
+    //console.log('Data Final:', datafinal);
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
@@ -235,6 +253,7 @@ const getTotais = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+    //console.log('getTotais:');
     //console.log('Empresa:', empresa);
     //console.log('Data Inicial:', datainicial);
     //console.log('Data Final:', datafinal);

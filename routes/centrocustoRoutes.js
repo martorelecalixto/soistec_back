@@ -9,6 +9,8 @@ const centrocustoController = require('../controllers/centrocustoController');
  *   description: Endpoints para gerenciamento de centro custo
  */
 
+router.get('/centrocustopai', centrocustoController.getCentroCustoPaiDropDown);
+
 /**
  * @swagger
  * /api/centrocusto:

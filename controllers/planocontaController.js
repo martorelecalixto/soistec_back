@@ -1,5 +1,40 @@
 const { poolPromise } = require('../db');
 
+// Obter todas as plano conta pai
+const getPlanoContaPaiDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+      let tipo  = 'SINTÉTICO';
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa  ';
+      whereClause += ' AND tipo LIKE @tipo';
+      request.input('tipo', `%${tipo}%`);
+
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT idplanoconta, nome
+            FROM planoconta ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // Obter todas as plano conta
 const getPlanoContaDropDown = async (req, res) => {
@@ -55,7 +90,7 @@ const getPlanoConta = async (req, res) => {
 
     whereClause += ' ORDER BY nome';
 
-    const query = `SELECT idplanoconta, nome, empresa FROM planoconta ${whereClause}`;
+    const query = `SELECT idplanoconta, nome, empresa, estrutura, natureza, idplanocontapai, tipo, idpaigeral, naoresultado FROM planoconta ${whereClause}`;
 
     const result = await request.query(query);
     res.json(result.recordset);
@@ -71,7 +106,7 @@ const getPlanoContaById = async (req, res) => {
     const result = await pool
       .request()
       .input('id', req.params.idplanoconta)
-      .query('SELECT idplanoconta, nome, empresa FROM planoconta WHERE idplanoconta = @idplanoconta');
+      .query('SELECT idplanoconta, nome, empresa, estrutura, natureza, idplanocontapai, tipo, idpaigeral, naoresultado FROM planoconta WHERE idplanoconta = @idplanoconta');
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
@@ -141,6 +176,109 @@ const deletePlanoConta = async (req, res) => {
   }
 };
 
+// Consulta o maior valor de estrutura do Pai
+const temPaiFunc = async (req, res) => {
+  try {
+    const { idPai, empresa } = req.query;
+
+    if (!idPai || !empresa) {
+      return res.status(400).json({
+        success: false,
+        message: 'Os parâmetros "idPai" e "empresa" são obrigatórios.'
+      });
+    }
+
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input('IdPlanoContaPai', idPai);
+    request.input('Empresa', empresa);
+
+    const sql = `
+      SELECT Max(Estrutura) as estrutura
+      FROM PlanoConta
+      WHERE IdPlanoConta = @IdPlanoContaPai
+      AND Empresa = @Empresa
+    `;
+
+    const result = await request.query(sql);
+    const value = result.recordset[0]?.Estrutura || "";
+
+    res.json({ Estrutura: value });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+// Consulta o maior valor de estrutura do Irmão
+const temIrmaoFunc = async (req, res) => {
+  try {
+    const { idPai, empresa } = req.query;
+
+    if (!idPai || !empresa) {
+      return res.status(400).json({
+        success: false,
+        message: 'Os parâmetros "idPai" e "empresa" são obrigatórios.'
+      });
+    }
+
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input('IdPlanoContaPai', idPai);
+    request.input('Empresa', empresa);
+
+    const sql = `
+      SELECT Max(Estrutura) as estrutura
+      FROM PlanoConta
+      WHERE IdPlanoContaPai = @IdPlanoContaPai
+      AND Empresa = @Empresa
+    `;
+
+    const result = await request.query(sql);
+    const value = result.recordset[0]?.Estrutura || "";
+
+    res.json({ Estrutura: value });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+// Consulta o maior valor de estrutura sem Pai
+const semPaiFunc = async (req, res) => {
+  try {
+    const { empresa } = req.query;
+
+    if (!empresa) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "empresa" é obrigatório.'
+      });
+    }
+
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input('Empresa', empresa);
+
+    const sql = `
+      SELECT Max(Estrutura) as estrutura
+      FROM PlanoConta
+      WHERE (IdPlanoContaPai IS NULL OR IdPlanoContaPai = 0)
+      AND Empresa = @Empresa
+    `;
+
+    const result = await request.query(sql);
+    let value = result.recordset[0]?.Estrutura || "0";
+
+    if (!value || value === "") {
+      value = "0";
+    }
+
+    res.json({ Estrutura: value });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+
 module.exports = {
   getPlanoConta,
   getPlanoContaById,
@@ -148,4 +286,8 @@ module.exports = {
   updatePlanoConta,
   deletePlanoConta,
   getPlanoContaDropDown,
+  getPlanoContaPaiDropDown,
+  temPaiFunc,
+  temIrmaoFunc,
+  semPaiFunc
 };

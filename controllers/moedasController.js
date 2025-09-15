@@ -59,7 +59,7 @@ const getMoedas = async (req, res) => {
     whereClause += ' ORDER BY nome ';
 
    const query =
-    `SELECT idmoeda, nome, sigla, 
+    `SELECT idmoeda, nome, sigla, codiso, intsingular, intplural, decsingular, decplural,
       empresa FROM moeda ${whereClause}`
 
    const result = await request.query(query);
@@ -85,7 +85,7 @@ const getMoedaById = async (req, res) => {
       .request()
       .input('id', req.params.id)
       .query(
-        `SELECT id, nome, sigla,
+        `SELECT idmoeda, nome, sigla, codiso, intsingular, intplural, decsingular, decplural,
           empresa FROM moeda  WHERE idmoeda = @id ORDER BY nome`
       );
 
@@ -154,12 +154,22 @@ const updateMoeda = async (req, res) => {
       .input('decplural', decplural)
       .query(
         `UPDATE moeda SET
-          nome = @nome
+          nome = @nome,
+          sigla = @sigla,
+          codiso = @codiso,
+          intsingular = @intsingular,
+          intplural = @intplural,
+          decsingular = @decsingular,
+          decplural = @decplural
         WHERE idmoeda = @idmoeda`
       );
+      //console.log(req.params.idmoeda);
+      //console.log(req.body);
+      //console.log(res.status(500).json({ success: false, message: error.message }));
 
-    res.json({ success: true, message: 'Moeda atualizada com sucesso' });
+      res.json({ success: true, message: 'Moeda atualizada com sucesso' });
   } catch (error) {
+    console.error('Erro ao atualizar moeda:', error); // mostra stack completo
     res.status(500).json({ success: false, message: error.message });
   }
 };

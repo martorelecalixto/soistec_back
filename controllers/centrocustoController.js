@@ -1,5 +1,40 @@
 const { poolPromise } = require('../db');
 
+// Obter todas as centro custo pai
+const getCentroCustoPaiDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+      let tipo  = 'SINTÉTICO';
+
+      request.input('empresa', empresa);
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa  ';
+      whereClause += ' AND tipo LIKE @tipo';
+      request.input('tipo', `%${tipo}%`);
+
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT id, nome
+            FROM centrocustos ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // Obter todas as centrocusto
 const getCentroCustoDropDown = async (req, res) => {
@@ -55,7 +90,7 @@ const getCentroCusto = async (req, res) => {
 
     whereClause += ' ORDER BY nome';
 
-    const query = `SELECT id, nome, empresa FROM centrocustos ${whereClause}`;
+    const query = `SELECT id, nome, empresa, idpai, tipo, idpaigeral FROM centrocustos ${whereClause}`;
 
     const result = await request.query(query);
     res.json(result.recordset);
@@ -71,7 +106,7 @@ const getCentroCustoById = async (req, res) => {
     const result = await pool
       .request()
       .input('id', req.params.id)
-      .query('SELECT id, nome, empresa FROM centrocustos WHERE id = @id');
+      .query('SELECT id, nome, empresa, idpai, tipo, idpaigeral FROM centrocustos WHERE id = @id');
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
@@ -145,4 +180,5 @@ module.exports = {
   updateCentroCusto,
   deleteCentroCusto,
   getCentroCustoDropDown,
+  getCentroCustoPaiDropDown,
 };

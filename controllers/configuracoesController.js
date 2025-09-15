@@ -8,6 +8,7 @@ const getConfiguracoes = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+   // console.log('getConfiguracoes - empresa:', empresa);
 
     const pool = await poolPromise;
     const result = await pool
@@ -23,12 +24,12 @@ const getConfiguracoes = async (req, res) => {
                 lancamentotituloautomatico, utilizarcopet, separartaxanafatura, separarravnafatura, 
                 separarcomissaonafatura, separardescontonafatura, faturacomformapagtodistinto, 
                 emailde, emailremetente, emailsenha, emailsmtp, emailporta, ididiomapadrao, 
-                idclientecaixa, idformapagamentoentrada
+                idclientecaixa, idformapagamentoentrada, qtd_dia_dashboard
          FROM configuracoessistema
          WHERE empresa = @empresa
          `
       );
-
+     //console.log('getConfiguracoes - result:', result.body);
      if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
     } else {
@@ -54,6 +55,7 @@ const getConfiguracaoById = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+   // console.log('getConfiguracaoById - empresa:', empresa);
 
     const pool = await poolPromise;
     const result = await pool
@@ -69,10 +71,12 @@ const getConfiguracaoById = async (req, res) => {
                 lancamentotituloautomatico, utilizarcopet, separartaxanafatura, separarravnafatura, 
                 separarcomissaonafatura, separardescontonafatura, faturacomformapagtodistinto, 
                 emailde, emailremetente, emailsenha, emailsmtp, emailporta, ididiomapadrao, 
-                idclientecaixa, idformapagamentoentrada
+                idclientecaixa, idformapagamentoentrada, qtd_dia_dashboard
          FROM configuracoessistema
          WHERE empresa = @empresa`
       );
+
+      //console.log('getConfiguracaoById - result:', result);
 
       if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
@@ -96,7 +100,8 @@ const createConfiguracao = async (req, res) => {
       idcentrocustorecreembolso, idcentrocustopagreembolso, lancamentotituloautomatico,
       utilizarcopet, separartaxanafatura, separarravnafatura, separarcomissaonafatura,
       separardescontonafatura, faturacomformapagtodistinto, emailde, emailremetente,
-      emailsenha, emailsmtp, emailporta, ididiomapadrao, idclientecaixa, idformapagamentoentrada
+      emailsenha, emailsmtp, emailporta, ididiomapadrao, idclientecaixa, idformapagamentoentrada, 
+      qtd_dia_dashboard
     } = req.body;
 
     const pool = await poolPromise;
@@ -138,6 +143,7 @@ const createConfiguracao = async (req, res) => {
       .input('ididiomapadrao', ididiomapadrao)
       .input('idclientecaixa', idclientecaixa)
       .input('idformapagamentoentrada', idformapagamentoentrada)
+      .input('qtd_dia_dashboard', qtd_dia_dashboard)
       .query(
         `INSERT INTO configuracoessistema (
           idformapagtohotelcli, idformapagtohotelfor, idformapagtohotelcomis, idmoedapadrao,
@@ -148,7 +154,8 @@ const createConfiguracao = async (req, res) => {
           idcentrocustorecreembolso, idcentrocustopagreembolso, lancamentotituloautomatico,
           utilizarcopet, separartaxanafatura, separarravnafatura, separarcomissaonafatura,
           separardescontonafatura, faturacomformapagtodistinto, emailde, emailremetente,
-          emailsenha, emailsmtp, emailporta, ididiomapadrao, idclientecaixa, idformapagamentoentrada
+          emailsenha, emailsmtp, emailporta, ididiomapadrao, idclientecaixa, idformapagamentoentrada, 
+          qtd_dia_dashboard
         ) VALUES (
           @idformapagtohotelcli, @idformapagtohotelfor, @idformapagtohotelcomis, @idmoedapadrao,
           @idfilialpadrao, @empresa, @idcontabancariapadrao, @mensagemfaturapadrao, @condicoesespeciaisfatura,
@@ -158,7 +165,8 @@ const createConfiguracao = async (req, res) => {
           @idcentrocustorecreembolso, @idcentrocustopagreembolso, @lancamentotituloautomatico,
           @utilizarcopet, @separartaxanafatura, @separarravnafatura, @separarcomissaonafatura,
           @separardescontonafatura, @faturacomformapagtodistinto, @emailde, @emailremetente,
-          @emailsenha, @emailsmtp, @emailporta, @ididiomapadrao, @idclientecaixa, @idformapagamentoentrada
+          @emailsenha, @emailsmtp, @emailporta, @ididiomapadrao, @idclientecaixa, @idformapagamentoentrada,
+          @qtd_dia_dashboard
         )`
       );
 
@@ -171,9 +179,9 @@ const createConfiguracao = async (req, res) => {
 // Atualizar configuração
 const updateConfiguracao = async (req, res) => {
   try {
-    console.log(req.params);
-    console.log('ENTROU AQUI');
-    console.log(req.params.id);
+   // console.log(req.params);
+   // console.log('ENTROU AQUI');
+   // console.log(req.params.id);
     const { id } = req.params;
     const {
       idformapagtohotelcli, idformapagtohotelfor, idformapagtohotelcomis, idmoedapadrao,
@@ -184,7 +192,8 @@ const updateConfiguracao = async (req, res) => {
       idcentrocustorecreembolso, idcentrocustopagreembolso, lancamentotituloautomatico,
       utilizarcopet, separartaxanafatura, separarravnafatura, separarcomissaonafatura,
       separardescontonafatura, faturacomformapagtodistinto, emailde, emailremetente,
-      emailsenha, emailsmtp, emailporta, ididiomapadrao, idclientecaixa, idformapagamentoentrada
+      emailsenha, emailsmtp, emailporta, ididiomapadrao, idclientecaixa, idformapagamentoentrada,
+      qtd_dia_dashboard
     } = req.body;
 
     const pool = await poolPromise;
@@ -227,6 +236,7 @@ const updateConfiguracao = async (req, res) => {
       .input('ididiomapadrao', ididiomapadrao)
       .input('idclientecaixa', idclientecaixa)
       .input('idformapagamentoentrada', idformapagamentoentrada)
+      .input('qtd_dia_dashboard', qtd_dia_dashboard)
       .query(
         `UPDATE configuracoessistema SET
           idformapagtohotelcli = @idformapagtohotelcli,
@@ -264,7 +274,8 @@ const updateConfiguracao = async (req, res) => {
           emailporta = @emailporta, 
           ididiomapadrao = @ididiomapadrao,
           idclientecaixa = @idclientecaixa,
-          idformapagamentoentrada = @idformapagamentoentrada
+          idformapagamentoentrada = @idformapagamentoentrada,
+          qtd_dia_dashboard = @qtd_dia_dashboard
         WHERE id = @id`
       );
 
