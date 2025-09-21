@@ -214,6 +214,66 @@ const getTituloPagarByVendaBilhete = async (req, res) => {
   }
 };
 
+// Obter um titulo pagar pelo IDVenda hotel
+const getTituloPagarByVendaHotel = async (req, res) => {
+  try {
+    const { idvenda } = req.params;
+
+    if (!idvenda) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "idtitulo" é obrigatório.' });
+    }
+
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'idvenda' foi fornecido  
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input('idvenda', idvenda);
+
+     const query =
+          `SELECT 
+            TitulosPagar.idtitulo,
+            TitulosPagar.dataemissao,
+            TitulosPagar.datavencimento,
+            TitulosPagar.datacompetencia,
+            TitulosPagar.descricao,
+            TitulosPagar.documento,
+            TitulosPagar.valor,
+            TitulosPagar.valorpago,
+            TitulosPagar.descontopago,
+            TitulosPagar.juropago,
+            TitulosPagar.parcela,
+            TitulosPagar.idvendabilhete,
+            TitulosPagar.idvendahotel,
+            TitulosPagar.idvendapacote,
+            TitulosPagar.identidade,
+            TitulosPagar.idmoeda,
+            TitulosPagar.idformapagamento,
+            TitulosPagar.idplanoconta,
+            TitulosPagar.idcentrocusto,
+            TitulosPagar.idfilial,
+            TitulosPagar.chave,
+            TitulosPagar.empresa,
+            TitulosPagar.idnotacredito,
+            TitulosPagar.idnotadebito,
+            TitulosPagar.idreembolso,
+            TitulosPagar.id,
+            entidades.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            planoconta.nome AS planoconta
+            FROM            TitulosPagar LEFT OUTER JOIN
+                            PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
+                            Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                            FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+            WHERE idvendahotel = @idvenda
+      `;
+
+   const result = await request.query(query);
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Obter baixa pagar pelo IDTitulo
 const getBaixaPagarByTitulo = async (req, res) => {
   try {
@@ -258,133 +318,101 @@ const getBaixaPagarByTitulo = async (req, res) => {
   }
 };
 
-// Criar um novo titulo
-const createTituloPagar = async (req, res) => {
+// Obter todos os titulos pagar
+const getTituloPagarLancamento = async (req, res) => {
   try {
-    console.log('createTituloPagar');
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal  } = req.query;
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
 
-    const {
-          dataemissao,
-          datavencimento,
-          datacompetencia,
-          descricao,
-          documento,
-          valor,
-          valorpago,
-          descontopago,
-          juropago,
-          parcela,
-          idvendabilhete,
-          idvendahotel,
-          idvendapacote,
-          identidade,
-          idmoeda,
-          idformapagamento,
-          idplanoconta,
-          idcentrocusto,
-          idfilial,
-          chave,
-          empresa,
-          idnotacredito,
-          idnotadebito,
-          idreembolso,
-          id
-    } = req.body;
-
+    // Parâmetros obrigatórios
     const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .input('dataemissao', dataemissao)
-      .input('datavencimento', datavencimento)
-      .input('datacompetencia', datacompetencia)
-      .input('descricao', descricao)
-      .input('documento', documento)
-      .input('valor', valor)
-      .input('valorpago', valorpago)
-      .input('descontopago', descontopago)
-      .input('juropago', juropago)
-      .input('parcela', parcela)
-      .input('idvendabilhete', idvendabilhete)
-      .input('idvendahotel', idvendahotel)
-      .input('idvendapacote', idvendapacote)
-      .input('identidade', identidade)
-      .input('idmoeda', idmoeda)
-      .input('idformapagamento', idformapagamento)
-      .input('idplanoconta', idplanoconta)
-      .input('idcentrocusto', idcentrocusto)
-      .input('idfilial', idfilial)
-      .input('chave', chave)
-      .input('empresa', empresa)
-      .input('idnotacredito', idnotacredito)
-      .input('idnotadebito', idnotadebito)
-      .input('idreembolso', idreembolso)
-      .input('id', id)
-      .query(`
-        INSERT INTO titulospagar (
-            dataemissao,
-            datavencimento,
-            datacompetencia,
-            descricao,
-            documento,
-            valor,
-            valorpago,
-            descontopago,
-            juropago,
-            parcela,
-            idvendabilhete,
-            idvendahotel,
-            idvendapacote,
-            identidade,
-            idmoeda,
-            idformapagamento,
-            idplanoconta,
-            idcentrocusto,
-            idfilial,
-            chave,
-            empresa,
-            idnotacredito,
-            idnotadebito,
-            idreembolso,
-            id
-        )
-        OUTPUT INSERTED.idtitulo
-        VALUES (
-            @dataemissao,
-            @datavencimento,
-            @datacompetencia,
-            @descricao,
-            @documento,
-            @valor,
-            @valorpago,
-            @descontopago,
-            @juropago,
-            @parcela,
-            @idvendabilhete,
-            @idvendahotel,
-            @idvendapacote,
-            @identidade,
-            @idmoeda,
-            @idformapagamento,
-            @idplanoconta,
-            @idcentrocusto,
-            @idfilial,
-            @chave,
-            @empresa,
-            @idnotacredito,
-            @idnotadebito,
-            @idreembolso,
-            @id
-        )
-      `);
-    const idtitulo = result.recordset[0].idtitulo;
-    console.log('Titulo Pagar Criado: ' + idtitulo);
+    const request = pool.request();
 
-    res.status(201).json({ success: true, idtitulo, message: 'titulo criada com sucesso' });
+    request.input('empresa', empresa);
+
+    // Parâmetros opcionais
+    let whereClause = 'WHERE titulospagar.empresa = @empresa AND titulospagar.id > 0 ';
+
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND titulospagar.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND titulospagar.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND titulospagar.idmoeda = @idmoeda';
+    }
+    
+    if (datainicial) {
+      request.input('datainicial', datainicial); // Formata a data para incluir hora
+      whereClause += ' AND titulospagar.datavencimento >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND titulospagar.datavencimento <= @datafinal';
+    }
+    
+    whereClause += ' AND titulospagar.valor > titulospagar.valorpago ';
+    whereClause += ' ORDER BY titulospagar.datavencimento desc ';
+
+    const query =
+     `
+        SELECT 
+            TitulosPagar.idtitulo,
+            TitulosPagar.dataemissao,
+            TitulosPagar.datavencimento,
+            TitulosPagar.datacompetencia,
+            TitulosPagar.descricao,
+            TitulosPagar.documento,
+            ISNULL(TitulosPagar.valor,0) AS valor,
+            ISNULL(TitulosPagar.valorpago,0) AS valorpago, 
+            ISNULL(TitulosPagar.descontopago,0) AS descontopago,
+            ISNULL(TitulosPagar.juropago,0) AS juropago,
+            (ISNULL(TitulosPagar.valor,0) - ISNULL(TitulosPagar.valorpago,0)) AS valoraberto,
+            TitulosPagar.parcela,
+            TitulosPagar.idvendabilhete,
+            TitulosPagar.idvendahotel,
+            TitulosPagar.idvendapacote,
+            TitulosPagar.identidade,
+            TitulosPagar.idmoeda,
+            TitulosPagar.idformapagamento,
+            TitulosPagar.idplanoconta,
+            TitulosPagar.idcentrocusto,
+            TitulosPagar.idfilial,
+            TitulosPagar.chave,
+            TitulosPagar.empresa,
+            TitulosPagar.idnotacredito,
+            TitulosPagar.idnotadebito,
+            TitulosPagar.idreembolso,
+            TitulosPagar.id,
+            entidades.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            planoconta.nome AS planoconta,
+            'PAGAR' AS tipo,
+            CAST(0 AS BIT) AS selecionado
+            FROM            TitulosPagar LEFT OUTER JOIN
+                            PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
+                            Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                            FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+
+            ${whereClause}  `
+   const result = await request.query(query);
+   res.json(result.recordset);    
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).send(error.message);
   }
 };
-
 
 // Atualizar um titulo existente
 const updateTituloPagar = async (req, res) => {
@@ -470,7 +498,6 @@ const updateTituloPagar = async (req, res) => {
   }
 };
 
-
 // Deletar um titulo
 const deleteTituloPagar = async (req, res) => {
   try {
@@ -485,18 +512,21 @@ const deleteTituloPagar = async (req, res) => {
   }
 };
 
-
 // Deletar titulos da venda bilhete
 const deleteTituloPagarByVendaBilhete = async (req, res) => {
   try {
-    
+    const idVenda = req.params.idvenda; // pega da rota
+
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idvendabilhete', req.params.idvendabilhete)
+      .input('idvendabilhete', idVenda) // passa corretamente
       .query('DELETE FROM titulospagar WHERE idvendabilhete = @idvendabilhete');
+
     res.json({ success: true, message: 'Titulos deletados com sucesso' });
+    //console.log('Titulos Deletados da Venda Bilhete: ' + idVenda);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -504,13 +534,18 @@ const deleteTituloPagarByVendaBilhete = async (req, res) => {
 // Deletar titulos da venda bilhete
 const deleteTituloPagarByVendaHotel = async (req, res) => {
   try {
+    const idVenda = req.params.idvenda; // pega da rota
+
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idvendahotel', req.params.idvendahotel)
+      .input('idvendahotel', idVenda) // passa corretamente
       .query('DELETE FROM titulospagar WHERE idvendahotel = @idvendahotel');
+
     res.json({ success: true, message: 'Titulos deletados com sucesso' });
+    //console.log('Titulos Deletados da Venda Bilhete: ' + idVenda);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -862,21 +897,158 @@ const createBaixasPagarGenerica = async (req, res) => {
   }
 };
 
-// Obter todos os titulos pagar
-const getTituloPagarLancamento = async (req, res) => {
+// Criar um novo titulo
+const createTituloPagar = async (req, res) => {
   try {
-    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal  } = req.query;
+    console.log('createTituloPagar');
+
+    const {
+          dataemissao,
+          datavencimento,
+          datacompetencia,
+          descricao,
+          documento,
+          valor,
+          valorpago,
+          descontopago,
+          juropago,
+          parcela,
+          idvendabilhete,
+          idvendahotel,
+          idvendapacote,
+          identidade,
+          idmoeda,
+          idformapagamento,
+          idplanoconta,
+          idcentrocusto,
+          idfilial,
+          chave,
+          empresa,
+          idnotacredito,
+          idnotadebito,
+          idreembolso,
+          id
+    } = req.body;
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('dataemissao', dataemissao)
+      .input('datavencimento', datavencimento)
+      .input('datacompetencia', datacompetencia)
+      .input('descricao', descricao)
+      .input('documento', documento)
+      .input('valor', valor)
+      .input('valorpago', valorpago)
+      .input('descontopago', descontopago)
+      .input('juropago', juropago)
+      .input('parcela', parcela)
+      .input('idvendabilhete', idvendabilhete)
+      .input('idvendahotel', idvendahotel)
+      .input('idvendapacote', idvendapacote)
+      .input('identidade', identidade)
+      .input('idmoeda', idmoeda)
+      .input('idformapagamento', idformapagamento)
+      .input('idplanoconta', idplanoconta)
+      .input('idcentrocusto', idcentrocusto)
+      .input('idfilial', idfilial)
+      .input('chave', chave)
+      .input('empresa', empresa)
+      .input('idnotacredito', idnotacredito)
+      .input('idnotadebito', idnotadebito)
+      .input('idreembolso', idreembolso)
+      .input('id', id)
+      .query(`
+        INSERT INTO titulospagar (
+            dataemissao,
+            datavencimento,
+            datacompetencia,
+            descricao,
+            documento,
+            valor,
+            valorpago,
+            descontopago,
+            juropago,
+            parcela,
+            idvendabilhete,
+            idvendahotel,
+            idvendapacote,
+            identidade,
+            idmoeda,
+            idformapagamento,
+            idplanoconta,
+            idcentrocusto,
+            idfilial,
+            chave,
+            empresa,
+            idnotacredito,
+            idnotadebito,
+            idreembolso,
+            id
+        )
+        OUTPUT INSERTED.idtitulo
+        VALUES (
+            @dataemissao,
+            @datavencimento,
+            @datacompetencia,
+            @descricao,
+            @documento,
+            @valor,
+            @valorpago,
+            @descontopago,
+            @juropago,
+            @parcela,
+            @idvendabilhete,
+            @idvendahotel,
+            @idvendapacote,
+            @identidade,
+            @idmoeda,
+            @idformapagamento,
+            @idplanoconta,
+            @idcentrocusto,
+            @idfilial,
+            @chave,
+            @empresa,
+            @idnotacredito,
+            @idnotadebito,
+            @idreembolso,
+            @id
+        )
+      `);
+    const idtitulo = result.recordset[0].idtitulo;
+    console.log('Titulo Pagar Criado: ' + idtitulo);
+
+    res.status(201).json({ success: true, idtitulo, message: 'titulo criada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Obter relatorios analítico de titulos a pagar
+const getRelatoriosAnalitico = async (req, res) => {
+  try {
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
+            vencimentoinicial, vencimentofinal, idformapagamento, idgrupo,
+            tituloinicial, titulofinal, aereoinicial, aereofinal, servicoinicial, 
+            servicofinal, tipo, situacao
+     } = req.query;
     const sql = require('mssql');
+    //console.log('REQUISIÇÃO::', req.query);
+    //console.log('EMPRESA::', empresa);
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
-    }
+    }    
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
     const request = pool.request();
 
     request.input('empresa', empresa);
+
+    let groupClause = '';
+    let orderClause = '';
+    let script = '';
 
     // Parâmetros opcionais
     let whereClause = 'WHERE titulospagar.empresa = @empresa AND titulospagar.id > 0 ';
@@ -897,71 +1069,192 @@ const getTituloPagarLancamento = async (req, res) => {
       whereClause += ' AND titulospagar.idmoeda = @idmoeda';
     }
     
+    if (idgrupo) {
+      request.input('idgrupo', idgrupo);
+      whereClause += ' AND (vendasbilhetes.idgrupo = @idgrupo OR vendashoteis.idgrupo = @idgrupo) ';
+    }
+
+    if (idformapagamento) {
+      request.input('idformapagamento', idformapagamento);
+      whereClause += ' AND titulospagar.idformapagamento = @idformapagamento';
+    }
+
     if (datainicial) {
-      request.input('datainicial', datainicial); // Formata a data para incluir hora
-      whereClause += ' AND titulospagar.datavencimento >= @datainicial';
+      request.input('datainicial', datainicial);
+      whereClause += ' AND titulospagar.dataemissao >= @datainicial';
     }
     
     if (datafinal) {
       request.input('datafinal', datafinal);
-      whereClause += ' AND titulospagar.datavencimento <= @datafinal';
+      whereClause += ' AND titulospagar.dataemissao <= @datafinal';
+    }
+
+    if (vencimentoinicial) {
+      request.input('vencimentoinicial', vencimentoinicial);
+      whereClause += ' AND titulospagar.datavencimento >= @vencimentoinicial';
     }
     
-    whereClause += ' AND titulospagar.valor > titulospagar.valorpago ';
-    whereClause += ' ORDER BY titulospagar.datavencimento desc ';
+    if (vencimentofinal) {
+      request.input('vencimentofinal', vencimentofinal);
+      whereClause += ' AND titulospagar.datavencimento <= @vencimentofinal';
+    }
 
-    const query =
-     `
-        SELECT 
-            TitulosPagar.idtitulo,
-            TitulosPagar.dataemissao,
-            TitulosPagar.datavencimento,
-            TitulosPagar.datacompetencia,
-            TitulosPagar.descricao,
-            TitulosPagar.documento,
-            ISNULL(TitulosPagar.valor,0) AS valor,
-            ISNULL(TitulosPagar.valorpago,0) AS valorpago, 
-            ISNULL(TitulosPagar.descontopago,0) AS descontopago,
-            ISNULL(TitulosPagar.juropago,0) AS juropago,
-            (ISNULL(TitulosPagar.valor,0) - ISNULL(TitulosPagar.valorpago,0)) AS valoraberto,
-            TitulosPagar.parcela,
-            TitulosPagar.idvendabilhete,
-            TitulosPagar.idvendahotel,
-            TitulosPagar.idvendapacote,
-            TitulosPagar.identidade,
-            TitulosPagar.idmoeda,
-            TitulosPagar.idformapagamento,
-            TitulosPagar.idplanoconta,
-            TitulosPagar.idcentrocusto,
-            TitulosPagar.idfilial,
-            TitulosPagar.chave,
-            TitulosPagar.empresa,
-            TitulosPagar.idnotacredito,
-            TitulosPagar.idnotadebito,
-            TitulosPagar.idreembolso,
-            TitulosPagar.id,
-            entidades.nome AS entidade,
-            formapagamento.nome AS pagamento,
-            planoconta.nome AS planoconta,
-            'PAGAR' AS tipo,
-            CAST(0 AS BIT) AS selecionado
-            FROM            TitulosPagar LEFT OUTER JOIN
-                            PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
-                            Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
-                            FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+    if (tituloinicial) {
+      request.input('tituloinicial', tituloinicial);
+      whereClause += ' AND titulospagar.id >= @tituloinicial';
+    }
+    
+    if (titulofinal) {
+      request.input('titulofinal', titulofinal);
+      whereClause += ' AND titulospagar.id <= @titulofinal';
+    }
 
-            ${whereClause}  `
+    if (aereoinicial) {
+      request.input('aereoinicial', aereoinicial);
+      whereClause += ' AND vendasbilhetes.id >= @aereoinicial';
+    }
+    
+    if (aereofinal) {
+      request.input('aereofinal', aereofinal);
+      whereClause += ' AND vendasbilhetes.id <= @aereofinal';
+    }
+
+    if (servicoinicial) {
+      request.input('servicoinicial', servicoinicial);
+      whereClause += ' AND vendashoteis.id >= @servicoinicial';
+    }
+    
+    if (servicofinal) {
+      request.input('servicofinal', servicofinal);
+      whereClause += ' AND vendashoteis.id <= @servicofinal';
+    }
+
+    if(situacao == 'ABERTO')
+      whereClause += ' AND titulospagar.valor > titulospagar.valorpago '
+    if(situacao == 'QUITADO')
+      whereClause += ' AND titulospagar.valor = titulospagar.valorpago '
+
+
+    if(tipo == 'Fornecedor')
+        orderClause += ' ORDER BY Entidades.nome, titulospagar.dataemissao, titulospagar.id '
+    else
+    if(tipo == 'Emissao')
+      orderClause += ' ORDER BY titulospagar.dataemissao, Entidades.nome, titulospagar.id '
+    else
+    if(tipo == 'Vencimento')
+      orderClause += ' ORDER BY titulospagar.datavencimento, Entidades.nome, titulospagar.id '
+    else
+    if(tipo == 'Pagamento')
+      orderClause += ' ORDER BY FormaPagamento.nome, titulospagar.dataemissao, titulospagar.id '
+    else
+    if(tipo == 'PlanoConta')
+      orderClause += ' ORDER BY PlanoConta.nome, titulospagar.dataemissao, titulospagar.id'
+    else
+    if(tipo == 'Baixa'){
+      whereClause += ' AND BaixasPagar.id > 0';
+      orderClause += ' ORDER BY titulospagar.id, titulospagar.databaixa';
+    }
+
+    if(tipo == 'Baixa'){
+      groupClause += ' GROUP BY   Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, titulospagar.Id, titulospagar.Valor, '+
+                     ' titulospagar.ValorPago, titulospagar.Descricao, titulospagar.DataEmissao, titulospagar.DataVencimento, titulospagar.descontopago, ' + 
+                     ' titulospagar.juropago, BaixasPagar.id, BaixasPagar.databaixa, BaixasPagar.ValorPago, BaixasPagar.juropago, ' +
+                     ' BaixasPagar.descontopago, Bancos.nome, ContasBancarias.NumeroConta ';
+    }else{
+      groupClause += ' GROUP BY   Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, titulospagar.Id, titulospagar.Valor, titulospagar.ValorPago, titulospagar.Descricao, titulospagar.DataEmissao, titulospagar.DataVencimento, titulospagar.descontopago, titulospagar.juropago ';
+    }
+
+
+    if(tipo == 'Baixa'){
+      script =
+      `
+        SELECT        Entidades.Nome AS entidade, 
+                      Filiais.Nome AS filial, 
+                      PlanoConta.Nome AS planoconta, 
+                      FormaPagamento.Nome AS pagamento,
+                      TitulosPagar.Id AS idtitulo, 
+                      TitulosPagar.valor, 
+                      isnull(TitulosPagar.valorpago,0) AS valorpago, 
+                      (isnull(TitulosPagar.valor,0) - isnull(TitulosPagar.valorpago,0)) AS valoraberto,
+                      isnull(TitulosPagar.descontopago,0) AS descontopago, 
+                      isnull(TitulosPagar.juropago,0) AS juropago, 
+                      TitulosPagar.descricao, 
+                      TitulosPagar.dataemissao, 
+                      TitulosPagar.datavencimento,
+                      BaixasPagar.id,
+                      BaixasPagar.databaixa AS datapagamento,
+                      BaixasPagar.ValorPago AS valorbaixa,
+                      BaixasPagar.juropago,
+                      BaixasPagar.descontopago,
+            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
+        FROM            PlanoConta INNER JOIN
+                                Entidades INNER JOIN
+                                TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
+                                FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta LEFT OUTER JOIN
+                                Grupos RIGHT OUTER JOIN
+                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo ON TitulosPagar.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                Grupos AS Grupos_1 RIGHT OUTER JOIN
+                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON TitulosPagar.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
+                                
+       `
+    }else{
+    //const query =
+    script =
+      `
+        SELECT        Entidades.Nome AS entidade, 
+                      Filiais.Nome AS filial, 
+                      PlanoConta.Nome AS planoconta, 
+                      FormaPagamento.Nome AS pagamento,
+                      TitulosPagar.Id AS idtitulo, 
+                      TitulosPagar.valor, 
+                      isnull(TitulosPagar.valorpago,0) AS valorpago, 
+                      (isnull(TitulosPagar.valor,0) - isnull(TitulosPagar.valorpago,0)) AS valoraberto,
+                      isnull(TitulosPagar.descontopago,0) AS descontopago, 
+                      isnull(TitulosPagar.juropago,0) AS juropago, 
+                      TitulosPagar.descricao, 
+                      TitulosPagar.dataemissao, 
+                      TitulosPagar.datavencimento
+        FROM            PlanoConta INNER JOIN
+                                Entidades INNER JOIN
+                                TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
+                                FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta LEFT OUTER JOIN
+                                Grupos RIGHT OUTER JOIN
+                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo ON TitulosPagar.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                Grupos AS Grupos_1 RIGHT OUTER JOIN
+                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON TitulosPagar.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
+                                
+       `
+    }
+
+    const query = 
+     `  ${script} ${whereClause} ${groupClause} ${orderClause} `
+
    const result = await request.query(query);
+   //console.log('DATA::', datainicial, datafinal);  
+   //console.log('result::', result.recordset);
+  // console.log('QUERY::', query);
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);
   }
 };
 
+
 module.exports = {
   getTituloPagar,
   getTituloPagarById,
   getTituloPagarByVendaBilhete,
+  getTituloPagarByVendaHotel,
   getBaixaPagarByTitulo,
   createTituloPagar,
   updateTituloPagar,
@@ -972,5 +1265,6 @@ module.exports = {
   createBaixaPagar,
   deleteBaixasPagar,
   getTituloPagarLancamento,
-  createBaixasPagarGenerica
+  createBaixasPagarGenerica,
+  getRelatoriosAnalitico
 };

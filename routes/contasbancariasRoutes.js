@@ -6,7 +6,7 @@ router.get('/', contasbancariasController.getContasBancarias);
 
 router.post('/', contasbancariasController.createContaBancaria);
 
-router.put('/:id', contasbancariasController.updateContaBancaria);
+router.put('/:idcontabancaria', contasbancariasController.updateContaBancaria);
 
 router.delete('/:id', contasbancariasController.deleteContaBancaria);
 

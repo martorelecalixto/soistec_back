@@ -94,7 +94,7 @@ const getBancos = async (req, res) => {
     whereClause += ' ORDER BY nome ';
 
    const query =
-    `SELECT idbanco, nome, 
+    `SELECT idbanco, nome, isnull(numero,'') as numero,
       empresa FROM bancos ${whereClause}`
 
    const result = await request.query(query);
@@ -120,7 +120,7 @@ const getBancoById = async (req, res) => {
       .request()
       .input('idbanco', req.params.id)
       .query(
-        `SELECT idbanco, nome, 
+        `SELECT idbanco, nome, isnull(numero,'') as numero,
           empresa FROM bancos  WHERE idbanco = @idbanco ORDER BY nome`
       );
 
@@ -169,11 +169,11 @@ const updateBanco = async (req, res) => {
     const {
       nome, numero
     } = req.body;
-
+console.log(req.params.idbanco);
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idbanco', req.params.id)
+      .input('idbanco', req.params.idbanco)
       .input('nome', nome)
       .input('numero', numero)
       .query(
@@ -228,10 +228,10 @@ const getLancamento = async (req, res) => {
       whereClause += ' AND lancamentos.idfilial = @idfilial';
     }
 
-    if (idmoeda) {
-      request.input('idmoeda', idmoeda);
-      whereClause += ' AND lancamentos.idmoeda = @idmoeda';
-    }
+   // if (idmoeda) {
+   //   request.input('idmoeda', idmoeda);
+   //   whereClause += ' AND lancamentos.idmoeda = @idmoeda';
+   // }
     
     if (idcontabancaria) {
       request.input('idcontabancaria', idcontabancaria);
@@ -270,6 +270,9 @@ const getLancamento = async (req, res) => {
                   FormaPagamento ON Lancamentos.IdOperacaoBancaria = FormaPagamento.IdFormaPagamento
             ${whereClause}  `
    const result = await request.query(query);
+  // console.log('query');
+  // console.log('result');
+  // console.log(result.recordset);
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);

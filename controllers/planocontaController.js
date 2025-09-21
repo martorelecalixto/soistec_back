@@ -88,7 +88,7 @@ const getPlanoConta = async (req, res) => {
       request.input('nome', `%${nome}%`);
     }
 
-    whereClause += ' ORDER BY nome';
+    whereClause += ' ORDER BY empresa, estrutura';
 
     const query = `SELECT idplanoconta, nome, empresa, estrutura, natureza, idplanocontapai, tipo, idpaigeral, naoresultado FROM planoconta ${whereClause}`;
 
@@ -106,7 +106,7 @@ const getPlanoContaById = async (req, res) => {
     const result = await pool
       .request()
       .input('id', req.params.idplanoconta)
-      .query('SELECT idplanoconta, nome, empresa, estrutura, natureza, idplanocontapai, tipo, idpaigeral, naoresultado FROM planoconta WHERE idplanoconta = @idplanoconta');
+      .query('SELECT idplanoconta, nome, empresa, estrutura, natureza, idplanocontapai, tipo, idpaigeral, naoresultado FROM planoconta WHERE idplanoconta = @idplanoconta ORDER BY empresa, estrutura');
 
     if (result.recordset.length > 0) {
       res.json(result.recordset[0]);
@@ -167,7 +167,7 @@ const deletePlanoConta = async (req, res) => {
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idplanoconta', req.params.id)
+      .input('idplanoconta', req.params.idplanoconta)
       .query('DELETE FROM planoconta WHERE idplanoconta = @idplanoconta');
 
     res.json({ success: true, message: 'Plano Conta deletado com sucesso' });
@@ -199,9 +199,8 @@ const temPaiFunc = async (req, res) => {
       WHERE IdPlanoConta = @IdPlanoContaPai
       AND Empresa = @Empresa
     `;
-
     const result = await request.query(sql);
-    const value = result.recordset[0]?.Estrutura || "";
+    const value = result.recordset[0]?.estrutura || "";
 
     res.json({ Estrutura: value });
   } catch (error) {
@@ -234,7 +233,7 @@ const temIrmaoFunc = async (req, res) => {
     `;
 
     const result = await request.query(sql);
-    const value = result.recordset[0]?.Estrutura || "";
+    const value = result.recordset[0]?.estrutura || "";
 
     res.json({ Estrutura: value });
   } catch (error) {
@@ -266,7 +265,7 @@ const semPaiFunc = async (req, res) => {
     `;
 
     const result = await request.query(sql);
-    let value = result.recordset[0]?.Estrutura || "0";
+    let value = result.recordset[0]?.estrutura || "0";
 
     if (!value || value === "") {
       value = "0";

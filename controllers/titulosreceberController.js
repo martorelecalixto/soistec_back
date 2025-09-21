@@ -168,7 +168,7 @@ const getTituloReceberById = async (req, res) => {
   }
 };
 
-// Obter um titulo receber pelo IDVenda
+// Obter um titulo receber pelo IDVenda Aereo
 const getTituloReceberByVendaBilhete = async (req, res) => {
   try {
     const { idvenda } = req.params;
@@ -237,6 +237,75 @@ const getTituloReceberByVendaBilhete = async (req, res) => {
   }
 };
 
+// Obter um titulo receber pelo IDVenda Hotel
+const getTituloReceberByVendaHotel = async (req, res) => {
+  try {
+    const { idvenda } = req.params;
+
+    if (!idvenda) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "idtitulo" é obrigatório.' });
+    }
+
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'idvenda' foi fornecido  
+    const pool = await poolPromise;
+    const request = pool.request();
+    request.input('idvenda', idvenda);
+
+    //const result = await pool
+     // .request()
+     // .input('idvenda',  req.params.idvenda)
+     // .query(`
+     const query =
+          `SELECT 
+            TitulosReceber.idtitulo,
+            TitulosReceber.dataemissao,
+            TitulosReceber.datavencimento,
+            TitulosReceber.datacompetencia,
+            TitulosReceber.descricao,
+            TitulosReceber.documento,
+            TitulosReceber.valor,
+            TitulosReceber.valorpago,
+            TitulosReceber.descontopago,
+            TitulosReceber.juropago,
+            TitulosReceber.parcela,
+            TitulosReceber.idvendabilhete,
+            TitulosReceber.idvendahotel,
+            TitulosReceber.idvendapacote,
+            TitulosReceber.idfatura,
+            TitulosReceber.identidade,
+            TitulosReceber.idmoeda,
+            TitulosReceber.idformapagamento,
+            TitulosReceber.idplanoconta,
+            TitulosReceber.idcentrocusto,
+            TitulosReceber.idfilial,
+            TitulosReceber.chave,
+            TitulosReceber.empresa,
+            TitulosReceber.comissao,
+            TitulosReceber.idnotacredito,
+            TitulosReceber.idnotadebito,
+            TitulosReceber.idreembolso,
+            TitulosReceber.id,
+            TitulosReceber.idnf,
+            TitulosReceber.numeronf,
+            TitulosReceber.titulovalorentrada,
+            entidades.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            planoconta.nome AS planoconta
+            FROM            TitulosReceber LEFT OUTER JOIN
+                            PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
+                            Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                            FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+            WHERE idvendahotel = @idvenda
+      `;
+
+   const result = await request.query(query);
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Obter baixa receber pelo IDTitulo
 const getBaixaReceberByTitulo = async (req, res) => {
   try {
@@ -281,148 +350,105 @@ const getBaixaReceberByTitulo = async (req, res) => {
   }
 };
 
-// Criar um novo titulo
-const createTituloReceber = async (req, res) => {
+// Obter todos os titulos receber
+const getTituloReceberLancamento = async (req, res) => {
   try {
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal  } = req.query;
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
 
-    const {
-          dataemissao,
-          datavencimento,
-          datacompetencia,
-          descricao,
-          documento,
-          valor,
-          valorpago,
-          descontopago,
-          juropago,
-          parcela,
-          idvendabilhete,
-          idvendahotel,
-          idvendapacote,
-          idfatura,
-          identidade,
-          idmoeda,
-          idformapagamento,
-          idplanoconta,
-          idcentrocusto,
-          idfilial,
-          chave,
-          empresa,
-          comissao,
-          idnotacredito,
-          idnotadebito,
-          idreembolso,
-          id,
-          idnf,
-          numeronf,
-          titulovalorentrada
-    } = req.body;
-
+    // Parâmetros obrigatórios
     const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .input('dataemissao', dataemissao)
-      .input('datavencimento', datavencimento)
-      .input('datacompetencia', datacompetencia)
-      .input('descricao', descricao)
-      .input('documento', documento)
-      .input('valor', valor)
-      .input('valorpago', valorpago)
-      .input('descontopago', descontopago)
-      .input('juropago', juropago)
-      .input('parcela', parcela)
-      .input('idvendabilhete', idvendabilhete)
-      .input('idvendahotel', idvendahotel)
-      .input('idvendapacote', idvendapacote)
-      .input('idfatura', idfatura)
-      .input('identidade', identidade)
-      .input('idmoeda', idmoeda)
-      .input('idformapagamento', idformapagamento)
-      .input('idplanoconta', idplanoconta)
-      .input('idcentrocusto', idcentrocusto)
-      .input('idfilial', idfilial)
-      .input('chave', chave)
-      .input('empresa', empresa)
-      .input('comissao', comissao)
-      .input('idnotacredito', idnotacredito)
-      .input('idnotadebito', idnotadebito)
-      .input('idreembolso', idreembolso)
-      .input('id', id)
-      .input('idnf', idnf)
-      .input('numeronf', numeronf)
-      .input('titulovalorentrada', titulovalorentrada)
-      .query(`
-        INSERT INTO titulosreceber (
-            dataemissao,
-            datavencimento,
-            datacompetencia,
-            descricao,
-            documento,
-            valor,
-            valorpago,
-            descontopago,
-            juropago,
-            parcela,
-            idvendabilhete,
-            idvendahotel,
-            idvendapacote,
-            idfatura,
-            identidade,
-            idmoeda,
-            idformapagamento,
-            idplanoconta,
-            idcentrocusto,
-            idfilial,
-            chave,
-            empresa,
-            comissao,
-            idnotacredito,
-            idnotadebito,
-            idreembolso,
-            id,
-            idnf,
-            numeronf,
-            titulovalorentrada
-        )
-        OUTPUT INSERTED.idtitulo
-        VALUES (
-            @dataemissao,
-            @datavencimento,
-            @datacompetencia,
-            @descricao,
-            @documento,
-            @valor,
-            @valorpago,
-            @descontopago,
-            @juropago,
-            @parcela,
-            @idvendabilhete,
-            @idvendahotel,
-            @idvendapacote,
-            @idfatura,
-            @identidade,
-            @idmoeda,
-            @idformapagamento,
-            @idplanoconta,
-            @idcentrocusto,
-            @idfilial,
-            @chave,
-            @empresa,
-            @comissao,
-            @idnotacredito,
-            @idnotadebito,
-            @idreembolso,
-            @id,
-            @idnf,
-            @numeronf,
-            @titulovalorentrada
-        )
-      `);
-    const idtitulo = result.recordset[0].idtitulo;
+    const request = pool.request();
 
-    res.status(201).json({ success: true, idtitulo, message: 'titulo criada com sucesso' });
+    request.input('empresa', empresa);
+
+    // Parâmetros opcionais
+    let whereClause = 'WHERE titulosreceber.empresa = @empresa AND titulosreceber.id > 0 ';
+
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND titulosreceber.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND titulosreceber.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND titulosreceber.idmoeda = @idmoeda';
+    }
+    
+    if (datainicial) {
+      request.input('datainicial', datainicial); // Formata a data para incluir hora
+      whereClause += ' AND titulosreceber.datavencimento >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND titulosreceber.datavencimento <= @datafinal';
+    }
+    
+    whereClause += ' AND titulosreceber.valor > titulosreceber.valorpago ';
+
+    whereClause += ' ORDER BY titulosreceber.datavencimento desc ';
+
+    const query =
+     `
+        SELECT 
+            TitulosReceber.idtitulo,
+            TitulosReceber.dataemissao,
+            TitulosReceber.datavencimento,
+            TitulosReceber.datacompetencia,
+            TitulosReceber.descricao,
+            TitulosReceber.documento,
+            ISNULL(TitulosReceber.valor,0) AS valor,
+            ISNULL(TitulosReceber.valorpago,0) AS valorpago,
+            ISNULL(TitulosReceber.descontopago,0) AS descontopago,
+            ISNULL(TitulosReceber.juropago,0) AS juropago,
+            (ISNULL(TitulosReceber.valor,0) - ISNULL(TitulosReceber.valorpago,0)) AS valoraberto,
+            TitulosReceber.parcela,
+            TitulosReceber.idvendabilhete,
+            TitulosReceber.idvendahotel,
+            TitulosReceber.idvendapacote,
+            TitulosReceber.idfatura,
+            TitulosReceber.identidade,
+            TitulosReceber.idmoeda,
+            TitulosReceber.idformapagamento,
+            TitulosReceber.idplanoconta,
+            TitulosReceber.idcentrocusto,
+            TitulosReceber.idfilial,
+            TitulosReceber.chave,
+            TitulosReceber.empresa,
+            TitulosReceber.comissao,
+            TitulosReceber.idnotacredito,
+            TitulosReceber.idnotadebito,
+            TitulosReceber.idreembolso,
+            TitulosReceber.id,
+            TitulosReceber.idnf,
+            TitulosReceber.numeronf,
+            TitulosReceber.titulovalorentrada,
+            entidades.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            planoconta.nome AS planoconta,
+            'RECEBER' AS tipo,
+            CAST(0 AS BIT) AS selecionado
+            FROM            TitulosReceber LEFT OUTER JOIN
+                            PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
+                            Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                            FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+
+            ${whereClause}  `
+   const result = await request.query(query);
+   res.json(result.recordset);    
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).send(error.message);
   }
 };
 
@@ -557,34 +583,21 @@ const deleteTituloReceberByVendaBilhete = async (req, res) => {
   }
 };
 
-
-/*
-const deleteTituloReceberByVendaBilhete = async (req, res) => {
-  try {
-    console.log('Deletando Titulos da Venda Bilhete: ' + req.params.idvenda);
-    const pool = await poolPromise;
-    await pool
-      .request()
-      .input('idvendabilhete', req.params.idvendabilhete)
-      .query('DELETE FROM titulosreceber WHERE idvendabilhete = @idvendabilhete');
-    res.json({ success: true, message: 'Titulos deletados com sucesso' });
-    console.log('Titulos Deletados da Venda Bilhete: ' + req.params.idvenda);
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-*/
-
-// Deletar titulos da venda bilhete
+// Deletar titulos da venda hotel
 const deleteTituloReceberByVendaHotel = async (req, res) => {
   try {
+    const idVenda = req.params.idvenda; // pega da rota
+
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idvendahotel', req.params.idvendahotel)
+      .input('idvendahotel', idVenda) // passa corretamente
       .query('DELETE FROM titulosreceber WHERE idvendahotel = @idvendahotel');
+
     res.json({ success: true, message: 'Titulos deletados com sucesso' });
+    //console.log('Titulos Deletados da Venda Bilhete: ' + idVenda);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -937,21 +950,176 @@ const createBaixasReceberGenerica = async (req, res) => {
   }
 };
 
-// Obter todos os titulos receber
-const getTituloReceberLancamento = async (req, res) => {
+// Criar um novo titulo
+const createTituloReceber = async (req, res) => {
   try {
-    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal  } = req.query;
+
+    const {
+          dataemissao,
+          datavencimento,
+          datacompetencia,
+          descricao,
+          documento,
+          valor,
+          valorpago,
+          descontopago,
+          juropago,
+          parcela,
+          idvendabilhete,
+          idvendahotel,
+          idvendapacote,
+          idfatura,
+          identidade,
+          idmoeda,
+          idformapagamento,
+          idplanoconta,
+          idcentrocusto,
+          idfilial,
+          chave,
+          empresa,
+          comissao,
+          idnotacredito,
+          idnotadebito,
+          idreembolso,
+          id,
+          idnf,
+          numeronf,
+          titulovalorentrada
+    } = req.body;
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('dataemissao', dataemissao)
+      .input('datavencimento', datavencimento)
+      .input('datacompetencia', datacompetencia)
+      .input('descricao', descricao)
+      .input('documento', documento)
+      .input('valor', valor)
+      .input('valorpago', valorpago)
+      .input('descontopago', descontopago)
+      .input('juropago', juropago)
+      .input('parcela', parcela)
+      .input('idvendabilhete', idvendabilhete)
+      .input('idvendahotel', idvendahotel)
+      .input('idvendapacote', idvendapacote)
+      .input('idfatura', idfatura)
+      .input('identidade', identidade)
+      .input('idmoeda', idmoeda)
+      .input('idformapagamento', idformapagamento)
+      .input('idplanoconta', idplanoconta)
+      .input('idcentrocusto', idcentrocusto)
+      .input('idfilial', idfilial)
+      .input('chave', chave)
+      .input('empresa', empresa)
+      .input('comissao', comissao)
+      .input('idnotacredito', idnotacredito)
+      .input('idnotadebito', idnotadebito)
+      .input('idreembolso', idreembolso)
+      .input('id', id)
+      .input('idnf', idnf)
+      .input('numeronf', numeronf)
+      .input('titulovalorentrada', titulovalorentrada)
+      .query(`
+        INSERT INTO titulosreceber (
+            dataemissao,
+            datavencimento,
+            datacompetencia,
+            descricao,
+            documento,
+            valor,
+            valorpago,
+            descontopago,
+            juropago,
+            parcela,
+            idvendabilhete,
+            idvendahotel,
+            idvendapacote,
+            idfatura,
+            identidade,
+            idmoeda,
+            idformapagamento,
+            idplanoconta,
+            idcentrocusto,
+            idfilial,
+            chave,
+            empresa,
+            comissao,
+            idnotacredito,
+            idnotadebito,
+            idreembolso,
+            id,
+            idnf,
+            numeronf,
+            titulovalorentrada
+        )
+        OUTPUT INSERTED.idtitulo
+        VALUES (
+            @dataemissao,
+            @datavencimento,
+            @datacompetencia,
+            @descricao,
+            @documento,
+            @valor,
+            @valorpago,
+            @descontopago,
+            @juropago,
+            @parcela,
+            @idvendabilhete,
+            @idvendahotel,
+            @idvendapacote,
+            @idfatura,
+            @identidade,
+            @idmoeda,
+            @idformapagamento,
+            @idplanoconta,
+            @idcentrocusto,
+            @idfilial,
+            @chave,
+            @empresa,
+            @comissao,
+            @idnotacredito,
+            @idnotadebito,
+            @idreembolso,
+            @id,
+            @idnf,
+            @numeronf,
+            @titulovalorentrada
+        )
+      `);
+    const idtitulo = result.recordset[0].idtitulo;
+
+    res.status(201).json({ success: true, idtitulo, message: 'titulo criada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Obter relatorios analítico de titulos a receber
+const getRelatoriosAnalitico = async (req, res) => {
+  try {
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
+            vencimentoinicial, vencimentofinal, idformapagamento, idgrupo,
+            tituloinicial, titulofinal, aereoinicial, aereofinal, servicoinicial, 
+            servicofinal, faturainicial, faturafinal, tipo, situacao
+     } = req.query;
     const sql = require('mssql');
+    //console.log('REQUISIÇÃO::', req.query);
+    //console.log('EMPRESA::', empresa);
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
-    }
+    }    
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
     const request = pool.request();
 
     request.input('empresa', empresa);
+
+    let groupClause = '';
+    let orderClause = '';
+    let script = '';
 
     // Parâmetros opcionais
     let whereClause = 'WHERE titulosreceber.empresa = @empresa AND titulosreceber.id > 0 ';
@@ -972,77 +1140,206 @@ const getTituloReceberLancamento = async (req, res) => {
       whereClause += ' AND titulosreceber.idmoeda = @idmoeda';
     }
     
+    if (idgrupo) {
+      request.input('idgrupo', idgrupo);
+      whereClause += ' AND (vendasbilhetes.idgrupo = @idgrupo OR vendashoteis.idgrupo = @idgrupo) ';
+    }
+
+    if (idformapagamento) {
+      request.input('idformapagamento', idformapagamento);
+      whereClause += ' AND titulosreceber.idformapagamento = @idformapagamento';
+    }
+
     if (datainicial) {
-      request.input('datainicial', datainicial); // Formata a data para incluir hora
-      whereClause += ' AND titulosreceber.datavencimento >= @datainicial';
+      request.input('datainicial', datainicial);
+      whereClause += ' AND titulosreceber.dataemissao >= @datainicial';
     }
     
     if (datafinal) {
       request.input('datafinal', datafinal);
-      whereClause += ' AND titulosreceber.datavencimento <= @datafinal';
+      whereClause += ' AND titulosreceber.dataemissao <= @datafinal';
+    }
+
+    if (vencimentoinicial) {
+      request.input('vencimentoinicial', vencimentoinicial);
+      whereClause += ' AND titulosreceber.datavencimento >= @vencimentoinicial';
     }
     
-    whereClause += ' AND titulosreceber.valor > titulosreceber.valorpago ';
+    if (vencimentofinal) {
+      request.input('vencimentofinal', vencimentofinal);
+      whereClause += ' AND titulosreceber.datavencimento <= @vencimentofinal';
+    }
 
-    whereClause += ' ORDER BY titulosreceber.datavencimento desc ';
+    if (tituloinicial) {
+      request.input('tituloinicial', tituloinicial);
+      whereClause += ' AND titulosreceber.id >= @tituloinicial';
+    }
+    
+    if (titulofinal) {
+      request.input('titulofinal', titulofinal);
+      whereClause += ' AND titulosreceber.id <= @titulofinal';
+    }
 
-    const query =
-     `
-        SELECT 
-            TitulosReceber.idtitulo,
-            TitulosReceber.dataemissao,
-            TitulosReceber.datavencimento,
-            TitulosReceber.datacompetencia,
-            TitulosReceber.descricao,
-            TitulosReceber.documento,
-            ISNULL(TitulosReceber.valor,0) AS valor,
-            ISNULL(TitulosReceber.valorpago,0) AS valorpago,
-            ISNULL(TitulosReceber.descontopago,0) AS descontopago,
-            ISNULL(TitulosReceber.juropago,0) AS juropago,
-            (ISNULL(TitulosReceber.valor,0) - ISNULL(TitulosReceber.valorpago,0)) AS valoraberto,
-            TitulosReceber.parcela,
-            TitulosReceber.idvendabilhete,
-            TitulosReceber.idvendahotel,
-            TitulosReceber.idvendapacote,
-            TitulosReceber.idfatura,
-            TitulosReceber.identidade,
-            TitulosReceber.idmoeda,
-            TitulosReceber.idformapagamento,
-            TitulosReceber.idplanoconta,
-            TitulosReceber.idcentrocusto,
-            TitulosReceber.idfilial,
-            TitulosReceber.chave,
-            TitulosReceber.empresa,
-            TitulosReceber.comissao,
-            TitulosReceber.idnotacredito,
-            TitulosReceber.idnotadebito,
-            TitulosReceber.idreembolso,
-            TitulosReceber.id,
-            TitulosReceber.idnf,
-            TitulosReceber.numeronf,
-            TitulosReceber.titulovalorentrada,
-            entidades.nome AS entidade,
-            formapagamento.nome AS pagamento,
-            planoconta.nome AS planoconta,
-            'RECEBER' AS tipo,
-            CAST(0 AS BIT) AS selecionado
-            FROM            TitulosReceber LEFT OUTER JOIN
-                            PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
-                            Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
-                            FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+    if (aereoinicial) {
+      request.input('aereoinicial', aereoinicial);
+      whereClause += ' AND vendasbilhetes.id >= @aereoinicial';
+    }
+    
+    if (aereofinal) {
+      request.input('aereofinal', aereofinal);
+      whereClause += ' AND vendasbilhetes.id <= @aereofinal';
+    }
 
-            ${whereClause}  `
+    if (servicoinicial) {
+      request.input('servicoinicial', servicoinicial);
+      whereClause += ' AND vendashoteis.id >= @servicoinicial';
+    }
+    
+    if (servicofinal) {
+      request.input('servicofinal', servicofinal);
+      whereClause += ' AND vendashoteis.id <= @servicofinal';
+    }
+
+    if (faturainicial) {
+      request.input('faturainicial', faturainicial);
+      whereClause += ' AND Faturas.id >= @faturainicial';
+    }
+    
+    if (faturafinal) {
+      request.input('faturafinal', faturafinal);
+      whereClause += ' AND Faturas.id <= @faturafinal';
+    }
+
+    if(situacao == 'ABERTO')
+      whereClause += ' AND titulosreceber.valor > titulosreceber.valorpago '
+    if(situacao == 'QUITADO')
+      whereClause += ' AND titulosreceber.valor = titulosreceber.valorpago '
+
+
+    if(tipo == 'Cliente')
+        orderClause += ' ORDER BY Entidades.nome, titulosreceber.dataemissao, titulosreceber.id '
+    else
+    if(tipo == 'Emissao')
+      orderClause += ' ORDER BY titulosreceber.dataemissao, Entidades.nome, titulosreceber.id '
+    else
+    if(tipo == 'Vencimento')
+      orderClause += ' ORDER BY titulosreceber.datavencimento, Entidades.nome, titulosreceber.id '
+    else
+    if(tipo == 'Pagamento')
+      orderClause += ' ORDER BY FormaPagamento.nome, titulosreceber.dataemissao, titulosreceber.id '
+    else
+    if(tipo == 'PlanoConta')
+      orderClause += ' ORDER BY PlanoConta.nome, titulosreceber.dataemissao, titulosreceber.id'
+    else
+    if(tipo == 'Baixa'){
+      whereClause += ' AND BaixasReceber.id > 0';
+      orderClause += ' ORDER BY titulosreceber.id, BaixasReceber.databaixa';
+    }
+
+    if(tipo == 'Baixa'){
+      groupClause += ' GROUP BY   Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosReceber.Id, TitulosReceber.Valor, '+
+                     ' TitulosReceber.ValorPago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, TitulosReceber.descontopago, ' + 
+                     ' TitulosReceber.juropago, Faturas.Id, BaixasReceber.id, BaixasReceber.databaixa, BaixasReceber.ValorPago, BaixasReceber.juropago, ' +
+                     ' BaixasReceber.descontopago, Bancos.nome, ContasBancarias.NumeroConta ';
+    }else{
+      groupClause += ' GROUP BY   Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosReceber.Id, TitulosReceber.Valor, TitulosReceber.ValorPago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, TitulosReceber.descontopago, TitulosReceber.juropago, Faturas.Id ';
+    }
+
+
+    if(tipo == 'Baixa'){
+      script =
+      `
+        SELECT        Entidades.Nome AS entidade, 
+                      Filiais.Nome AS filial, 
+                      PlanoConta.Nome AS planoconta, 
+                      FormaPagamento.Nome AS pagamento,
+                      TitulosReceber.Id AS idtitulo, 
+                      Faturas.Id AS idfatura, 
+                      TitulosReceber.valor, 
+                      isnull(TitulosReceber.valorpago,0) AS valorpago, 
+                      (isnull(TitulosReceber.valor,0) - isnull(TitulosReceber.valorpago,0)) AS valoraberto,
+                      isnull(TitulosReceber.descontopago,0) AS descontopago, 
+                      isnull(TitulosReceber.juropago,0) AS juropago, 
+                      TitulosReceber.descricao, 
+                      TitulosReceber.dataemissao, 
+                      TitulosReceber.datavencimento,
+                      BaixasReceber.id,
+                      BaixasReceber.databaixa AS datapagamento,
+                      BaixasReceber.ValorPago AS valorbaixa,
+                      BaixasReceber.juropago,
+                      BaixasReceber.descontopago,
+            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
+        FROM            PlanoConta INNER JOIN
+                                Entidades INNER JOIN
+                                TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
+                                FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta LEFT OUTER JOIN
+                                Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Grupos RIGHT OUTER JOIN
+                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo ON TitulosReceber.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                Grupos AS Grupos_1 RIGHT OUTER JOIN
+                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON TitulosReceber.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber
+                                
+       `
+    }else{
+    //const query =
+    script =
+      `
+        SELECT        Entidades.Nome AS entidade, 
+                      Filiais.Nome AS filial, 
+                      PlanoConta.Nome AS planoconta, 
+                      FormaPagamento.Nome AS pagamento,
+                      TitulosReceber.Id AS idtitulo, 
+                      Faturas.Id AS idfatura, 
+                      TitulosReceber.valor, 
+                      isnull(TitulosReceber.valorpago,0) AS valorpago, 
+                      (isnull(TitulosReceber.valor,0) - isnull(TitulosReceber.valorpago,0)) AS valoraberto,
+                      isnull(TitulosReceber.descontopago,0) AS descontopago, 
+                      isnull(TitulosReceber.juropago,0) AS juropago, 
+                      TitulosReceber.descricao, 
+                      TitulosReceber.dataemissao, 
+                      TitulosReceber.datavencimento
+        FROM            PlanoConta INNER JOIN
+                                Entidades INNER JOIN
+                                TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
+                                FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta LEFT OUTER JOIN
+                                Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Grupos RIGHT OUTER JOIN
+                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo ON TitulosReceber.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                Grupos AS Grupos_1 RIGHT OUTER JOIN
+                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON TitulosReceber.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber
+                                
+       `
+    }
+
+    const query = 
+     `  ${script} ${whereClause} ${groupClause} ${orderClause} `
+
    const result = await request.query(query);
+   //console.log('DATA::', datainicial, datafinal);  
+   //console.log('result::', result.recordset);
+  // console.log('QUERY::', query);
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);
   }
 };
 
+
 module.exports = {
   getTituloReceber,
   getTituloReceberById,
   getTituloReceberByVendaBilhete,
+  getTituloReceberByVendaHotel,
   getBaixaReceberByTitulo,
   createTituloReceber,
   updateTituloReceber,
@@ -1053,5 +1350,6 @@ module.exports = {
   createBaixaReceber,
   deleteBaixasReceber,
   getTituloReceberLancamento,
-  createBaixasReceberGenerica
+  createBaixasReceberGenerica,
+  getRelatoriosAnalitico
 };

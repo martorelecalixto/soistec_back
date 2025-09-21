@@ -9,45 +9,6 @@ const moedasController = require('../controllers/moedasController');
  *   description: Endpoints para gerenciamento de moedas
  */
 
-/**
- * @swagger
- * /api/moedas:
- *   get:
- *     summary: Lista moedas com filtros opcionais
- *     tags: [Moedas]
- *     parameters:
- *       - in: query
- *         name: empresa
- *         schema:
- *           type: string
- *         required: true
- *         description: Nome da empresa (obrigatório)
- *       - in: query
- *         name: idmoeda
- *         schema:
- *           type: integer
- *         required: false
- *         description: ID da moeda
- *       - in: query
- *         name: nome
- *         schema:
- *           type: string
- *         required: false
- *         description: Nome da moeda
- *     responses:
- *       200:
- *         description: Lista de moedas
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   nome:
- *                     type: string
- */
-router.get('/', moedasController.getMoedas);
 
 /**
  * @swagger
@@ -143,6 +104,86 @@ router.put('/:idmoeda', moedasController.updateMoeda);
  *         description: Moeda não encontrada
  */
 router.delete('/:idmoeda', moedasController.deleteMoeda);
+
+/**
+ * @swagger
+ * /api/moedas:
+ *   get:
+ *     summary: Lista moedas com filtros opcionais
+ *     tags: [Moedas]
+ *     parameters:
+ *       - in: query
+ *         name: empresa
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Nome da empresa (obrigatório)
+ *       - in: query
+ *         name: idmoeda
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: ID da moeda
+ *       - in: query
+ *         name: nome
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Nome da moeda
+ *     responses:
+ *       200:
+ *         description: Lista de moedas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   nome:
+ *                     type: string
+ */
+router.get('/:idmoeda', moedasController.getMoedaById);
+
+/**
+ * @swagger
+ * /api/moedas:
+ *   get:
+ *     summary: Lista moedas com filtros opcionais
+ *     tags: [Moedas]
+ *     parameters:
+ *       - in: query
+ *         name: empresa
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Nome da empresa (obrigatório)
+ *       - in: query
+ *         name: idmoeda
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: ID da moeda
+ *       - in: query
+ *         name: nome
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Nome da moeda
+ *     responses:
+ *       200:
+ *         description: Lista de moedas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   nome:
+ *                     type: string
+ */
+router.get('/', moedasController.getMoedas);
 
 /**
  * @swagger

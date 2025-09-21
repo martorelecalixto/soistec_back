@@ -94,9 +94,11 @@ const getContasBancarias = async (req, res) => {
     whereClause += ' ORDER BY ContasBancarias.numeroconta ';
 
    const query =
-    `SELECT ContasBancarias.idcontabancaria, (isnull(ContasBancarias.numeroconta,'') + ' ' + isnull(ContasBancarias.digitoconta,'')) AS numeroconta, ContasBancarias.digitoconta, 
-      ContasBancarias.titularconta, (isnull(ContasBancarias.numeroagencia,'') + ' ' + isnull(ContasBancarias.digitoagencia,'')) AS numeroagencia, ContasBancarias.digitoagencia, 
-      ContasBancarias.valorinicial, ContasBancarias.saldo, ContasBancarias.idbanco, ContasBancarias.idmoeda,  ContasBancarias.empresa, Bancos.nome AS banco
+    `SELECT ContasBancarias.idcontabancaria, isnull(ContasBancarias.numeroconta,'')  AS numeroconta, ContasBancarias.digitoconta, 
+      ContasBancarias.titularconta, isnull(ContasBancarias.numeroagencia,'')  AS numeroagencia, ContasBancarias.digitoagencia, 
+      ContasBancarias.valorinicial, ContasBancarias.saldo, ContasBancarias.idbanco, ContasBancarias.idmoeda,  ContasBancarias.empresa, Bancos.nome AS banco,
+      (isnull(ContasBancarias.numeroconta,'') + ' ' + isnull(ContasBancarias.digitoconta,'')) AS conta, (isnull(ContasBancarias.numeroagencia,'') + ' ' + isnull(ContasBancarias.digitoagencia,'')) AS agencia
+
     FROM            ContasBancarias INNER JOIN   Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco
     ${whereClause}`
 
@@ -174,7 +176,6 @@ const createContaBancaria = async (req, res) => {
   }
 };
 
-
 // Atualizar um conta bancaria existente
 const updateContaBancaria = async (req, res) => {
   try {
@@ -185,7 +186,7 @@ const updateContaBancaria = async (req, res) => {
     const pool = await poolPromise;
     await pool
       .request()
-      .input('idcontabancaria', req.params.id)
+      .input('idcontabancaria', req.params.idcontabancaria)
       .input('numeroconta', numeroconta)
       .input('digitoconta', digitoconta)
       .input('titularconta', titularconta)
@@ -197,14 +198,14 @@ const updateContaBancaria = async (req, res) => {
       .input('idmoeda', idmoeda)
       .query(
         `UPDATE contasbancarias SET
-          numeroconta = @numeroconta
-          digitoconta = @digitoconta
-          titularconta = @titularconta
-          numeroagencia = @numeroagencia
-          digitoagencia = @digitoagencia
-          valorinicial = @valorinicial
-          saldo = @saldo
-          idbanco = @idbanco
+          numeroconta = @numeroconta,
+          digitoconta = @digitoconta,
+          titularconta = @titularconta,
+          numeroagencia = @numeroagencia,
+          digitoagencia = @digitoagencia,
+          valorinicial = @valorinicial,
+          saldo = @saldo,
+          idbanco = @idbanco,
           idmoeda = @idmoeda
         WHERE idcontabancaria = @idcontabancaria`
       );
@@ -214,7 +215,6 @@ const updateContaBancaria = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Deletar uma conta bancaria
 const deleteContaBancaria = async (req, res) => {

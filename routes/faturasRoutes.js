@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const faturasController = require('../controllers/faturasController');
 
+router.get('/relatorios/analitico', faturasController.getRelatoriosAnalitico);
+
+router.get('/relatorios/sintetico', faturasController.getRelatoriosSintetico);
+
 router.get('/impressao', faturasController.getFaturaImpressao);
 
 router.get('/impressaoitens', faturasController.getItensFaturaImpressao);

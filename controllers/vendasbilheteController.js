@@ -542,7 +542,7 @@ const getRelatoriosAnalitico = async (req, res) => {
   }
 };
 
-// Obter relatorios sintetico de vendas bilhetes
+// Obter relatórios sintético de vendas bilhetes
 const getRelatoriosSintetico = async (req, res) => {
   try {
     const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
@@ -554,7 +554,6 @@ const getRelatoriosSintetico = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
-    
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
@@ -652,6 +651,8 @@ const getRelatoriosSintetico = async (req, res) => {
     }
 
     if(tipo == 'Operadora'){
+         // console.log('****06.01***');
+
     whereClause +=  ' GROUP BY vendasbilhetes.id, ' +
                     '   vendasbilhetes.observacao,  ' +
                     '		vendasbilhetes.solicitante, ' +
@@ -667,6 +668,7 @@ const getRelatoriosSintetico = async (req, res) => {
                     '		faturas.id,  ' +
                     '		titulosreceber.valorpago ';
     }else{
+
     whereClause +=  ' GROUP BY vendasbilhetes.id, ' +
                     '   vendasbilhetes.observacao,  ' +
                     '		vendasbilhetes.solicitante, ' +
@@ -700,9 +702,10 @@ const getRelatoriosSintetico = async (req, res) => {
     if(tipo == 'Operadora')
       whereClause += ' ORDER BY Entidades_4.nome, vendasbilhetes.datavenda, vendasbilhetes.id ';
 
+    let query = '';
     if(tipo == 'Operadora'){
-    const query =
-     `SELECT      vendasbilhetes.id, 
+     query =
+     `SELECT      vendasbilhetes.id AS idvenda, 
                   vendasbilhetes.observacao, 
                   ISNULL(vendasbilhetes.solicitante,'') AS solicitante, 
                   Entidades_3.nome AS entidade, 
@@ -738,8 +741,8 @@ const getRelatoriosSintetico = async (req, res) => {
                       Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
         ${whereClause}  `
     }else{
-    const query =
-     `SELECT      vendasbilhetes.id, 
+    query =
+     `SELECT      vendasbilhetes.id AS idvenda, 
                   vendasbilhetes.observacao, 
                   ISNULL(vendasbilhetes.solicitante,'') AS solicitante, 
                   Entidades_3.nome AS entidade, 
@@ -774,10 +777,11 @@ const getRelatoriosSintetico = async (req, res) => {
                       Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
         ${whereClause}  `
     }
+
+   //console.log('QUERY::', query);
    const result = await request.query(query);
    //console.log('DATA::', datainicial, datafinal);  
-   console.log('result::', result.recordset);
-   console.log('QUERY::', query);
+   //console.log('result::', result.recordset);
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);

@@ -239,8 +239,12 @@ const forgotPassword = async (req, res) => {
 
     // 🔗 Link real para o front-end resetar a senha
     //const resetLink = `http://localhost:5000/reset-password?token=${token}`;
-    const resetLink = `http://localhost:5000/auth/reset-password?token=${token}`;
-    // const resetUrl = `https://meusistema.com/auth/reset-password?token=${token}`;
+    ///UTILIZADO ATÉ 15/09/2025 const resetLink = `http://localhost:5000/auth/reset-password?token=${token}`;
+
+    //Pega a URL base do .env
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5000";
+    const resetLink = `${frontendUrl}/auth/reset-password?token=${token}`;
+    
 
     // Envia o e-mail
     await sendEmail(

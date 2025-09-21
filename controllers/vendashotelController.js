@@ -738,6 +738,8 @@ const getRelatoriosSintetico = async (req, res) => {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
     
+    //console.log('REQUISIÇÃO::', req.query);
+    //console.log('EMPRESA::', empresa);
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;
@@ -883,9 +885,10 @@ const getRelatoriosSintetico = async (req, res) => {
     if(tipo == 'Operadora')
       whereClause += ' ORDER BY Entidades_4.nome, vendashoteis.datavenda, vendashoteis.id ';
 
+    let query = '';
     if(tipo == 'Operadora'){
-    const query =
-     `SELECT      vendashoteis.id, 
+     query =
+     `SELECT      vendashoteis.id AS idvenda, 
                   vendashoteis.observacao, 
                   ISNULL(vendashoteis.solicitante,'') AS solicitante, 
                   Entidades_3.nome AS entidade, 
@@ -921,8 +924,8 @@ const getRelatoriosSintetico = async (req, res) => {
                       Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
         ${whereClause}  `
     }else{
-    const query =
-     `SELECT      vendashoteis.id, 
+     query =
+     `SELECT      vendashoteis.id AS idvenda, 
                   vendashoteis.observacao, 
                   ISNULL(vendashoteis.solicitante,'') AS solicitante, 
                   Entidades_3.nome AS entidade, 
@@ -959,8 +962,8 @@ const getRelatoriosSintetico = async (req, res) => {
     }
    const result = await request.query(query);
    //console.log('DATA::', datainicial, datafinal);  
-   console.log('result::', result.recordset);
-   console.log('QUERY::', query);
+   //console.log('result::', result.recordset);
+   //console.log('QUERY::', query);
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);

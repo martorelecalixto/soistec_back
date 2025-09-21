@@ -8,7 +8,7 @@ router.delete('/:id', bancosController.deleteBanco);
 
 router.post('/', bancosController.createBanco);
 
-router.put('/:id', bancosController.updateBanco);
+router.put('/:idbanco', bancosController.updateBanco);
 
 router.get('/lancamentos/saldoanterior', bancosController.getLancamentoSaldoAnterior);
 

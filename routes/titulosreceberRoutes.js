@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const titulosreceberController = require('../controllers/titulosreceberController');
 
+router.get('/relatorios/analitico', titulosreceberController.getRelatoriosAnalitico);
 router.get('/lancamentos', titulosreceberController.getTituloReceberLancamento);
 router.get('/baixasreceber/:idtitulo', titulosreceberController.getBaixaReceberByTitulo);
 router.get('/porvendabilhete/:idvenda', titulosreceberController.getTituloReceberByVendaBilhete);
+router.get('/porvendahotel/:idvenda', titulosreceberController.getTituloReceberByVendaHotel);
 router.get('/:idtitulo', titulosreceberController.getTituloReceberById);
 router.get('/', titulosreceberController.getTituloReceber);
 
@@ -20,7 +22,7 @@ router.delete('/baixasrec', titulosreceberController.deleteBaixasReceber);
 // 2) rotas com caminho fixo + param
 router.delete('/baixasreceber/:id', titulosreceberController.deleteBaixaReceber);
 router.delete('/porvendabilhete/:idvenda', titulosreceberController.deleteTituloReceberByVendaBilhete);
-router.delete('/vendahotel/:idvendahotel', titulosreceberController.deleteTituloReceberByVendaHotel); // <-- mudou
+router.delete('/porvendahotel/:idvenda', titulosreceberController.deleteTituloReceberByVendaHotel); // <-- mudou
 
 // 3) por último a rota genérica (com regex numérica)
 router.delete('/:idtitulo', titulosreceberController.deleteTituloReceber);

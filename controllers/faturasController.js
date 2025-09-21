@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 // Obter faturas impressão
 const getFaturaImpressao = async (req, res) => {
   try {
-   // console.log('getFaturaImpressao');
+
     const { empresa, faturas } = req.query;
     const sql = require('mssql');
 
@@ -15,8 +15,7 @@ const getFaturaImpressao = async (req, res) => {
         message: 'O parâmetro "empresa" é obrigatório.'
       });
     }
-//console.log('EMPRESA RECEBIDA: ' + empresa);
-//console.log('FATURAS RECEBIDAS: ' + faturas);
+
     if (!faturas) {
       return res.status(400).json({
         success: false,
@@ -35,18 +34,17 @@ const getFaturaImpressao = async (req, res) => {
         message: 'O parâmetro "faturas" deve ser um array válido, ex: [1025,1026].'
       });
     }
-//console.log('FATURAS ARRAY: ' + faturaArray);
+
     const pool = await poolPromise; // <- precisa importar de config de conexão
     const request = pool.request();
 
     request.input('empresa', empresa);
-//console.log('01: ' + empresa);
     const faturaParams = faturaArray.map((id, index) => {
-      const paramName = `idfatura${index}`;
-      request.input(paramName, sql.Int, id);
-      return `@${paramName}`;
+    const paramName = `idfatura${index}`;
+    request.input(paramName, sql.Int, id);
+    return `@${paramName}`;
     });
-//console.log('02: ' + faturaParams);
+
     const query = `
       SELECT 
         f.idfatura,
@@ -93,8 +91,6 @@ const getFaturaImpressao = async (req, res) => {
         AND f.idfatura IN (${faturaParams.join(',')})
       ORDER BY f.idfatura
     `;
-
-    //console.log('RESULTADO DA QUERY:' + query.toString());
 
     const result = await request.query(query);
     //console.log(result.recordset);
@@ -251,7 +247,7 @@ const getItensFaturaImpressao = async (req, res) => {
 // Obter todos os faturas
 const getFatura = async (req, res) => {
   try {
-    const { empresa, idfilial, identidade, idmoeda, pax, faturainicial, faturafinal, bilheteinicial, bilhetefinal, servicoinicial, servicofinal, datainicial, datafinal  } = req.query;
+    const { empresa, idfilial, identidade, idmoeda, idgrupo, pax, faturainicial, faturafinal, bilheteinicial, bilhetefinal, servicoinicial, servicofinal, datainicial, datafinal, vencimentoinicial, vencimentofinal  } = req.query;
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -260,7 +256,7 @@ const getFatura = async (req, res) => {
 
     let semFiltros = 'false';
 
-    if ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!pax)&&(!faturainicial)&&(!faturafinal)&&(!bilheteinicial)&&(!bilhetefinal)&&(!servicoinicial)&&(!servicofinal)&&(!datainicial)&&(!datafinal))
+    if ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!idgrupo)&&(!pax)&&(!faturainicial)&&(!faturafinal)&&(!bilheteinicial)&&(!bilhetefinal)&&(!servicoinicial)&&(!servicofinal)&&(!datainicial)&&(!datafinal)&&(!vencimentoinicial)&&(!vencimentofinal))
       semFiltros = 'true';
 
     // Parâmetros obrigatórios
@@ -295,6 +291,12 @@ const getFatura = async (req, res) => {
       request.input('idmoeda', idmoeda);
       whereClauseBilhete += ' AND ft.idmoeda = @idmoeda';
       whereClauseServico += ' AND ft.idmoeda = @idmoeda';
+    }
+
+    if (idgrupo) {
+      request.input('idgrupo', idgrupo);
+      whereClauseBilhete += ' AND vb.idgrupo = @idgrupo';
+      whereClauseServico += ' AND vh.idgrupo = @idgrupo';
     }
 
     if (faturainicial) {
@@ -339,6 +341,18 @@ const getFatura = async (req, res) => {
       request.input('datafinal', datafinal);
       whereClauseBilhete += ' AND ft.dataemissao <= @datafinal';
       whereClauseServico += ' AND ft.dataemissao <= @datafinal';
+    }
+
+    if (vencimentoinicial) {
+      request.input('vencimentoinicial', vencimentoinicial);
+      whereClauseBilhete += ' AND ft.datavencimento >= @vencimentoinicial';
+      whereClauseServico += ' AND ft.datavencimento >= @vencimentoinicial';
+    }
+    
+    if (vencimentofinal) {
+      request.input('vencimentofinal', vencimentofinal);
+      whereClauseBilhete += ' AND ft.datavencimento <= @vencimentofinal';
+      whereClauseServico += ' AND ft.datavencimento <= @vencimentofinal';
     }
 
     if (pax) {
@@ -461,12 +475,16 @@ const getFatura = async (req, res) => {
 const getEmissao = async (req, res) => {
   try {
     //console.log('getEmissao');
-    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal, aereo, servico  } = req.query;
+    const { empresa, idfilial, identidade, idmoeda, idgrupo, datainicial, datafinal, 
+       vencimentoinicial, vencimentofinal, aereo, servico  } = req.query;
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
+   // console.log('Empresa: ' + empresa);
+   // console.log('Aéreo: ' + aereo);
+   // console.log('Serviço: ' + servico);
 
     let semFiltros = 'false';
 
@@ -484,8 +502,12 @@ const getEmissao = async (req, res) => {
       unionClause = ' UNION ';
     }
 
-    if ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!datainicial)&&(!datafinal))
+    if ( ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!datainicial)&&(!datafinal)) || ((aereo === 'false')&&(servico === 'false')) )
       semFiltros = 'true';
+
+    //console.log('Sem filtros: ' + semFiltros);
+    //console.log('Aéreo: ' + aereo);
+    //console.log(req.query);
 
     if( aereo === 'true') {
       
@@ -513,6 +535,21 @@ const getEmissao = async (req, res) => {
         request.input('idmoeda', idmoeda);
         whereClauseAereo += ' AND VendasBilhetes.idmoeda = @idmoeda';
       }
+
+      if (idgrupo) {
+        request.input('idgrupo', idgrupo);
+        whereClauseAereo += ' AND VendasBilhetes.idgrupo = @idgrupo';
+      }
+
+      if (vencimentoinicial) {
+        request.input('vencimentoinicial', vencimentoinicial);
+        whereClauseAereo += ' AND VendasBilhetes.datavencimento >= @vencimentoinicial';
+      }
+      
+      if (vencimentofinal) {
+        request.input('vencimentofinal', vencimentofinal);
+        whereClauseAereo += ' AND VendasBilhetes.datavencimento <= @vencimentofinal';
+      }
       
       if (datainicial) {
         request.input('datainicial', datainicial);
@@ -530,9 +567,9 @@ const getEmissao = async (req, res) => {
                 VendasBilhetes.observacao, ISNULL(VendasBilhetes.solicitante, '') AS solicitante, 
                 VendasBilhetes.identidade, VendasBilhetes.id, 
                 VendasBilhetes.empresa, FormaPagamento.Nome AS pagamento, 
-                VendasBilhetes.datavencimento, VendasBilhetes.idformapagamento,
+                VendasBilhetes.datavencimento, VendasBilhetes.idformapagamento, VendasBilhetes.datavenda,
                 VendasBilhetes.idcentrocusto, VendasBilhetes.idmoeda, Cast(0 AS BIT) AS selecionado,
-                Entidades.nome AS entidade, 'BILHETE' AS tipo, VendasBilhetes.idfilial
+                Entidades.nome AS entidade, 'AEREO' AS tipo, VendasBilhetes.idfilial
         FROM            FormaPagamento RIGHT OUTER JOIN
                                 VendasBilhetes INNER JOIN
                                 Entidades ON VendasBilhetes.IdEntidade = Entidades.IdEntidade ON FormaPagamento.IdFormaPagamento = VendasBilhetes.IdFormaPagamento LEFT OUTER JOIN
@@ -543,7 +580,7 @@ const getEmissao = async (req, res) => {
         GROUP BY VendasBilhetes.idvenda, VendasBilhetes.valortotal, 
                 VendasBilhetes.observacao, VendasBilhetes.solicitante, 
                 VendasBilhetes.identidade, VendasBilhetes.id, 
-                VendasBilhetes.empresa, FormaPagamento.nome, 
+                VendasBilhetes.empresa, FormaPagamento.nome, VendasBilhetes.datavenda,
                 VendasBilhetes.datavencimento, VendasBilhetes.idformapagamento,
                 VendasBilhetes.idcentroCusto, VendasBilhetes.idmoeda, Entidades.nome, VendasBilhetes.idfilial
        
@@ -577,6 +614,21 @@ const getEmissao = async (req, res) => {
         request.input('idmoeda2', idmoeda);
         whereClauseServico += ' AND VendasHoteis.idmoeda = @idmoeda2';
       }
+
+      if (idgrupo) {
+        request.input('idgrupo', idgrupo);
+        whereClauseAereo += ' AND VendasHoteis.idgrupo = @idgrupo';
+      }
+
+      if (vencimentoinicial) {
+        request.input('vencimentoinicial', vencimentoinicial);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento >= @vencimentoinicial';
+      }
+      
+      if (vencimentofinal) {
+        request.input('vencimentofinal', vencimentofinal);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento <= @vencimentofinal';
+      }
       
       if (datainicial) {
         request.input('datainicial2', datainicial);
@@ -595,7 +647,7 @@ const getEmissao = async (req, res) => {
                 VendasHoteis.observacao, ISNULL(VendasHoteis.solicitante, '') AS solicitante, 
                 VendasHoteis.identidade, VendasHoteis.id, 
                 VendasHoteis.empresa, FormaPagamento.nome AS pagamento, 
-                VendasHoteis.datavencimento, VendasHoteis.idformapagamento,
+                VendasHoteis.datavencimento, VendasHoteis.idformapagamento, VendasHoteis.datavenda,
                 VendasHoteis.idcentrocusto, VendasHoteis.idmoeda, Cast(0 AS BIT) AS selecionado,
                 Entidades.nome AS entidade, 'SERVICO' AS tipo, VendasHoteis.idfilial
         FROM            FormaPagamento RIGHT OUTER JOIN
@@ -608,7 +660,7 @@ const getEmissao = async (req, res) => {
         GROUP BY VendasHoteis.idvenda, VendasHoteis.valortotal,
                 VendasHoteis.observacao, VendasHoteis.solicitante,
                 VendasHoteis.identidade, VendasHoteis.id, 
-                VendasHoteis.empresa, FormaPagamento.nome, 
+                VendasHoteis.empresa, FormaPagamento.nome, VendasHoteis.datavenda,
                 VendasHoteis.datavencimento, VendasHoteis.idformapagamento,
                 VendasHoteis.idcentrocusto, VendasHoteis.idmoeda, Entidades.nome, VendasHoteis.idfilial
        
@@ -967,21 +1019,768 @@ const deleteFatura = async (req, res) => {
   }
 };
 
-// Deletar um fatura
-/*
-const deleteFatura = async (req, res) => {
+// Obter relatorios analítico de vendas bilhetes
+const getRelatoriosAnalitico = async (req, res) => {
   try {
+    //console.log('getEmissao');
+    const { empresa, idfilial, identidade, idmoeda, idgrupo, idoperadora, datainicial, datafinal, 
+       vencimentoinicial, vencimentofinal, bilheteinicial, bilhetefinal, servicoinicial, servicofinal, 
+       faturainicial, faturafinal, pax, tipo  } = req.query;
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
+   // console.log('Empresa: ' + empresa);
+   // console.log('Aéreo: ' + aereo);
+   // console.log('Serviço: ' + servico);
+
+    let semFiltros = 'false';
+
+    // Parâmetros obrigatórios
     const pool = await poolPromise;
-    await pool
-      .request()
-      .input('idfatura', req.params.idfatura)
-      .query('DELETE FROM faturas WHERE idfatura = @idfatura');
-    res.json({ success: true, message: 'Fatura deletada com sucesso' });
+    const request = pool.request();
+
+
+    let orderbyClause = '';
+    let scriptAereo = '';
+    let scriptServico = '';
+    let unionClause = '';
+    unionClause = ' UNION ';
+
+    if ( ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!idgrupo)&&(!idoperadora)&&(!datainicial)&&(!datafinal)&&(!vencimentoinicial)&&(!vencimentofinal)&&
+         (!bilheteinicial)&&(!bilhetefinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
+      semFiltros = 'true';
+
+    //console.log('Sem filtros: ' + semFiltros);
+    //console.log('Aéreo: ' + aereo);
+    //console.log(req.query);
+
+    //if( aereo === 'true') {
+      
+      if(tipo == 'Cliente')
+          orderbyClause += ' ORDER BY 5, 6, 1 '
+      else
+      if(tipo == 'Emissao')
+        orderbyClause += ' ORDER BY 6, 5, 1 '
+      else
+      if(tipo == 'Vencimento')
+        orderbyClause += ' ORDER BY 7, 5, 1 '
+      else
+      if(tipo == 'Operadora')
+        orderbyClause += ' ORDER BY 12, 6, 1 '
+      else
+      if(tipo == 'Fatura')
+        orderbyClause += ' ORDER BY 1, 6, 5 ';
+      else
+      if(tipo == 'SemFatura')
+        orderbyClause += ' ORDER BY 3, 2, 1 ';
+
+
+
+      request.input('empresa', empresa);
+    
+      // Parâmetros opcionais
+      let whereClauseAereo = ' WHERE VendasBilhetes.empresa = @empresa  ';
+
+      if (semFiltros === 'true') {
+        whereClauseAereo += ' AND VendasBilhetes.identidade = -1';
+      }
+
+      if (tipo === 'SemFatura') {
+        whereClauseAereo += ' AND Isnull(VendasBilhetes.IdFatura,0) = 0 and FormaPagamento.GerarFatura = 1';
+      }
+
+      if (semFiltros === 'true') {
+        whereClauseAereo += ' AND VendasBilhetes.identidade = -1';
+      }
+
+      // Filtros opcionais
+      if (idfilial) {
+        request.input('idfilial', idfilial);
+        whereClauseAereo += ' AND VendasBilhetes.idfilial = @idfilial';
+      }
+
+      if (identidade) {
+        request.input('identidade', identidade);
+        whereClauseAereo += ' AND VendasBilhetes.identidade = @identidade';
+      }
+
+      if (idmoeda) {
+        request.input('idmoeda', idmoeda);
+        whereClauseAereo += ' AND VendasBilhetes.idmoeda = @idmoeda';
+      }
+
+      if (idgrupo) {
+        request.input('idgrupo', idgrupo);
+        whereClauseAereo += ' AND VendasBilhetes.idgrupo = @idgrupo';
+      }
+
+      if (vencimentoinicial) {
+        request.input('vencimentoinicial', vencimentoinicial);
+        whereClauseAereo += ' AND VendasBilhetes.datavencimento >= @vencimentoinicial';
+      }
+      
+      if (vencimentofinal) {
+        request.input('vencimentofinal', vencimentofinal);
+        whereClauseAereo += ' AND VendasBilhetes.datavencimento <= @vencimentofinal';
+      }
+      
+      if (datainicial) {
+        request.input('datainicial', datainicial);
+        whereClauseAereo += ' AND VendasBilhetes.datavenda >= @datainicial';
+      }
+      
+      if (datafinal) {
+        request.input('datafinal', datafinal);
+        whereClauseAereo += ' AND VendasBilhetes.datavenda <= @datafinal';
+      }
+
+      if (idoperadora) {
+        request.input('idoperadora', idoperadora);
+        whereClause += ' AND ItensVendaBilhete.idoperadora = @idoperadora';
+      }
+
+      if (pax) {
+        request.input('pax', `%${pax}%`);
+        whereClause += ' AND ItensVendaBilhete.pax LIKE @pax';
+      }
+
+      if (servicoinicial) {
+        request.input('bilheteinicial', bilheteinicial);
+        whereClause += ' AND vendasbilhetes.id >= @bilheteinicial';
+      }
+      
+      if (servicofinal) {
+        request.input('bilhetefinal', bilhetefinal);
+        whereClause += ' AND vendasbilhetes.id <= @bilhetefinal';
+      }
+
+      if (faturainicial) {
+        request.input('faturainicial', faturainicial);
+        whereClause += ' AND Faturas.id >= @faturainicial';
+      }
+      
+      if (faturafinal) {
+        request.input('faturafinal', faturafinal);
+        whereClause += ' AND Faturas.id <= @faturafinal';
+      }
+
+      if(tipo == 'SemFatura'){
+        scriptAereo = 
+        `
+          SELECT      
+                VendasBilhetes.Id AS idvenda, 
+                entidades_3.Nome AS entidade, 
+                VendasBilhetes.datavenda AS dataemissao, 
+                VendasBilhetes.datavencimento,
+                ISNULL(VendasBilhetes.ValorTotal, 0) AS valoroutros, 
+                FormaPagamento.Nome AS pagamento, 
+                'AEREO' AS tipo,
+                Entidades_4.nome AS operadora
+          FROM            TitulosReceber RIGHT OUTER JOIN
+                                  Faturas RIGHT OUTER JOIN
+                                  Moeda INNER JOIN
+                                  Entidades AS Entidades_3 INNER JOIN
+                                  VendasBilhetes ON Entidades_3.IdEntidade = VendasBilhetes.IdEntidade ON Moeda.IdMoeda = VendasBilhetes.IdMoeda INNER JOIN
+                                  Filiais ON VendasBilhetes.IdFilial = Filiais.IdFilial ON Faturas.IdFatura = VendasBilhetes.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                  Entidades INNER JOIN
+                                  ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                                  Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda LEFT OUTER JOIN
+                                  Entidades AS entidades_1 ON VendasBilhetes.IdVendedor = entidades_1.IdEntidade LEFT OUTER JOIN
+                                  Entidades AS entidades_2 ON VendasBilhetes.IdEmissor = entidades_2.IdEntidade LEFT OUTER JOIN
+                                  RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                  FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                  Grupos ON VendasBilhetes.IdGrupo = Grupos.Id
+
+          ${whereClauseAereo} 
+
+          GROUP BY    
+                entidades_3.Nome, 
+                VendasBilhetes.datavenda, 
+                VendasBilhetes.DataVencimento,
+                VendasBilhetes.ValorTotal, 
+                VendasBilhetes.Id, 
+                FormaPagamento.Nome,
+                Entidades_4.nome    
+          
+          `
+      }else{
+      scriptAereo = 
+        `
+          SELECT      Faturas.Id AS idfatura,
+                Faturas.valor, 
+                Isnull(TitulosReceber.ValorPago,0) AS valorpago,
+                TitulosReceber.id AS idtitulo,
+                entidades_3.Nome AS entidade, 
+                Faturas.dataemissao, 
+                Faturas.datavencimento,
+                ISNULL(VendasBilhetes.ValorTotal, 0) AS valoroutros, 
+                VendasBilhetes.Id AS idvenda, 
+                FormaPagamento.Nome AS pagamento, 
+                'AEREO' AS tipo,
+                Entidades_4.nome AS operadora
+          FROM            TitulosReceber RIGHT OUTER JOIN
+                                  Filiais RIGHT OUTER JOIN
+                                  VendasBilhetes INNER JOIN
+                                  Faturas INNER JOIN
+                                  Entidades AS Entidades_3 ON Faturas.IdEntidade = Entidades_3.IdEntidade ON VendasBilhetes.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                  Moeda ON Faturas.IdMoeda = Moeda.IdMoeda ON Filiais.IdFilial = Faturas.IdFilial ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                  Entidades INNER JOIN
+                                  ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                                  Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda LEFT OUTER JOIN
+                                  Entidades AS entidades_1 ON VendasBilhetes.IdVendedor = entidades_1.IdEntidade LEFT OUTER JOIN
+                                  Entidades AS entidades_2 ON VendasBilhetes.IdEmissor = entidades_2.IdEntidade LEFT OUTER JOIN
+                                  RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                  FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                  Grupos ON VendasBilhetes.IdGrupo = Grupos.Id
+        
+          ${whereClauseAereo} 
+
+          GROUP BY    Faturas.Id,
+                Faturas.valor, 
+                entidades_3.Nome, 
+                Faturas.DataEmissao, 
+                Faturas.DataVencimento,
+                VendasBilhetes.ValorTotal, 
+                VendasBilhetes.Id, 
+                FormaPagamento.Nome,
+                TitulosReceber.ValorPago,
+                TitulosReceber.id,
+                Entidades_4.nome       
+          
+          `
+
+      }
+   // }
+
+    //if(servico === 'true') {
+      
+      request.input('empresa2', empresa);
+    
+      // Parâmetros opcionais
+      let whereClauseServico = ' WHERE VendasHoteis.empresa = @empresa2  ';
+
+      if (semFiltros === 'true') {
+        whereClauseServico += ' AND VendasHoteis.identidade = -1';
+      }
+
+      if (tipo === 'SemFatura') {
+        whereClauseServico += ' AND Isnull(VendasHoteis.IdFatura,0) = 0 and FormaPagamento.GerarFatura = 1';
+      }
+
+      if (tipo === 'true') {
+        whereClauseServico += ' AND VendasHoteis.identidade = -1';
+      }
+
+      // Filtros opcionais
+      if (idfilial) {
+        request.input('idfilial2', idfilial);
+        whereClauseServico += ' AND VendasHoteis.idfilial = @idfilial2';
+      }
+
+      if (identidade) {
+        request.input('identidade2', identidade);
+        whereClauseServico += ' AND VendasHoteis.identidade = @identidade2';
+      }
+
+      if (idmoeda) {
+        request.input('idmoeda2', idmoeda);
+        whereClauseServico += ' AND VendasHoteis.idmoeda = @idmoeda2';
+      }
+
+      if (idgrupo) {
+        request.input('idgrupo', idgrupo);
+        whereClauseAereo += ' AND VendasHoteis.idgrupo = @idgrupo';
+      }
+
+      if (vencimentoinicial) {
+        request.input('vencimentoinicial', vencimentoinicial);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento >= @vencimentoinicial';
+      }
+      
+      if (vencimentofinal) {
+        request.input('vencimentofinal', vencimentofinal);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento <= @vencimentofinal';
+      }
+      
+      if (datainicial) {
+        request.input('datainicial2', datainicial);
+        whereClauseServico += ' AND VendasHoteis.datavenda >= @datainicial2';
+      }
+      
+      if (datafinal) {
+        request.input('datafinal2', datafinal);
+        whereClauseServico += ' AND VendasHoteis.datavenda <= @datafinal2';
+      }
+
+      if (idoperadora) {
+        request.input('idoperadora', idoperadora);
+        whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
+      }
+
+      if (pax) {
+        request.input('pax', `%${pax}%`);
+        whereClause += ' AND ItensVendaHotel.pax LIKE @pax';
+      }
+
+      if (servicoinicial) {
+        request.input('servicoinicial', servicoinicial);
+        whereClause += ' AND vendashoteis.id >= @servicoinicial';
+      }
+      
+      if (servicofinal) {
+        request.input('servicofinal', servicofinal);
+        whereClause += ' AND vendashoteis.id <= @servicofinal';
+      }
+
+      if (faturainicial) {
+        request.input('faturainicial', faturainicial);
+        whereClause += ' AND Faturas.id >= @faturainicial';
+      }
+      
+      if (faturafinal) {
+        request.input('faturafinal', faturafinal);
+        whereClause += ' AND Faturas.id <= @faturafinal';
+      }
+
+      if(tipo == 'SemFatura'){
+
+          scriptServico = 
+          `
+          ${unionClause}
+
+          SELECT      
+                VendasHoteis.Id AS idvenda, 
+                entidades_3.Nome AS entidade, 
+                VendasHoteis.datavenda AS dataemissao, 
+                VendasHoteis.datavencimento,
+                ISNULL(VendasHoteis.ValorTotal, 0) AS valoroutros, 
+                FormaPagamento.Nome AS pagamento, 
+                'SERVICO' AS tipo,
+                Entidades_4.nome AS operadora
+          FROM            TitulosReceber RIGHT OUTER JOIN
+                                  Faturas RIGHT OUTER JOIN
+                                  Moeda INNER JOIN
+                                  Entidades AS Entidades_3 INNER JOIN
+                                  VendasHoteis ON Entidades_3.IdEntidade = VendasHoteis.IdEntidade ON Moeda.IdMoeda = VendasHoteis.IdMoeda INNER JOIN
+                                  Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                  Entidades INNER JOIN
+                                  ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                  Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                  Entidades AS entidades_1 ON VendasHoteis.IdVendedor = entidades_1.IdEntidade LEFT OUTER JOIN
+                                  Entidades AS entidades_2 ON VendasHoteis.IdEmissor = entidades_2.IdEntidade LEFT OUTER JOIN
+                                  RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                  FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                  Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+
+          ${whereClauseServico}
+          
+          GROUP BY   
+                entidades_3.Nome, 
+                VendasHoteis.datavenda, 
+                VendasHoteis.DataVencimento,
+                VendasHoteis.ValorTotal, 
+                VendasHoteis.Id, 
+                FormaPagamento.Nome,
+                Entidades_4.nome
+        
+        `
+      }else{
+          scriptServico = 
+          `
+          ${unionClause}
+
+          SELECT      Faturas.Id AS idfatura,
+                Faturas.valor, 
+                Isnull(TitulosReceber.ValorPago,0) AS valorpago,
+                TitulosReceber.id AS idtitulo,
+                entidades_3.Nome AS entidade, 
+                Faturas.dataemissao, 
+                Faturas.datavencimento,
+                ISNULL(VendasHoteis.ValorTotal, 0) AS valoroutros, 
+                VendasHoteis.Id AS idvenda, 
+                FormaPagamento.Nome AS pagamento, 
+                'SERVICO' AS tipo,
+                Entidades_4.nome AS operadora
+          FROM            TitulosReceber RIGHT OUTER JOIN
+                                  Filiais RIGHT OUTER JOIN
+                                  VendasHoteis INNER JOIN
+                                  Faturas INNER JOIN
+                                  Entidades AS Entidades_3 ON Faturas.IdEntidade = Entidades_3.IdEntidade ON VendasHoteis.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                  Moeda ON Faturas.IdMoeda = Moeda.IdMoeda ON Filiais.IdFilial = Faturas.IdFilial ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                  Entidades INNER JOIN
+                                  ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                  Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                  Entidades AS entidades_1 ON VendasHoteis.IdVendedor = entidades_1.IdEntidade LEFT OUTER JOIN
+                                  Entidades AS entidades_2 ON VendasHoteis.IdEmissor = entidades_2.IdEntidade LEFT OUTER JOIN
+                                  RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                  FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                  Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+
+          ${whereClauseServico}
+          
+          GROUP BY    Faturas.Id,
+                Faturas.valor, 
+                entidades_3.Nome, 
+                Faturas.DataEmissao, 
+                Faturas.DataVencimento,
+                VendasHoteis.ValorTotal, 
+                VendasHoteis.Id, 
+                FormaPagamento.Nome,
+                TitulosReceber.ValorPago,
+                TitulosReceber.id,
+                Entidades_4.nome
+        
+        `
+
+      }
+
+    //}
+    
+    const query =
+     `  ${scriptAereo} ${scriptServico} ${orderbyClause} `
+   
+    const result = await request.query(query);
+    
+   res.json(result.recordset);    
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).send(error.message);
+    //console.log(error.message); 
   }
 };
-*/
+
+// Obter relatórios sintético de vendas bilhetes
+const getRelatoriosSintetico = async (req, res) => {
+  try {
+    //console.log('getEmissao');
+    const { empresa, idfilial, identidade, idmoeda, idgrupo, idoperadora, datainicial, datafinal, 
+       vencimentoinicial, vencimentofinal, bilheteinicial, bilhetefinal, servicoinicial, servicofinal, 
+       faturainicial, faturafinal, pax, tipo  } = req.query;
+    const sql = require('mssql');
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
+   // console.log('Empresa: ' + empresa);
+   // console.log('Aéreo: ' + aereo);
+   // console.log('Serviço: ' + servico);
+
+    let semFiltros = 'false';
+
+    // Parâmetros obrigatórios
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    let scriptInicio = '';
+    let scriptFim = '';
+    let orderbyClause = '';
+    let scriptAereo = '';
+    let scriptServico = '';
+    let unionClause = '';
+    unionClause = ' UNION ';
+
+    if ( ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!idgrupo)&&(!idoperadora)&&(!datainicial)&&(!datafinal)&&(!vencimentoinicial)&&(!vencimentofinal)&&
+         (!bilheteinicial)&&(!bilhetefinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
+      semFiltros = 'true';
+
+    //console.log('Sem filtros: ' + semFiltros);
+    //console.log('Aéreo: ' + aereo);
+    //console.log(req.query);
+
+    //if( aereo === 'true') {
+
+      scriptInicio = 
+          `
+            SELECT  tabela.idfatura,
+                  tabela.valor, 
+                  tabela.valorpago,
+                  tabela.idtitulo,
+                  tabela.entidade, 
+                  tabela.dataemissao, 
+                  tabela.datavencimento
+            FROM    (
+
+            `
+
+      scriptFim = 
+          `
+            ) AS tabela
+            GROUP BY  tabela.idfatura,
+                  tabela.valor, 
+                  tabela.valorpago,
+                  tabela.idtitulo,
+                  tabela.entidade, 
+                  tabela.dataemissao, 
+                  tabela.datavencimento
+            `
+
+      if(tipo == 'Cliente')
+          orderbyClause += ' ORDER BY tabela.entidade, tabela.dataemissao, tabela.idfatura '
+      else
+      if(tipo == 'Emissao')
+        orderbyClause += ' ORDER BY tabela.dataemissao, tabela.entidade, tabela.idfatura '
+      else
+      if(tipo == 'Vencimento')
+        orderbyClause += ' ORDER BY tabela.datavencimento, tabela.entidade, tabela.idfatura '
+      else
+      if(tipo == 'Operadora')
+        orderbyClause += ' ORDER BY tabela.operadora, tabela.dataemissao, tabela.idfatura '
+      else
+      if(tipo == 'Fatura')
+        orderbyClause += ' ORDER BY tabela.idfatura, tabela.dataemissao, tabela.entidade ';
+
+
+      request.input('empresa', empresa);
+    
+      // Parâmetros opcionais
+      let whereClauseAereo = ' WHERE VendasBilhetes.empresa = @empresa  ';
+
+      if (semFiltros === 'true') {
+        whereClauseAereo += ' AND VendasBilhetes.identidade = -1';
+      }
+
+      // Filtros opcionais
+      if (idfilial) {
+        request.input('idfilial', idfilial);
+        whereClauseAereo += ' AND VendasBilhetes.idfilial = @idfilial';
+      }
+
+      if (identidade) {
+        request.input('identidade', identidade);
+        whereClauseAereo += ' AND VendasBilhetes.identidade = @identidade';
+      }
+
+      if (idmoeda) {
+        request.input('idmoeda', idmoeda);
+        whereClauseAereo += ' AND VendasBilhetes.idmoeda = @idmoeda';
+      }
+
+      if (idgrupo) {
+        request.input('idgrupo', idgrupo);
+        whereClauseAereo += ' AND VendasBilhetes.idgrupo = @idgrupo';
+      }
+
+      if (vencimentoinicial) {
+        request.input('vencimentoinicial', vencimentoinicial);
+        whereClauseAereo += ' AND VendasBilhetes.datavencimento >= @vencimentoinicial';
+      }
+      
+      if (vencimentofinal) {
+        request.input('vencimentofinal', vencimentofinal);
+        whereClauseAereo += ' AND VendasBilhetes.datavencimento <= @vencimentofinal';
+      }
+      
+      if (datainicial) {
+        request.input('datainicial', datainicial);
+        whereClauseAereo += ' AND VendasBilhetes.datavenda >= @datainicial';
+      }
+      
+      if (datafinal) {
+        request.input('datafinal', datafinal);
+        whereClauseAereo += ' AND VendasBilhetes.datavenda <= @datafinal';
+      }
+
+      if (idoperadora) {
+        request.input('idoperadora', idoperadora);
+        whereClause += ' AND ItensVendaBilhete.idoperadora = @idoperadora';
+      }
+
+      if (pax) {
+        request.input('pax', `%${pax}%`);
+        whereClause += ' AND ItensVendaBilhete.pax LIKE @pax';
+      }
+
+      if (servicoinicial) {
+        request.input('bilheteinicial', bilheteinicial);
+        whereClause += ' AND vendasbilhetes.id >= @bilheteinicial';
+      }
+      
+      if (servicofinal) {
+        request.input('bilhetefinal', bilhetefinal);
+        whereClause += ' AND vendasbilhetes.id <= @bilhetefinal';
+      }
+
+      if (faturainicial) {
+        request.input('faturainicial', faturainicial);
+        whereClause += ' AND Faturas.id >= @faturainicial';
+      }
+      
+      if (faturafinal) {
+        request.input('faturafinal', faturafinal);
+        whereClause += ' AND Faturas.id <= @faturafinal';
+      }
+
+      scriptAereo = 
+      `
+        SELECT  Faturas.Id AS idfatura,
+              Faturas.valor, 
+              Isnull(TitulosReceber.ValorPago,0) AS valorpago,
+              TitulosReceber.id AS idtitulo,
+              entidades_3.Nome AS entidade, 
+              Faturas.DataEmissao, 
+              Faturas.DataVencimento
+        FROM            TitulosReceber RIGHT OUTER JOIN
+                                Filiais RIGHT OUTER JOIN
+                                VendasBilhetes INNER JOIN
+                                Faturas INNER JOIN
+                                Entidades AS Entidades_3 ON Faturas.IdEntidade = Entidades_3.IdEntidade ON VendasBilhetes.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Moeda ON Faturas.IdMoeda = Moeda.IdMoeda ON Filiais.IdFilial = Faturas.IdFilial ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Entidades INNER JOIN
+                                ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                                Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda LEFT OUTER JOIN
+                                Entidades AS entidades_1 ON VendasBilhetes.IdVendedor = entidades_1.IdEntidade LEFT OUTER JOIN
+                                Entidades AS entidades_2 ON VendasBilhetes.IdEmissor = entidades_2.IdEntidade LEFT OUTER JOIN
+                                RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                Grupos ON VendasBilhetes.IdGrupo = Grupos.Id
+      
+        ${whereClauseAereo} 
+
+        GROUP BY    Faturas.Id,
+              Faturas.valor, 
+              entidades_3.Nome, 
+              Faturas.DataEmissao, 
+              Faturas.DataVencimento,
+              TitulosReceber.ValorPago,
+              TitulosReceber.id
+        
+        `
+   // }
+
+    //if(servico === 'true') {
+      
+      request.input('empresa2', empresa);
+    
+      // Parâmetros opcionais
+      let whereClauseServico = ' WHERE VendasHoteis.empresa = @empresa2  ';
+
+      if (semFiltros === 'true') {
+        whereClauseServico += ' AND VendasHoteis.identidade = -1';
+      }
+
+      // Filtros opcionais
+      if (idfilial) {
+        request.input('idfilial2', idfilial);
+        whereClauseServico += ' AND VendasHoteis.idfilial = @idfilial2';
+      }
+
+      if (identidade) {
+        request.input('identidade2', identidade);
+        whereClauseServico += ' AND VendasHoteis.identidade = @identidade2';
+      }
+
+      if (idmoeda) {
+        request.input('idmoeda2', idmoeda);
+        whereClauseServico += ' AND VendasHoteis.idmoeda = @idmoeda2';
+      }
+
+      if (idgrupo) {
+        request.input('idgrupo', idgrupo);
+        whereClauseAereo += ' AND VendasHoteis.idgrupo = @idgrupo';
+      }
+
+      if (vencimentoinicial) {
+        request.input('vencimentoinicial', vencimentoinicial);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento >= @vencimentoinicial';
+      }
+      
+      if (vencimentofinal) {
+        request.input('vencimentofinal', vencimentofinal);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento <= @vencimentofinal';
+      }
+      
+      if (datainicial) {
+        request.input('datainicial2', datainicial);
+        whereClauseServico += ' AND VendasHoteis.datavenda >= @datainicial2';
+      }
+      
+      if (datafinal) {
+        request.input('datafinal2', datafinal);
+        whereClauseServico += ' AND VendasHoteis.datavenda <= @datafinal2';
+      }
+
+      if (idoperadora) {
+        request.input('idoperadora', idoperadora);
+        whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
+      }
+
+      if (pax) {
+        request.input('pax', `%${pax}%`);
+        whereClause += ' AND ItensVendaHotel.pax LIKE @pax';
+      }
+
+      if (servicoinicial) {
+        request.input('servicoinicial', servicoinicial);
+        whereClause += ' AND vendashoteis.id >= @servicoinicial';
+      }
+      
+      if (servicofinal) {
+        request.input('servicofinal', servicofinal);
+        whereClause += ' AND vendashoteis.id <= @servicofinal';
+      }
+
+      if (faturainicial) {
+        request.input('faturainicial', faturainicial);
+        whereClause += ' AND Faturas.id >= @faturainicial';
+      }
+      
+      if (faturafinal) {
+        request.input('faturafinal', faturafinal);
+        whereClause += ' AND Faturas.id <= @faturafinal';
+      }
+
+
+      scriptServico = 
+      `
+      ${unionClause}
+
+        SELECT   Faturas.Id AS idfatura,
+              Faturas.valor, 
+              Isnull(TitulosReceber.ValorPago,0) AS valorpago,
+              TitulosReceber.id AS idtitulo,
+              entidades_3.Nome AS entidade, 
+              Faturas.DataEmissao, 
+              Faturas.DataVencimento
+        FROM            TitulosReceber RIGHT OUTER JOIN
+                                Filiais RIGHT OUTER JOIN
+                                VendasHoteis INNER JOIN
+                                Faturas INNER JOIN
+                                Entidades AS Entidades_3 ON Faturas.IdEntidade = Entidades_3.IdEntidade ON VendasHoteis.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Moeda ON Faturas.IdMoeda = Moeda.IdMoeda ON Filiais.IdFilial = Faturas.IdFilial ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Entidades INNER JOIN
+                                ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                Entidades AS entidades_1 ON VendasHoteis.IdVendedor = entidades_1.IdEntidade LEFT OUTER JOIN
+                                Entidades AS entidades_2 ON VendasHoteis.IdEmissor = entidades_2.IdEntidade LEFT OUTER JOIN
+                                RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+
+        ${whereClauseServico}
+        
+        GROUP BY    Faturas.Id,
+              Faturas.valor, 
+              entidades_3.Nome, 
+              Faturas.DataEmissao, 
+              Faturas.DataVencimento,
+              TitulosReceber.ValorPago,
+              TitulosReceber.id
+       
+      `
+    //}
+    
+    const query =
+     `  ${scriptInicio} ${scriptAereo} ${scriptServico} ${scriptFim}  ${orderbyClause} `
+   
+    const result = await request.query(query);
+    
+   res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).send(error.message);
+    //console.log(error.message); 
+  }
+};
 
 module.exports = {
   getFatura,
@@ -991,5 +1790,7 @@ module.exports = {
   deleteFatura,
   getEmissao,
   getFaturaImpressao,
-  getItensFaturaImpressao
+  getItensFaturaImpressao,
+  getRelatoriosAnalitico,
+  getRelatoriosSintetico
 };

@@ -83,7 +83,7 @@ const getMoedaById = async (req, res) => {
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('id', req.params.id)
+      .input('id', req.params.idmoeda)
       .query(
         `SELECT idmoeda, nome, sigla, codiso, intsingular, intplural, decsingular, decplural,
           empresa FROM moeda  WHERE idmoeda = @id ORDER BY nome`
@@ -196,4 +196,5 @@ module.exports = {
   updateMoeda,
   deleteMoeda,
   getMoedasDropDown,
+
 };
