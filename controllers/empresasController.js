@@ -231,6 +231,8 @@ const deleteEmpresa = async (req, res) => {
   }
 };
 
+
+
 module.exports = {
   getEmpresas,
   getEmpresaById,

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const atividadesController = require('../controllers/atividadesController');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
@@ -173,5 +174,14 @@ router.delete('/:id', atividadesController.deleteAtividade);
  *                     type: string
  */
 router.get('/', atividadesController.getAtividadesDropDown);
+
+// 🔐 Protege a rota de listagem geral (usuário precisa ter permissão "Atividade.View")
+router.get('/', authMiddleware('Atividade.View'), atividadesController.getAtividades);
+
+// 🔐 Protege edição (precisa "Atividade.Editar")
+router.put('/:id', authMiddleware('Atividade.Editar'), atividadesController.updateAtividade);
+
+// 🔐 Protege exclusão (precisa "Atividade.Excluir")
+router.delete('/:id', authMiddleware('Atividade.Excluir'), atividadesController.deleteAtividade);
 
 module.exports = router;

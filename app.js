@@ -37,6 +37,10 @@ const titulospagarRoutes = require('./routes/titulospagarRoutes');
 const usuariosRoutes = require('./routes/usuariosRoutes');
 const vendasbilheteRoutes = require('./routes/vendasbilheteRoutes'); 
 const vendashotelRoutes = require('./routes/vendashotelRoutes'); 
+const grupospermissoesRoutes = require('./routes/grupospermissoesRoutes'); 
+const permissoesRoutes = require('./routes/permissoesRoutes');
+const usuariosgruposRoutes = require('./routes/usuariosgruposRoutes'); 
+const recursosRoutes = require('./routes/recursosRoutes'); 
 
 // Swagger
 const setupSwagger = require('./swagger');
@@ -79,6 +83,10 @@ app.use('/api/titulosreceber', titulosreceberRoutes);
 app.use('/api/vendasbilhete', vendasbilheteRoutes); 
 app.use('/api/vendashotel', vendashotelRoutes); 
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/grupospermissoes', grupospermissoesRoutes);
+app.use('/api/permissoes', permissoesRoutes);
+app.use('/api/usuariosgrupos', usuariosgruposRoutes);
+app.use('/api/recursos', recursosRoutes);
 
 // Swagger
 setupSwagger(app);
