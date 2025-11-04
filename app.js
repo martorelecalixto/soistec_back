@@ -42,6 +42,7 @@ const usuariosgruposRoutes = require('./routes/usuariosgruposRoutes');
 const recursosRoutes = require('./routes/recursosRoutes');
 const emailRoutes = require('./routes/emailRoutes');
 const emailanexoRoutes = require('./routes/emailanexoRoutes');
+const nfseRoutes = require('./routes/nfseRoutes');
 
 // Swagger
 const setupSwagger = require('./swagger');
@@ -96,6 +97,7 @@ app.use('/api/grupospermissoes', grupospermissoesRoutes);
 app.use('/api/permissoes', permissoesRoutes);
 app.use('/api/usuariosgrupos', usuariosgruposRoutes);
 app.use('/api/recursos', recursosRoutes);
+app.use('/api/nfse', nfseRoutes);
 
 // Swagger
 setupSwagger(app);
@@ -130,7 +132,8 @@ limparUploadsTemporarios(); // também limpa na inicialização
 // Inicialização do servidor
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  //console.log(`🚀 Servidor rodando na porta ${PORT}`);
+   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
 

@@ -1152,7 +1152,7 @@ const getRelatoriosAnalitico = async (req, res) => {
     else
     if(tipo == 'Baixa'){
       whereClause += ' AND BaixasPagar.id > 0';
-      orderClause += ' ORDER BY titulospagar.id, titulospagar.databaixa';
+      orderClause += ' ORDER BY titulospagar.id, BaixasPagar.databaixa';
     }
 
     if(tipo == 'Baixa'){

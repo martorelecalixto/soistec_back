@@ -1,3 +1,8 @@
+
+
+
+
+/*
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 
@@ -36,6 +41,13 @@ async function sendEmail({ from, to, subject, html, attachments }) {
 }
 
 module.exports = { sendEmail };
+*/
+
+
+
+
+
+
 
 
 
