@@ -51,15 +51,17 @@ const importarNfse = async (req, res) => {
 
     for (const nota of notas) {
       const itemResumo = { numeroNf: nota.numeroNf ?? nota.numeronf ?? null, status: 'pendente', message: null };
-//console.log(`-----------------------------------------`);
+
       // Campos principais
       const cnpjPrestador = onlyDigits(nota.cnpjPrestador || nota.cnpj_prestador || nota.prestadorCnpj || '');
       const cpfCnpjTomador = onlyDigits(nota.cpfCnpjTomador || nota.cpf_cnpj_tomador || nota.tomadorCpfCnpj || '');
       const numeroNf = String(nota.numeroNf ?? nota.numeronf ?? nota.numero ?? '');
-      const dataEmissao = nota.dataEmissao ? new Date(nota.dataEmissao) : null;
-      const dataVencimento = nota.dataVencimento ? new Date(nota.dataVencimento)
-                      : (nota.dataEmissao ? new Date(nota.dataEmissao) : null);
-      const dataCompetencia = nota.dataEmissao ? new Date(nota.dataEmissao) : null;
+      const dataEmissao = parseBrazilianDate(nota.dataEmissao);
+      const dataVencimento = parseBrazilianDate(nota.dataVencimento) 
+          || parseBrazilianDate(nota.dataEmissao);
+    
+      const dataCompetencia = parseBrazilianDate(nota.dataVencimento) 
+          || parseBrazilianDate(nota.dataEmissao);
 
       const valorBruto = Number(nota.valorBruto ?? nota.valorbruto ?? nota.valortotal ?? 0);
       const valorLiquido = Number(nota.valorLiquido ?? nota.valorliquido ?? valorBruto ?? 0);
@@ -73,9 +75,7 @@ const importarNfse = async (req, res) => {
       const valorIPI = Number(nota.valorIPI ?? nota.valoripi ?? 0);
       const descricao = nota.descricao ?? nota.obs ?? 'SERVIÇO';
       const idtitulo = nota.idtitulo ?? null;
-      //const moeda = 2;
-      //const formapagamento = 8;
-      //const planoconta = 24;
+
       let chave = ''; 
 
       try {
@@ -90,7 +90,6 @@ const importarNfse = async (req, res) => {
             `);
           if (rFilial.recordset.length > 0) idfilial = rFilial.recordset[0].idfilial;
         }
-//console.log(`(##01##)CNPJ Prestador: ${cnpjPrestador} => idfilial: ${idfilial}`);
         // 2) Buscar entidade
         let identidade = null;
         if (cpfCnpjTomador) {
@@ -102,7 +101,6 @@ const importarNfse = async (req, res) => {
             `);
           if (rEnt.recordset.length > 0) identidade = rEnt.recordset[0].identidade;
         }
-//console.log(`(##02##)CPF/CNPJ Tomador: ${cpfCnpjTomador} => identidade: ${identidade}`);        
 
         if (!idfilial || !identidade) {
           itemResumo.status = 'erro';
@@ -123,7 +121,6 @@ const importarNfse = async (req, res) => {
           summary.push(itemResumo);
           continue;
         }
-//console.log(`(##03##)Importando NF ${numeroNf} para idfilial ${idfilial}, identidade ${identidade}...`);
         // 4) Transação
         const transaction = new sql.Transaction(pool);
         await transaction.begin();
@@ -153,7 +150,6 @@ const importarNfse = async (req, res) => {
             .input('idmoeda', moeda)//2
             .input('natureza', 'ENTRADA')
             .input('tipo', 'SERVICO');
-//console.log(`(##04##)Inserindo NF...`);
           const rInsertNf = await trNf.query(`
             INSERT INTO nf (
               idfilial, identidade, dataemissao, datavencimento, numeronf,
@@ -169,18 +165,14 @@ const importarNfse = async (req, res) => {
             );
             SELECT SCOPE_IDENTITY() AS id;
           `);
-//console.log(`(##04.01##)NF inserida, resultado:`, rInsertNf.recordset);
 
           const idNf = rInsertNf.recordset[0]?.id;
-//console.log(`(##04.02##)idNf retornado: ${idNf}`);
           if (!idNf) throw new Error('Falha ao inserir NF (id não retornado).');
 
           // --- ITENSNF ---
           const itens = Array.isArray(nota.itens) && nota.itens.length > 0
             ? nota.itens
             : [{ descricao, valorBruto }];
-
-//console.log('Itens a inserir:', itens);
 
           for (const it of itens) {
             const itDescricao = it.descricao ?? descricao ?? '';
@@ -311,6 +303,7 @@ const getNfse = async (req, res) => {
  */
 const getNfseById = async (req, res) => {
   try {
+    
     const id = req.params.id;
     const pool = await poolPromise;
     const result = await pool.request()
@@ -404,10 +397,101 @@ const deleteNfse = async (req, res) => {
   }
 };
 
+const getIdFilial = async (req, res) => {
+  try {
+    const { cnpj, empresa } = req.query;
+
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('cnpj', cnpj)
+      .input('empresa', empresa)
+      .query(`SELECT idfilial FROM filiais WHERE cnpjcpf = @cnpj AND empresa = @empresa`);
+
+    if (result.recordset.length > 0) {
+      return res.json(result.recordset[0].idfilial);
+    }
+
+    return res.json(0);
+
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+const getIdCliente = async (req, res) => {
+  try {
+    const { cnpj, empresa } = req.query;
+
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('cnpj', cnpj)
+      .input('empresa', empresa)
+      .query(`SELECT identidade FROM entidades WHERE cnpjcpf = @cnpj AND empresa = @empresa`);
+
+    if (result.recordset.length > 0) {
+      return res.json(result.recordset[0].identidade);
+    }
+
+    return res.json(0);
+
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+const getExistNF = async (req, res) => {
+  try {
+    const { idfilial, idcliente, nf, empresa } = req.query;
+
+    if (!empresa) {
+          return res.status(400).json({ success: false, message: 'Parâmetro "empresa" é obrigatório.' });
+        }
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('idfilial', idfilial)
+      .input('idcliente', idcliente)
+      .input('nf', nf)
+      .input('empresa', empresa)
+      .query(`
+        SELECT numeronf 
+        FROM nf 
+        WHERE idfilial = @idfilial 
+          AND identidade = @idcliente 
+          AND numeronf = @nf
+          AND empresa = @empresa
+      `);
+
+    // Retorna true ou false diretamente como JSON simples
+    return res.json(result.recordset.length > 0);
+
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+function parseBrazilianDate(v) {
+  if (!v) return null;
+  v = String(v).trim();
+
+  const m = v.match(/(\d{2})[\/.-](\d{2})[\/.-](\d{4})/);
+  if (!m) return null;
+
+  return new Date(`${m[3]}-${m[2]}-${m[1]}`);
+}
+
 module.exports = {
   importarNfse,
   getNfse,
   getNfseById,
   updateNfse,
-  deleteNfse
+  deleteNfse,
+  getIdFilial,
+  getIdCliente,
+  getExistNF
 };

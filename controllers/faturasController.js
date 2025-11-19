@@ -145,7 +145,8 @@ const getItensFaturaImpressao = async (req, res) => {
           isnull(ivb.ValorAssento,0) AS valoroutros,
           isnull(vb.observacao,'') AS observacao, 
           isnull(vb.solicitante,'') AS solicitante, 
-          isnull(fp.Nome,'') AS pagamento
+          isnull(fp.Nome,'') AS pagamento,
+          vb.idfilial
       FROM VendasBilhetes vb
       INNER JOIN ItensVendaBilhete ivb ON vb.IdVenda = ivb.IdVenda
       INNER JOIN FormaPagamento fp ON vb.IdFormaPagamento = fp.IdFormaPagamento
@@ -169,7 +170,8 @@ const getItensFaturaImpressao = async (req, res) => {
           0 AS valoroutros,
           '' AS observacao, 
           '' AS solicitante, 
-          '' AS pagamento
+          '' AS pagamento,
+          vb.idfilial
       FROM VendasBilhetes vb
       INNER JOIN ItensVendaBilhete ivb ON vb.IdVenda = ivb.IdVenda
       INNER JOIN FormaPagamento fp ON vb.IdFormaPagamento = fp.IdFormaPagamento
@@ -177,7 +179,7 @@ const getItensFaturaImpressao = async (req, res) => {
       LEFT JOIN Entidades ent ON ivb.IdCiaAerea = ent.IdEntidade
       WHERE vb.empresa = @empresa AND vb.idfatura = @idfatura
       AND vb.Descontototal > 0
-      GROUP BY vb.id, vb.dataVenda, vb.Descontototal
+      GROUP BY vb.id, vb.dataVenda, vb.Descontototal, vb.idfilial
 
       UNION ALL
 
@@ -196,7 +198,8 @@ const getItensFaturaImpressao = async (req, res) => {
           isnull(ivh.ValorOutros,0) AS valoroutros,
           isnull(vh.observacao,'') AS observacao, 
           isnull(vh.solicitante,'') AS solicitante, 
-          isnull(fp2.Nome,'') AS pagamento
+          isnull(fp2.Nome,'') AS pagamento,
+          vh.idfilial
       FROM VendasHoteis vh
       INNER JOIN ItensVendaHotel ivh ON vh.IdVenda = ivh.IdVenda
       INNER JOIN FormaPagamento fp2 ON vh.IdFormaPagamento = fp2.IdFormaPagamento
@@ -220,7 +223,8 @@ const getItensFaturaImpressao = async (req, res) => {
           0 AS valoroutros,
           '' AS observacao, 
           '' AS solicitante, 
-          '' AS pagamento
+          '' AS pagamento,
+          vh.idfilial
       FROM VendasHoteis vh
       INNER JOIN ItensVendaHotel ivh ON vh.IdVenda = ivh.IdVenda
       INNER JOIN FormaPagamento fp2 ON vh.IdFormaPagamento = fp2.IdFormaPagamento
@@ -228,7 +232,7 @@ const getItensFaturaImpressao = async (req, res) => {
       LEFT JOIN Entidades ent2 ON ivh.IdFornecedor = ent2.IdEntidade
       WHERE vh.empresa = @empresa AND vh.idfatura = @idfatura
       AND vh.Descontototal > 0
-      GROUP BY vh.id, vh.dataVenda, vh.Descontototal
+      GROUP BY vh.id, vh.dataVenda, vh.Descontototal, vh.idfilial
 
       ORDER BY 2, 1
     `;
