@@ -14,13 +14,13 @@ const getRecursos = async (req, res) => {
     const pool = await poolPromise;
     const request = pool.request();
 
-    request.input('empresa', empresa);
+    //request.input('empresa', empresa);
 
     // Parâmetros opcionais
-    let whereClause = 'WHERE recursos.empresa = @empresa';
+    let whereClause = '';//'WHERE recursos.empresa = @empresa';
 
     if (nome) {
-      whereClause += ' AND recursos.nome LIKE @nome';
+      whereClause += ' WHERE recursos.nome LIKE @nome';
       request.input('nome', `%${nome}%`);
     }
 
