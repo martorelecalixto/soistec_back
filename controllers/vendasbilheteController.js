@@ -3,7 +3,7 @@ const { poolPromise } = require('../db');
 // Obter todas as vendasbilhete
 const getVendasBilhete = async (req, res) => {
   try {
-    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal } = req.query;
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal, idvendedor } = req.query;
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -46,6 +46,11 @@ const getVendasBilhete = async (req, res) => {
       whereClause += ' AND vendasbilhetes.datavenda <= @datafinal';
     }
 
+    if ((idvendedor) && (idvendedor != '0')) {
+      request.input('idvendedor', idvendedor);
+      whereClause += ' AND vendasbilhetes.idvendedor = @idvendedor';
+    }
+
     whereClause += ' GROUP BY vendasbilhetes.idvenda, vendasbilhetes.valortotal, vendasbilhetes.descontototal, vendasbilhetes.valorentrada,  ' + //
                    ' vendasbilhetes.observacao, vendasbilhetes.solicitante, vendasbilhetes.identidade, ' +
                    ' vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome, formapagamento.nome, ' +
@@ -75,9 +80,7 @@ const getVendasBilhete = async (req, res) => {
                               Grupos ON VendasBilhetes.IdGrupo = Grupos.Id LEFT OUTER JOIN
                               ItensVendaBilhete ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda ${whereClause}  `
    const result = await request.query(query);
-   //console.log('DATA::', datainicial, datafinal);  
-   //console.log('result::', result.recordset);
-   //console.log('QUERY::', query);
+
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);
@@ -416,7 +419,7 @@ const getRelatoriosAnalitico = async (req, res) => {
       whereClause += ' AND vendasbilhetes.idformapagamento = @idformapagamento';
     }
 
-    if (idvendedor) {
+    if ((idvendedor) && (idvendedor != '0')) {
       request.input('idvendedor', idvendedor);
       whereClause += ' AND vendasbilhetes.idvendedor = @idvendedor';
     }
@@ -590,7 +593,7 @@ const getRelatoriosSintetico = async (req, res) => {
       whereClause += ' AND vendasbilhetes.idformapagamento = @idformapagamento';
     }
 
-    if (idvendedor) {
+    if ((idvendedor) && (idvendedor != '0')) {
       request.input('idvendedor', idvendedor);
       whereClause += ' AND vendasbilhetes.idvendedor = @idvendedor';
     }

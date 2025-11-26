@@ -262,7 +262,7 @@ const login = async (req, res) => {
       .request()
       .input("email", email)
       .query(`
-        SELECT idusuario, nome, email, senha, empresa, idempresa
+        SELECT idusuario, nome, email, senha, empresa, idempresa, idvendedor
         FROM usuarios
         WHERE email = @email AND ativo = 1
       `);
@@ -318,10 +318,11 @@ const login = async (req, res) => {
       email: usuario.email,
       empresa: usuario.empresa,
       idempresa: usuario.idempresa,
+      idvendedor: usuario.idvendedor,
       grupos,
       permissoes,
     };
-
+    //console.log('TOKEN PAYLOAD::', tokenPayload);
     // 🔑 Access Token expira em 30 minutos
     const accessToken = jwt.sign(tokenPayload, SECRET_KEY, { expiresIn: "5m" });
 
@@ -343,11 +344,13 @@ const login = async (req, res) => {
       email: usuario.email,
       empresa: usuario.empresa,
       idempresa: usuario.idempresa,
+      idvendedor: usuario.idvendedor,
       grupos,
       permissoes,
       accessToken,
       refreshToken,
     });
+
   } catch (error) {
     console.error("Erro no login:", error);
     return res.status(500).json({ success: false, message: error.message });
@@ -421,7 +424,7 @@ const getUsuarios = async (req, res) => {
 
    const query =
     `SELECT idusuario, nome, email, celular, isnull(ativo,0) as ativo,
-      case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa FROM usuarios ${whereClause}`
+      case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idvendedor FROM usuarios ${whereClause}`
 
    const result = await request.query(query);
 
@@ -447,7 +450,7 @@ const getUsuarioById = async (req, res) => {
       .input('idsuario', req.params.idusuario)
       .query(
         `SELECT idusuario, nome, email, celular, isnull(ativo,0) as ativo,
-        case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa FROM usuarios  WHERE idusuario = @idusuario ORDER BY nome`
+        case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idvendedor FROM usuarios  WHERE idusuario = @idusuario ORDER BY nome`
       );
 
     //  .query('SELECT * FROM atividades  WHERE id = @id');
@@ -466,7 +469,7 @@ const getUsuarioById = async (req, res) => {
 const createUsuario = async (req, res) => {
   try {
     const {
-      nome, empresa, email, senha, celular, ativo
+      nome, empresa, email, senha, celular, ativo, idvendedor
     } = req.body;
 
     // ✅ Criptografar a senha antes de salvar
@@ -481,11 +484,12 @@ const createUsuario = async (req, res) => {
       .input('senha', hashedSenha)
       .input('celular', celular)
       .input('ativo', ativo)
+      .input('idvendedor', idvendedor)
       .query(
         `INSERT INTO usuarios (
-          nome, empresa, email, senha, celular, ativo
+          nome, empresa, email, senha, celular, ativo, idvendedor
         ) VALUES (
-          @nome, @empresa, @email, @senha, @celular, @ativo
+          @nome, @empresa, @email, @senha, @celular, @ativo, @idvendedor
         )`
       );
 
@@ -499,7 +503,7 @@ const createUsuario = async (req, res) => {
 const updateUsuario = async (req, res) => {
   try {
     const {
-      nome, celular, ativo
+      nome, celular, ativo, idvendedor
     } = req.body;
     // ✅ Criptografar a senha antes de salvar
     //const hashedSenha = await bcrypt.hash(senha, 10);
@@ -512,11 +516,13 @@ const updateUsuario = async (req, res) => {
         .input('nome', nome)
         .input('celular', celular)
         .input('ativo', ativo)
+        .input('idvendedor', idvendedor)
         .query(
           `UPDATE usuarios SET
             nome = @nome,
             celular = @celular,
-            ativo = @ativo
+            ativo = @ativo,
+            idvendedor = @idvendedor
           WHERE idusuario = @idusuario`
         );
 

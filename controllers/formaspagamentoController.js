@@ -91,6 +91,7 @@ const getFormaPagamentoById = async (req, res) => {
 // Criar uma nova forma pagamento
 const createFormaPagamento = async (req, res) => {
   try {
+   // console.log(req.body);
     const { nome, empresa, tipo, debito, credito, 
             gerartitulofatura, gerartitulovenda, baixaautomatica, vendaparcelada, gerarfatura,
             addtaxanovalor, addassentonovalor, addravnovalor, addcomissaonovalor, gerartituloservicofor,
@@ -133,7 +134,7 @@ const createFormaPagamento = async (req, res) => {
         '@gerartituloservicocomis, @idplanocontaaereo, @idplanocontaforaereo, @idplanocontaservico,' +
         '@idplanocontaforservico, @idplanocontacomisservico, @idplanocontapacote)'
       );
-
+//console.log('Forma Pagamento criado com sucesso');
     res.status(201).json({ success: true, message: 'Forma Pagamento criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

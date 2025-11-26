@@ -29,8 +29,9 @@ const getUsuarioById = async (req, res) => {
 };
 
 const createUsuario = async (req, res) => {
+  console.log('Request Body:', req.body); // Log do corpo da requisição
   try {
-    const { nome, email, senha } = req.body;
+    const { nome, email, senha, idvendedor } = req.body;
 
     // ✅ Criptografar a senha antes de salvar
     const hashedSenha = await bcrypt.hash(senha, 10);
@@ -41,8 +42,10 @@ const createUsuario = async (req, res) => {
       .input('nome', nome)
       .input('email', email)
       .input('senha', hashedSenha)
-      .query('INSERT INTO usuarios (nome, email, senha) VALUES (@nome, @email, @senha)');
+      .input('idvendedor', idvendedor)
+      .query('INSERT INTO usuarios (nome, email, senha, idvendedor) VALUES (@nome, @email, @senha, @idvendedor)');
 
+      console.log('Usuário criado com sucesso'); // Log de sucesso
     res.status(201).json({ success: true, message: 'Usuário criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -51,7 +54,8 @@ const createUsuario = async (req, res) => {
 
 const updateUsuario = async (req, res) => {
   try {
-    const { nome, email, senha } = req.body;
+    console.log('Request Body:', req.body); // Log do corpo da requisição
+    const { nome, email, senha, idvendedor } = req.body;
 
     // ✅ Criptografar nova senha se fornecida
     const hashedSenha = await bcrypt.hash(senha, 10);
@@ -63,8 +67,9 @@ const updateUsuario = async (req, res) => {
       .input('nome', nome)
       .input('email', email)
       .input('senha', hashedSenha)
-      .query('UPDATE usuarios SET nome = @nome, email = @email, senha = @senha WHERE idusuario = @idusuario');
-
+      .input('idvendedor', idvendedor)
+      .query('UPDATE usuarios SET nome = @nome, email = @email, senha = @senha, idvendedor = @idvendedor WHERE idusuario = @idusuario');
+console.log('Usuário atualizado com sucesso'); // Log de sucesso
     res.json({ success: true, message: 'Usuário atualizado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -83,7 +88,6 @@ const deleteUsuario = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 
 module.exports = {

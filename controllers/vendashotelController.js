@@ -3,7 +3,7 @@ const { poolPromise } = require('../db');
 // Obter todas as vendashotel
 const getVendasHotel = async (req, res) => {
   try {
-    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal } = req.query;
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal, idvendedor } = req.query;
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -43,6 +43,12 @@ const getVendasHotel = async (req, res) => {
     if (datafinal) {
       request.input('datafinal', datafinal);
       whereClause += ' AND vendashoteis.datavenda <= @datafinal';
+    }
+
+    if ((idvendedor) && (idvendedor != '0')) {
+
+      request.input('idvendedor', idvendedor);
+      whereClause += ' AND vendashoteis.idvendedor = @idvendedor';
     }
 
     whereClause += 
@@ -600,7 +606,7 @@ const getRelatoriosAnalitico = async (req, res) => {
       whereClause += ' AND vendashoteis.idformapagamento = @idformapagamento';
     }
 
-    if (idvendedor) {
+    if ((idvendedor) && (idvendedor != '0')) {
       request.input('idvendedor', idvendedor);
       whereClause += ' AND vendashoteis.idvendedor = @idvendedor';
     }
@@ -776,7 +782,7 @@ const getRelatoriosSintetico = async (req, res) => {
       whereClause += ' AND vendashoteis.idformapagamento = @idformapagamento';
     }
 
-    if (idvendedor) {
+    if ((idvendedor) && (idvendedor != '0')) {
       request.input('idvendedor', idvendedor);
       whereClause += ' AND vendashoteis.idvendedor = @idvendedor';
     }

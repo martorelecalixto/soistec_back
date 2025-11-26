@@ -1,6 +1,58 @@
 const { poolPromise } = require('../db');
 
 // Obter todas as configurações
+/*
+const getConfiguracoes = async (req, res) => {
+  try {
+    const { empresa } = req.query;
+
+    if (!empresa) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "empresa" é obrigatório.'
+      });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('empresa', empresa)
+      .query(`
+        SELECT id, idformapagtohotelcli, idformapagtohotelfor, idformapagtohotelcomis, 
+               idmoedapadrao, idfilialpadrao, empresa, idcontabancariapadrao, 
+               mensagemfaturapadrao, condicoesespeciaisfatura, idplanocontaaereocli, idplanocontaaereofor, 
+               idplanocontahotelcli, idplanocontahotelfor, idplanocontapacotefor, idplanocontapacotecli, 
+               idplanocontahotelcomis, idplanocontafatura, idformapagamentofatura, idplanocontapagreembolso, 
+               idplanocontarecreembolso, idcentrocustorecreembolso, idcentrocustopagreembolso, 
+               lancamentotituloautomatico, utilizarcopet, separartaxanafatura, separarravnafatura, 
+               separarcomissaonafatura, separardescontonafatura, faturacomformapagtodistinto, 
+               emailde, emailremetente, emailsenha, emailsmtp, emailporta, ididiomapadrao, 
+               idclientecaixa, idformapagamentoentrada, qtd_dia_dashboard
+        FROM configuracoessistema
+        WHERE empresa = @empresa
+      `);
+
+    if (result.recordset.length > 0) {
+      return res.json({
+        success: true,
+        data: result.recordset[0]
+      });
+    } else {
+      return res.json({
+        success: true,
+        data: null
+      });
+    }
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+*/
+
 const getConfiguracoes = async (req, res) => {
   try {
     const { empresa } = req.query;
@@ -41,6 +93,9 @@ const getConfiguracoes = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
+
+
+
 
 // Obter configuração pelo ID
 const getConfiguracaoById = async (req, res) => {
