@@ -57,7 +57,7 @@ const getPermissoesFora = async (req, res) => {
     request.input('idgrupopermissao', idgrupopermissao);
 
     // Parâmetros opcionais
-    let whereClause = 'AND Recursos.empresa = @empresa';
+    let whereClause = 'AND Recursos.idrecurso > 0';
 
     whereClause += ' ORDER BY Recursos.nome ';
 
