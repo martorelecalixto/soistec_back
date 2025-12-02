@@ -14,6 +14,12 @@ router.get('/relatorios/analitico', vendasbilheteController.getRelatoriosAnaliti
 
 router.get('/relatorios/sintetico', vendasbilheteController.getRelatoriosSintetico);
 
+router.get('/busca/vencimentocopet', vendasbilheteController.getVencimentoCopet);
+
+router.get('/busca/bilhetecadastrado', vendasbilheteController.getBilheteCadastrado);
+
+router.get('/busca/rav', vendasbilheteController.getRav);
+
 router.get('/tembaixa/:idvenda', vendasbilheteController.getTemBaixa);
 
 router.get('/:idvenda', vendasbilheteController.getVendasBilheteById);

@@ -791,6 +791,292 @@ const getRelatoriosSintetico = async (req, res) => {
   }
 };
 
+const getVencimentoCopet = async (req, res) => {
+  try {
+    const { empresa, datainicial, datafinal } = req.query;
+    const sql = require('mssql');
+
+    if (!empresa) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "empresa" é obrigatório.'
+      });
+    }
+
+    if (!datainicial || !datafinal) {
+      return res.status(400).json({
+        success: false,
+        message: 'Os parâmetros "datainicial" e "datafinal" são obrigatórios.'
+      });
+    }
+
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('empresa', empresa);
+    request.input('datainicial', datainicial);
+    request.input('datafinal', datafinal);
+
+    const query = `
+      SELECT 
+        copets.venctocopet,
+        copets.venctocopetog,
+        copets.venctocliente,
+        copets.venctoclienteog
+      FROM copets
+      WHERE 
+        copets.empresa = @empresa
+        AND copets.id > 0
+        AND copets.DataInicial <= @datainicial
+        AND copets.DataFinal >= @datafinal
+    `;
+
+    const result = await request.query(query);
+    const rows = result.recordset || [];
+
+    // ⚠️ Se nenhum registro encontrado, retorna '' conforme solicitado
+    if (rows.length === 0) {
+      return res.json({
+        success: true,
+        vencimento: '',
+        data: ''  // caso prefira [] basta trocar aqui
+      });
+    }
+
+    // Quando encontra registros
+    return res.json({
+      success: true,
+      vencimento: rows[0].venctocliente || '',
+      data: rows
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno no servidor",
+      error: error.message
+    });
+  }
+};
+
+const getBilheteCadastrado = async (req, res) => {
+  try {
+    const { empresa, bilhete, id } = req.query;
+    const sql = require('mssql');
+
+    // Validação
+    if (!empresa) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "empresa" é obrigatório.'
+      });
+    }
+
+    if (!bilhete) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "bilhete" é obrigatório.'
+      });
+    }
+
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('empresa', empresa);
+    request.input('bilhete', bilhete);
+    request.input('id', id);
+
+    const query = `
+      SELECT 
+        CONCAT(
+          'Nro Venda: ',
+          COALESCE(VendasBilhetes.Id, ''),
+          ' - ',
+          COALESCE(Entidades.Nome, ''),
+          ' - ',
+          COALESCE(ItensVendaBilhete.Bilhete, '')
+        ) AS descricao
+      FROM Entidades
+      INNER JOIN VendasBilhetes 
+        ON Entidades.IdEntidade = VendasBilhetes.IdEntidade
+      INNER JOIN ItensVendaBilhete 
+        ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda
+      WHERE 
+        VendasBilhetes.empresa = @empresa
+        AND VendasBilhetes.id > 0
+        AND ItensVendaBilhete.bilhete = @bilhete
+        AND ItensVendaBilhete.id <> @id
+    `;
+
+    const result = await request.query(query);
+    const rows = result.recordset || [];
+
+    // ⚠️ Se não encontrou nada, retorna '' conforme solicitado
+    if (rows.length === 0) {
+      return res.json({
+        success: true,
+        msg: '',
+        data: ''
+      });
+    }
+
+    // Registro encontrado
+    return res.json({
+      success: true,
+      msg: rows[0].descricao || '',
+      data: rows
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno no servidor",
+      error: error.message
+    });
+  }
+};
+
+const getRav = async (req, res) => {
+  try {
+    const { empresa, idciaaerea, tipovoo, valor } = req.query;
+    const sql = require("mssql");
+
+    // Validações
+    if (!empresa) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "empresa" é obrigatório.',
+      });
+    }
+
+    if (!idciaaerea) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "idciaaerea" é obrigatório.',
+      });
+    }
+
+    if (!tipovoo) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "tipovoo" é obrigatório.',
+      });
+    }
+
+    if (!valor) {
+      return res.status(400).json({
+        success: false,
+        message: 'O parâmetro "valor" é obrigatório.',
+      });
+    }
+
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input("empresa", empresa);
+    request.input("idciaaerea", idciaaerea);
+    request.input("tipovoo", tipovoo);
+    request.input("valor", valor);
+
+    let percentual = 0;
+    let valorRav = 0;
+
+    const whereClause = `
+      WHERE Entidades.empresa = @empresa
+        AND Entidades.identidade = @idciaaerea
+    `;
+
+    // ============================
+    // 1️⃣ BUSCA COMISSÃO PRINCIPAL
+    // ============================
+    const queryBase = `
+      SELECT 
+        CAereas.PerComisNac,
+        CAereas.PerComisInt
+      FROM CAereas
+      INNER JOIN Entidades ON CAereas.EntidadeID = Entidades.IdEntidade
+      ${whereClause}
+    `;
+
+    const baseResult = await request.query(queryBase);
+    const baseRows = baseResult.recordset || [];
+
+    if (baseRows.length === 0) {
+      // Nenhum registro encontrado → retorna vazio conforme padrão das outras APIs
+      return res.json({
+        success: true,
+        percentual: '',
+        valor: ''
+      });
+    }
+
+    // Definição inicial
+    if (tipovoo === "NACIONAL") {
+      percentual = baseRows[0].PerComisNac || 0;
+    } else {
+      percentual = baseRows[0].PerComisInt || 0;
+    }
+
+    // =======================================
+    // 2️⃣ SE PERCENTUAL = 0 → CONSULTA TABELAS
+    // =======================================
+    const buscarFaixa = async (campoValorIni, campoValorFin, campoValor, campoPerc) => {
+      const queryFaixa = `
+        SELECT 
+          ISNULL(CAereas.${campoValor}, 0) AS valor,
+          ISNULL(CAereas.${campoPerc}, 0) AS percentual
+        FROM CAereas
+        INNER JOIN Entidades ON CAereas.EntidadeID = Entidades.IdEntidade
+        ${whereClause}
+        AND CAereas.${campoValorIni} <= @valor 
+        AND CAereas.${campoValorFin} >= @valor
+      `;
+
+      const faixaResult = await request.query(queryFaixa);
+      return faixaResult.recordset[0] || null;
+    };
+
+    if (percentual === 0) {
+      let faixa1, faixa2;
+
+      if (tipovoo === "NACIONAL") {
+        faixa1 = await buscarFaixa("ValorIniNac1", "ValorFinNac1", "ValorNac1", "PercNac1");
+        faixa2 = await buscarFaixa("ValorIniNac2", "ValorFinNac2", "ValorNac2", "PercNac2");
+      } else {
+        faixa1 = await buscarFaixa("ValorIniInt1", "ValorFinInt1", "ValorInt1", "PercInt1");
+        faixa2 = await buscarFaixa("ValorIniInt2", "ValorFinInt2", "ValorInt2", "PercInt2");
+      }
+
+      const faixa = faixa1 || faixa2;
+
+      if (faixa) {
+        if (faixa.percentual > 0) {
+          percentual = faixa.percentual;
+        } else {
+          valorRav = faixa.valor;
+        }
+      }
+    }
+
+    // ======================
+    // 3️⃣ RETORNO FINAL
+    // ======================
+    return res.json({
+      success: true,
+      percentual: percentual || '',
+      valor: valorRav || ''
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno no servidor",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   getVendasBilhete,
   getVendasBilheteById,
@@ -799,5 +1085,8 @@ module.exports = {
   deleteVendasBilhete,
   getTemBaixa,
   getRelatoriosAnalitico,
-  getRelatoriosSintetico
+  getRelatoriosSintetico,
+  getVencimentoCopet,
+  getBilheteCadastrado,
+  getRav
 };
