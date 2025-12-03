@@ -4,6 +4,8 @@ const { poolPromise } = require('../db');
 const getVendasBilhete = async (req, res) => {
   try {
     const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal, idvendedor } = req.query;
+   // console.log('req.query::', req.query);
+   // console.log('EMPRESA::', empresa);
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -79,9 +81,10 @@ const getVendasBilhete = async (req, res) => {
                               RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                               Grupos ON VendasBilhetes.IdGrupo = Grupos.Id LEFT OUTER JOIN
                               ItensVendaBilhete ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda ${whereClause}  `
+//console.log('query::', query);
    const result = await request.query(query);
-
-   res.json(result.recordset);    
+   res.json(result.recordset);
+  // console.log('result::', result);     
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -199,6 +202,7 @@ const createVendasBilhete = async (req, res) => {
       id,
       valorentrada
     } = req.body;
+   // console.log('REQ.BODY::', req.body);
 
     const pool = await poolPromise;
     const result = await pool
@@ -375,6 +379,7 @@ const getRelatoriosAnalitico = async (req, res) => {
       vencimentoinicial, vencimentofinal, idformapagamento, idvendedor, idemissor,  idgrupo,
       aereoinicial, aereofinal, faturainicial, faturafinal, pax, tipo, idoperadora
      } = req.query;
+   //  console.log('req.query::', req.query);
     const sql = require('mssql');
     //console.log('REQUISIÇÃO::', req.query);
     //console.log('EMPRESA::', empresa);
@@ -535,7 +540,9 @@ const getRelatoriosAnalitico = async (req, res) => {
                       Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
                               
     ${whereClause}  `
+    //console.log('QUERY::', query);
    const result = await request.query(query);
+   //console.log('RESULT::', result);
    //console.log('DATA::', datainicial, datafinal);  
    //console.log('result::', result.recordset);
    //console.log('QUERY::', query);
@@ -794,6 +801,8 @@ const getRelatoriosSintetico = async (req, res) => {
 const getVencimentoCopet = async (req, res) => {
   try {
     const { empresa, datainicial, datafinal } = req.query;
+   // console.log('req.query::', req.query);
+   //  console.log('EMPRESA::', empresa);
     const sql = require('mssql');
 
     if (!empresa) {
@@ -832,6 +841,8 @@ const getVencimentoCopet = async (req, res) => {
     `;
 
     const result = await request.query(query);
+   // console.log('result::', result);
+     
     const rows = result.recordset || [];
 
     // ⚠️ Se nenhum registro encontrado, retorna '' conforme solicitado
@@ -910,7 +921,6 @@ const getBilheteCadastrado = async (req, res) => {
 
     const result = await request.query(query);
     const rows = result.recordset || [];
-
     // ⚠️ Se não encontrou nada, retorna '' conforme solicitado
     if (rows.length === 0) {
       return res.json({

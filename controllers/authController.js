@@ -310,7 +310,7 @@ const login = async (req, res) => {
       `);
 
     const permissoes = permissoesResult.recordset.map((p) => p.recurso);
-
+//console.log('PERMISSOES::', permissoes);
     // 5️⃣ Payload do token
     const tokenPayload = {
       idusuario: usuario.idusuario,
