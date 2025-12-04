@@ -1,5 +1,12 @@
 const { poolPromise } = require('../db');
 
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+
 // Obter todos os recibos
 const getReciboReceber = async (req, res) => {
   try {
@@ -55,10 +62,12 @@ const createReciboReceber = async (req, res) => {
   try {
     const { dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, empresa, tipo, id } = req.body;
 
+    const dataEmissaoNorm = normalizeDate(dataemissao);
+
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('dataemissao', dataemissao)
+      .input('dataemissao', dataEmissaoNorm)
       .input('descricao', descricao)
       .input('valor', valor)
       .input('identidade', identidade)
@@ -83,17 +92,18 @@ const createReciboReceber = async (req, res) => {
   }
 };
 
-
 // Atualizar um recibo existente
 const updateReciboReceber = async (req, res) => {
   try {
     const { dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id } = req.body;
 
+    const dataEmissaoNorm = normalizeDate(dataemissao);
+
     const pool = await poolPromise;
     await pool
       .request()
       .input('idrecibo', req.params.idrecibo)
-      .input('dataemissao', dataemissao)
+      .input('dataemissao', dataEmissaoNorm)
       .input('descricao', descricao)
       .input('valor', valor)
       .input('identidade', identidade)

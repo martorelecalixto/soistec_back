@@ -1,6 +1,13 @@
 const { poolPromise } = require('../db');
 const { v4: uuidv4 } = require('uuid');
 
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+
 // Obter todos os titulos pagar
 const getTituloPagar = async (req, res) => {
   try {
@@ -444,13 +451,18 @@ const updateTituloPagar = async (req, res) => {
           idreembolso,
           id
     } = req.body;
+
+    const dataEmissaoNorm = normalizeDate(dataemissao);
+    const dataCompetenciaNorm = normalizeDate(datacompetencia);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
+
     const pool = await poolPromise;
     await pool
       .request()
       .input('idtitulo', req.params.idtitulo)
-      .input('dataemissao', dataemissao)
-      .input('datavencimento', datavencimento)
-      .input('datacompetencia', datacompetencia)
+      .input('dataemissao', dataEmissaoNorm)
+      .input('datavencimento', dataVencimentoNorm)
+      .input('datacompetencia', dataCompetenciaNorm)
       .input('descricao', descricao)
       .input('documento', documento)
       .input('valor', valor)
@@ -631,12 +643,13 @@ const createBaixaPagar = async (req, res) => {
           empresa
     } = req.body;
 
-    //**************LANCAMENTO***************** */
+    const dataBaixaNorm = normalizeDate(databaixa);
 
+    //**************LANCAMENTO***************** */
     const poolLanc = await poolPromise;
     const resultLanc = await poolLanc
       .request()
-      .input('databaixa', databaixa)
+      .input('databaixa', dataBaixaNorm)
       .input('observacao', observacao)
       .input('valorpago', valorpago * (-1))
       .input('descontopago', descontopago)
@@ -682,7 +695,7 @@ const createBaixaPagar = async (req, res) => {
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('databaixa', databaixa)
+      .input('databaixa', dataBaixaNorm)
       .input('observacao', observacao)
       .input('valorpago', valorpago)
       .input('descontopago', descontopago)
@@ -775,11 +788,13 @@ const createBaixasPagarGenerica = async (req, res) => {
         empresa
       } = baixa;
 
+      const dataBaixaNorm = normalizeDate(databaixa);
+
       //************** LANCAMENTO ***************** */
       const poolLanc = await poolPromise;
       const resultLanc = await poolLanc
         .request()
-        .input('databaixa', databaixa)
+        .input('databaixa', dataBaixaNorm)
         .input('observacao', observacao)
         .input('valorpago', valorpago * (-1))
         .input('descontopago', descontopago)
@@ -825,7 +840,7 @@ const createBaixasPagarGenerica = async (req, res) => {
       const pool = await poolPromise;
       const result = await pool
         .request()
-        .input('databaixa', databaixa)
+        .input('databaixa', dataBaixaNorm)
         .input('observacao', observacao)
         .input('valorpago', valorpago)
         .input('descontopago', descontopago)
@@ -930,12 +945,16 @@ const createTituloPagar = async (req, res) => {
           id
     } = req.body;
 
+    const dataEmissaoNorm = normalizeDate(dataemissao);
+    const dataCompetenciaNorm = normalizeDate(datacompetencia);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
+
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('dataemissao', dataemissao)
-      .input('datavencimento', datavencimento)
-      .input('datacompetencia', datacompetencia)
+      .input('dataemissao', dataEmissaoNorm)
+      .input('datavencimento', dataVencimentoNorm)
+      .input('datacompetencia', dataCompetenciaNorm)
       .input('descricao', descricao)
       .input('documento', documento)
       .input('valor', valor)

@@ -1,5 +1,12 @@
 const { poolPromise } = require('../db');
 
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+
 // Obter todas as vendashotel
 const getVendasHotel = async (req, res) => {
   try {
@@ -304,11 +311,14 @@ const createVendasHotel = async (req, res) => {
       valorentrada
     } = req.body;
 
+    const dataVendaNorm = normalizeDate(datavenda);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
+
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('datavenda', datavenda)
-      .input('datavencimento', datavencimento)
+      .input('datavenda', dataVendaNorm)
+      .input('datavencimento', dataVencimentoNorm)
       .input('documento', documento)
       .input('valortotal', valortotal)
       .input('descontototal', descontototal)
@@ -405,13 +415,16 @@ const updateVendasHotel = async (req, res) => {
       id,
       valorentrada
     } = req.body;
-    //console.log(req.body);
+
+    const dataVendaNorm = normalizeDate(datavenda);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
+
     const pool = await poolPromise;
     await pool
       .request()
       .input('idvenda', req.params.idvenda)
-      .input('datavenda', datavenda)
-      .input('datavencimento', datavencimento)
+      .input('datavenda', dataVendaNorm)
+      .input('datavencimento', dataVencimentoNorm)
       .input('documento', documento)
       .input('valortotal', valortotal)
       .input('descontototal', descontototal)

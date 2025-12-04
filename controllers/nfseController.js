@@ -3,6 +3,14 @@ const { poolPromise } = require('../db');
 const sql = require('mssql');
 const { v4: uuidv4 } = require('uuid');
 
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+
+
 /**
  * Helper: remove tudo que não for dígito
  */
@@ -76,6 +84,9 @@ const importarNfse = async (req, res) => {
       const descricao = nota.descricao ?? nota.obs ?? 'SERVIÇO';
       const idtitulo = nota.idtitulo ?? null;
 
+      const dataEmissaoNorm = normalizeDate(dataEmissao);
+      const dataVencimentoNorm = normalizeDate(dataVencimento);
+
       let chave = ''; 
 
       try {
@@ -131,8 +142,8 @@ const importarNfse = async (req, res) => {
           const trNf = new sql.Request(transaction);
           trNf.input('idfilial', idfilial)
             .input('identidade', identidade)
-            .input('dataemissao', dataEmissao)
-            .input('datavencimento', dataVencimento)
+            .input('dataemissao', dataEmissaoNorm)
+            .input('datavencimento', dataVencimentoNorm)
             .input('numeronf', numeroNf)
             .input('valortotal', valorBruto)
             .input('valorir', valorIR)
@@ -213,9 +224,9 @@ const importarNfse = async (req, res) => {
           await trTitulo
             .input('idfilial', idfilial)
             .input('identidade', identidade)
-            .input('dataemissao', dataEmissao)
-            .input('datacompetencia', dataCompetencia)
-            .input('datavencimento', dataVencimento)
+            .input('dataemissao', dataEmissaoNorm)
+            .input('datacompetencia', dataVencimentoNorm)
+            .input('datavencimento', dataVencimentoNorm)
             .input('numeronf', numeroNf)
             .input('idnf', idNf)
             .input('valor', valorLiquido)

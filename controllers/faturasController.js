@@ -1,6 +1,12 @@
 const { poolPromise } = require('../db');
 const { v4: uuidv4 } = require('uuid');
 
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
 
 // Obter faturas impressão
 const getFaturaImpressao = async (req, res) => {
@@ -753,12 +759,15 @@ const createFatura = async (req, res) => {
         servico = [], // valor padrão caso não exista
       } = fatura;
 
+      const dataEmissaoNorm = normalizeDate(dataemissao);
+      const dataVencimentoNorm = normalizeDate(datavencimento);
+
       //************** INSERE FATURA ***************** */
       const poolFat = await poolPromise;
       const resultFat = await poolFat
         .request()
-        .input('dataemissao', dataemissao)
-        .input('datavencimento', datavencimento)
+        .input('dataemissao', dataEmissaoNorm)
+        .input('datavencimento', dataVencimentoNorm)
         .input('descricao', descricao)
         .input('valor', valor)
         .input('identidade', identidade)
@@ -810,9 +819,9 @@ const createFatura = async (req, res) => {
       const pool = await poolPromise;
       await pool
         .request()
-        .input('dataemissao', dataemissao)
-        .input('datavencimento', datavencimento)
-        .input('datacompetencia', dataemissao)
+        .input('dataemissao', dataEmissaoNorm)
+        .input('datavencimento', dataVencimentoNorm)
+        .input('datacompetencia', dataEmissaoNorm)
         .input('descricao', 'Fatura ' + id)
         .input('documento', id)
         .input('valor', valor)
@@ -940,12 +949,15 @@ const updateFatura = async (req, res) => {
           id
     } = req.body;
     //console.log(req.body);
+    const dataEmissaoNorm = normalizeDate(dataemissao);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
+
     const pool = await poolPromise;
     await pool
       .request()
       .input('idfatura', req.params.idfatura)
-      .input('dataemissao', dataemissao)
-      .input('datavencimento', datavencimento)
+      .input('dataemissao', dataEmissaoNorm)
+      .input('datavencimento', dataVencimentoNorm)
       .input('descricao', descricao)
       .input('valor', valor)
       .input('identidade', identidade)

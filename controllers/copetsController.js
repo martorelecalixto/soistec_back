@@ -1,5 +1,12 @@
 const { poolPromise } = require('../db');
 
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+
 // Obter todas os copets
 const getCopet = async (req, res) => {
   try {
@@ -204,15 +211,22 @@ const createCopet = async (req, res) => {
       empresa
     } = req.body;
 
+    const dataInicialNorm = normalizeDate(datainicial);
+    const dataFinalNorm = normalizeDate(datafinal);
+    const venctoCopetNorm = normalizeDate(venctocopet);
+    const venctoCopetogNorm = normalizeDate(venctocopetog);
+    const venctoClienteNorm = normalizeDate(venctocliente);
+    const venctoClienteogNorm = normalizeDate(venctoclienteog);
+
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('datainicial', datainicial)
-      .input('datafinal', datafinal)
-      .input('venctocopet', venctocopet)
-      .input('venctocopetog', venctocopetog)
-      .input('venctocliente', venctocliente)
-      .input('venctoclienteog', venctoclienteog)
+      .input('datainicial', dataInicialNorm)
+      .input('datafinal', dataFinalNorm)
+      .input('venctocopet', venctoCopetNorm)
+      .input('venctocopetog', venctoCopetogNorm)
+      .input('venctocliente', venctoClienteNorm)
+      .input('venctoclienteog', venctoClienteogNorm)
       .input('idciaaerea', idciaaerea)
       .input('idoperadora', idoperadora)
       .input('empresa', empresa)
@@ -249,16 +263,24 @@ const updateCopet = async (req, res) => {
       idciaaerea,
       idoperadora
     } = req.body;
+
+    const dataInicialNorm = normalizeDate(datainicial);
+    const dataFinalNorm = normalizeDate(datafinal);
+    const venctoCopetNorm = normalizeDate(venctocopet);
+    const venctoCopetogNorm = normalizeDate(venctocopetog);
+    const venctoClienteNorm = normalizeDate(venctocliente);
+    const venctoClienteogNorm = normalizeDate(venctoclienteog);
+    
     const pool = await poolPromise;
     await pool
       .request()
       .input('id', req.params.id)
-      .input('datainicial', datainicial)
-      .input('datafinal', datafinal)
-      .input('venctocopet', venctocopet)
-      .input('venctocopetog', venctocopetog)
-      .input('venctocliente', venctocliente)
-      .input('venctoclienteog', venctoclienteog)
+      .input('datainicial', dataInicialNorm)
+      .input('datafinal', dataFinalNorm)
+      .input('venctocopet', venctoCopetNorm)
+      .input('venctocopetog', venctoCopetogNorm)
+      .input('venctocliente', venctoClienteNorm)
+      .input('venctoclienteog', venctoClienteogNorm)
       .input('idciaaerea', idciaaerea)
       .input('idoperadora', idoperadora)
       .query(`

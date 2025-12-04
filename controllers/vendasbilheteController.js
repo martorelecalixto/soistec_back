@@ -1,5 +1,12 @@
 const { poolPromise } = require('../db');
 
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+
 // Obter todas as vendasbilhete
 const getVendasBilhete = async (req, res) => {
   try {
@@ -202,13 +209,16 @@ const createVendasBilhete = async (req, res) => {
       id,
       valorentrada
     } = req.body;
-   // console.log('REQ.BODY::', req.body);
+    //console.log('REQ.BODY::', req.body);
+
+    const dataVendaNorm = normalizeDate(datavenda);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
 
     const pool = await poolPromise;
     const result = await pool
       .request()
-      .input('datavenda', datavenda)
-      .input('datavencimento', datavencimento)
+      .input('datavenda', dataVendaNorm)
+      .input('datavencimento', dataVencimentoNorm)
       .input('documento', documento)
       .input('valortotal', valortotal)
       .input('descontototal', descontototal)
@@ -290,12 +300,16 @@ const updateVendasBilhete = async (req, res) => {
       id,
       valorentrada
     } = req.body;
+    //console.log('REQ.BODY::', req.body);
+    const dataVendaNorm = normalizeDate(datavenda);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
+
     const pool = await poolPromise;
     await pool
       .request()
       .input('idvenda', req.params.idvenda)
-      .input('datavenda', datavenda)
-      .input('datavencimento', datavencimento)
+      .input('datavenda', dataVendaNorm)
+      .input('datavencimento', dataVencimentoNorm)
       .input('documento', documento)
       .input('valortotal', valortotal)
       .input('descontototal', descontototal)
