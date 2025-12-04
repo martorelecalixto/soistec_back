@@ -660,23 +660,29 @@ const getRelatoriosSintetico = async (req, res) => {
       whereClause += ' AND ItensVendaBilhete.idoperadora = @idoperadora';
     }
 
+    if(tipo == 'Cliente'){
+    whereClause +=  ' GROUP BY  ' +
+                    '		Entidades_3.nome  ';
+    }else
+    if(tipo == 'Emissao'){
+    whereClause +=  ' GROUP BY  ' +
+                    '		vendasbilhetes.datavenda  ';
+    }else
+    if(tipo == 'Vencimento'){
+    whereClause +=  ' GROUP BY  ' +
+                    '		vendasbilhetes.datavencimento  ';
+    }else
+    if(tipo == 'Vendedor'){
+    whereClause +=  ' GROUP BY  ' +
+                    '		Entidades_1.nome  ';
+    }else
+    if(tipo == 'Emissor'){
+    whereClause +=  ' GROUP BY  ' +
+                    '		Entidades_2.nome  ';
+    }else
     if(tipo == 'Operadora'){
-         // console.log('****06.01***');
-
-    whereClause +=  ' GROUP BY vendasbilhetes.id, ' +
-                    '   vendasbilhetes.observacao,  ' +
-                    '		vendasbilhetes.solicitante, ' +
-                    '   vendasbilhetes.datavenda,  ' +
-                    '		Entidades_3.nome,  ' +
-                    '		Entidades_4.nome,  ' +
-                    '		formapagamento.nome, ' + 
-                    '		filiais.nome, ' +
-                    '   vendasbilhetes.datavencimento,  ' +
-                    '   entidades_1.nome,  ' +
-                    '		entidades_2.nome,  ' +
-                    '		recibosreceber.id,  ' +
-                    '		faturas.id,  ' +
-                    '		titulosreceber.valorpago ';
+    whereClause +=  ' GROUP BY  ' +
+                    '		Entidades_4.nome  ';
     }else{
 
     whereClause +=  ' GROUP BY vendasbilhetes.id, ' +
@@ -695,40 +701,159 @@ const getRelatoriosSintetico = async (req, res) => {
     }
 
     if(tipo == 'Cliente')
-        whereClause += ' ORDER BY Entidades_3.nome, vendasbilhetes.datavenda, vendasbilhetes.id '
+        whereClause += ' ORDER BY Entidades_3.nome '
     else
     if(tipo == 'Emissao')
-      whereClause += ' ORDER BY vendasbilhetes.datavenda, Entidades_3.nome, vendasbilhetes.id '
+      whereClause += ' ORDER BY vendasbilhetes.datavenda '
     else
     if(tipo == 'Vencimento')
-      whereClause += ' ORDER BY vendasbilhetes.datavencimento, Entidades_3.nome, vendasbilhetes.id '
+      whereClause += ' ORDER BY vendasbilhetes.datavencimento '
     else
     if(tipo == 'Emissor')
-      whereClause += ' ORDER BY Entidades_2.nome, vendasbilhetes.datavenda, vendasbilhetes.id '
+      whereClause += ' ORDER BY Entidades_2.nome '
     else
     if(tipo == 'Vendedor')
-      whereClause += ' ORDER BY Entidades_1.nome, vendasbilhetes.datavenda, vendasbilhetes.id '
+      whereClause += ' ORDER BY Entidades_1.nome '
     else
     if(tipo == 'Operadora')
-      whereClause += ' ORDER BY Entidades_4.nome, vendasbilhetes.datavenda, vendasbilhetes.id ';
+      whereClause += ' ORDER BY Entidades_4.nome ';
 
     let query = '';
+    if(tipo == 'Cliente'){
+     query =
+     `SELECT      Entidades_3.nome AS entidade, 
+                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                  SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      VendasBilhetes INNER JOIN
+                      Entidades AS Entidades_3 ON VendasBilhetes.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = VendasBilhetes.IdFatura ON ItensVendaBilhete.IdVenda = VendasBilhetes.IdVenda ON 
+                      entidades_1.IdEntidade = VendasBilhetes.IdVendedor ON entidades_2.IdEntidade = VendasBilhetes.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON VendasBilhetes.IdVenda = TitulosReceber.IdVendaBilhete LEFT OUTER JOIN
+                      FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON VendasBilhetes.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON VendasBilhetes.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
+        ${whereClause}  `
+    }else
+    if(tipo == 'Emissao'){
+     query =
+     `SELECT      vendasbilhetes.datavenda AS dataemissao, 
+                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                  SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      VendasBilhetes INNER JOIN
+                      Entidades AS Entidades_3 ON VendasBilhetes.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = VendasBilhetes.IdFatura ON ItensVendaBilhete.IdVenda = VendasBilhetes.IdVenda ON 
+                      entidades_1.IdEntidade = VendasBilhetes.IdVendedor ON entidades_2.IdEntidade = VendasBilhetes.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON VendasBilhetes.IdVenda = TitulosReceber.IdVendaBilhete LEFT OUTER JOIN
+                      FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON VendasBilhetes.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON VendasBilhetes.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
+        ${whereClause}  `
+    }else
+    if(tipo == 'Vencimento'){
+     query =
+     `SELECT      vendasbilhetes.datavencimento, 
+                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                  SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      VendasBilhetes INNER JOIN
+                      Entidades AS Entidades_3 ON VendasBilhetes.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = VendasBilhetes.IdFatura ON ItensVendaBilhete.IdVenda = VendasBilhetes.IdVenda ON 
+                      entidades_1.IdEntidade = VendasBilhetes.IdVendedor ON entidades_2.IdEntidade = VendasBilhetes.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON VendasBilhetes.IdVenda = TitulosReceber.IdVendaBilhete LEFT OUTER JOIN
+                      FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON VendasBilhetes.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON VendasBilhetes.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
+        ${whereClause}  `
+    }else
+    if(tipo == 'Vendedor'){
+     query =
+     `SELECT      Entidades_1.nome AS vendedor, 
+                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                  SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      VendasBilhetes INNER JOIN
+                      Entidades AS Entidades_3 ON VendasBilhetes.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = VendasBilhetes.IdFatura ON ItensVendaBilhete.IdVenda = VendasBilhetes.IdVenda ON 
+                      entidades_1.IdEntidade = VendasBilhetes.IdVendedor ON entidades_2.IdEntidade = VendasBilhetes.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON VendasBilhetes.IdVenda = TitulosReceber.IdVendaBilhete LEFT OUTER JOIN
+                      FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON VendasBilhetes.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON VendasBilhetes.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
+        ${whereClause}  `
+    }else
+    if(tipo == 'Emissor'){
+     query =
+     `SELECT      Entidades_2.nome AS emissor, 
+                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                  SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
+                      Entidades AS entidades_1 RIGHT OUTER JOIN
+                      Entidades INNER JOIN
+                      ItensVendaBilhete ON Entidades.IdEntidade = ItensVendaBilhete.IdCiaAerea INNER JOIN
+                      Entidades AS Entidades_4 ON ItensVendaBilhete.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
+                      Faturas RIGHT OUTER JOIN
+                      VendasBilhetes INNER JOIN
+                      Entidades AS Entidades_3 ON VendasBilhetes.IdEntidade = Entidades_3.IdEntidade ON 
+                      Faturas.IdFatura = VendasBilhetes.IdFatura ON ItensVendaBilhete.IdVenda = VendasBilhetes.IdVenda ON 
+                      entidades_1.IdEntidade = VendasBilhetes.IdVendedor ON entidades_2.IdEntidade = VendasBilhetes.IdEmissor LEFT OUTER JOIN
+                      RecibosReceber ON VendasBilhetes.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                      TitulosReceber ON VendasBilhetes.IdVenda = TitulosReceber.IdVendaBilhete LEFT OUTER JOIN
+                      FormaPagamento ON VendasBilhetes.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                      Moeda ON VendasBilhetes.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
+                      Filiais ON VendasBilhetes.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                      Grupos ON VendasBilhetes.IdGrupo = Grupos.Id                         
+        ${whereClause}  `
+    }else
     if(tipo == 'Operadora'){
      query =
-     `SELECT      vendasbilhetes.id AS idvenda, 
-                  vendasbilhetes.observacao, 
-                  ISNULL(vendasbilhetes.solicitante,'') AS solicitante, 
-                  Entidades_3.nome AS entidade, 
-                  formapagamento.nome AS pagamento,
-                  vendasbilhetes.datavenda AS dataemissao, 
-                  vendasbilhetes.datavencimento,  
-                  entidades_1.nome AS vendedor, 
-                  entidades_2.nome AS emissor, 
+     `SELECT       
                   entidades_4.nome AS operadora,
-                  filiais.nome AS filial,
-                  isnull(recibosreceber.id,0) AS idrecibo, 
-                  isnull(faturas.id,0) AS idfatura, 
-                  ISNULL(titulosreceber.valorpago,0) AS valorpago,
+                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
@@ -950,6 +1075,7 @@ const getRav = async (req, res) => {
   try {
     const { empresa, idciaaerea, tipovoo, valor } = req.query;
     const sql = require("mssql");
+    // console.log('req.query::', req.query);
 
     // Validações
     if (!empresa) {
