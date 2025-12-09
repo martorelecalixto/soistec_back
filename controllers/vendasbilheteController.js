@@ -740,7 +740,7 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valoroutros		
             FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                       Entidades AS entidades_1 RIGHT OUTER JOIN
                       Entidades INNER JOIN
@@ -766,7 +766,7 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valoroutros		
             FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                       Entidades AS entidades_1 RIGHT OUTER JOIN
                       Entidades INNER JOIN
@@ -792,7 +792,7 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valoroutros		
             FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                       Entidades AS entidades_1 RIGHT OUTER JOIN
                       Entidades INNER JOIN
@@ -818,7 +818,7 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valoroutros		
             FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                       Entidades AS entidades_1 RIGHT OUTER JOIN
                       Entidades INNER JOIN
@@ -844,7 +844,7 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valoroutros		
             FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                       Entidades AS entidades_1 RIGHT OUTER JOIN
                       Entidades INNER JOIN
@@ -871,7 +871,7 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valoroutros		
             FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                       Entidades AS entidades_1 RIGHT OUTER JOIN
                       Entidades INNER JOIN
@@ -907,7 +907,7 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaBilhete.ValorBilhete,0)) as valor,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaBilhete,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaBilhete.ValorTaxaServico,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valorassento		
+                  SUM(ISNULL(ItensVendaBilhete.ValorAssento,0)) as valoroutros		
             FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                       Entidades AS entidades_1 RIGHT OUTER JOIN
                       Entidades INNER JOIN
