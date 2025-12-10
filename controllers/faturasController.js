@@ -1500,20 +1500,49 @@ const getRelatoriosSintetico = async (req, res) => {
          (!bilheteinicial)&&(!bilhetefinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
       semFiltros = 'true';
 
-    //console.log('Sem filtros: ' + semFiltros);
-    //console.log('Aéreo: ' + aereo);
-    //console.log(req.query);
-
-    //if( aereo === 'true') {
-
+      if(tipo == 'Cliente'){
       scriptInicio = 
           `
-            SELECT  tabela.idfatura,
-                  tabela.valor, 
-                  tabela.valorpago,
-                  tabela.idtitulo,
-                  tabela.entidade, 
-                  tabela.dataemissao, 
+            SELECT  
+                  SUM(tabela.valor) as valoroutros, 
+                  SUM(tabela.valorpago) as valorpago,
+                  tabela.entidade
+            FROM    (
+
+            `
+
+      scriptFim = 
+          `
+            ) AS tabela
+            GROUP BY  
+                  tabela.entidade
+            `
+
+      }else
+      if(tipo == 'Emissao'){
+      scriptInicio = 
+          `
+            SELECT  
+                  SUM(tabela.valor) as valoroutros, 
+                  SUM(tabela.valorpago) as valorpago,
+                  tabela.dataemissao
+            FROM    (
+
+            `
+
+      scriptFim = 
+          `
+            ) AS tabela
+            GROUP BY  
+                  tabela.dataemissao
+            `
+      }else
+      if(tipo == 'Vencimento'){
+      scriptInicio = 
+          `
+            SELECT  
+                  SUM(tabela.valor) as valoroutros, 
+                  SUM(tabela.valorpago) as valorpago,
                   tabela.datavencimento
             FROM    (
 
@@ -1522,29 +1551,62 @@ const getRelatoriosSintetico = async (req, res) => {
       scriptFim = 
           `
             ) AS tabela
-            GROUP BY  tabela.idfatura,
-                  tabela.valor, 
-                  tabela.valorpago,
-                  tabela.idtitulo,
-                  tabela.entidade, 
-                  tabela.dataemissao, 
+            GROUP BY  
                   tabela.datavencimento
             `
+      }else
+      if(tipo == 'Operadora'){
+      scriptInicio = 
+          `
+            SELECT  
+                  SUM(tabela.valor) as valoroutros, 
+                  SUM(tabela.valorpago) as valorpago,
+                  tabela.operadora
+            FROM    (
+
+            `
+
+      scriptFim = 
+          `
+            ) AS tabela
+            GROUP BY  
+                  tabela.operadora
+            `
+      }else
+      if(tipo == 'Fatura'){
+      scriptInicio = 
+          `
+            SELECT  
+                  SUM(tabela.valor) as valoroutros, 
+                  SUM(tabela.valorpago) as valorpago,
+                  tabela.idfatura
+            FROM    (
+
+            `
+
+      scriptFim = 
+          `
+            ) AS tabela
+            GROUP BY  
+                  tabela.idfatura
+            `
+      }
+
 
       if(tipo == 'Cliente')
-          orderbyClause += ' ORDER BY tabela.entidade, tabela.dataemissao, tabela.idfatura '
+          orderbyClause += ' ORDER BY tabela.entidade '
       else
       if(tipo == 'Emissao')
-        orderbyClause += ' ORDER BY tabela.dataemissao, tabela.entidade, tabela.idfatura '
+        orderbyClause += ' ORDER BY tabela.dataemissao '
       else
       if(tipo == 'Vencimento')
-        orderbyClause += ' ORDER BY tabela.datavencimento, tabela.entidade, tabela.idfatura '
+        orderbyClause += ' ORDER BY tabela.datavencimento '
       else
       if(tipo == 'Operadora')
-        orderbyClause += ' ORDER BY tabela.operadora, tabela.dataemissao, tabela.idfatura '
+        orderbyClause += ' ORDER BY tabela.operadora '
       else
       if(tipo == 'Fatura')
-        orderbyClause += ' ORDER BY tabela.idfatura, tabela.dataemissao, tabela.entidade ';
+        orderbyClause += ' ORDER BY tabela.idfatura ';
 
 
       request.input('empresa', empresa);
@@ -1662,9 +1724,6 @@ const getRelatoriosSintetico = async (req, res) => {
               TitulosReceber.id
         
         `
-   // }
-
-    //if(servico === 'true') {
       
       request.input('empresa2', empresa);
     
@@ -1784,7 +1843,6 @@ const getRelatoriosSintetico = async (req, res) => {
               TitulosReceber.id
        
       `
-    //}
     
     const query =
      `  ${scriptInicio} ${scriptAereo} ${scriptServico} ${scriptFim}  ${orderbyClause} `
