@@ -65,7 +65,7 @@ const getVendasBilhete = async (req, res) => {
                    ' vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome, formapagamento.nome, ' +
                    ' vendasbilhetes.datavencimento, vendasbilhetes.idmoeda, vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idformapagamento, ' +
                    ' vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo, ' +
-                   ' entidades_1.nome, entidades_2.nome, recibosreceber.id, faturas.id, titulosreceber.valorpago ';
+                   ' entidades_1.nome, entidades_2.nome, recibosreceber.id, faturas.id, titulosreceber.valorpago, titulosreceber.idtitulo ';
 
     whereClause += ' ORDER BY vendasbilhetes.datavenda desc, vendasbilhetes.id ';
 
@@ -75,7 +75,7 @@ const getVendasBilhete = async (req, res) => {
         vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades.nome AS entidade, formapagamento.nome AS pagamento,
         vendasbilhetes.datavencimento, vendasbilhetes.idmoeda, vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idformapagamento,
         vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo,
-        entidades_1.nome AS vendedor, entidades_2.nome AS emissor, recibosreceber.id AS recibo, faturas.id AS fatura, ISNULL(titulosreceber.valorpago,0) AS valorpago
+        entidades_1.nome AS vendedor, entidades_2.nome AS emissor, recibosreceber.id AS recibo, faturas.id AS fatura, ISNULL(titulosreceber.valorpago,0) AS valorpago, titulosreceber.idtitulo
       FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
                               FormaPagamento RIGHT OUTER JOIN
                               VendasBilhetes INNER JOIN
@@ -207,7 +207,7 @@ const createVendasBilhete = async (req, res) => {
       idcentrocusto,
       idgrupo,
       id,
-      valorentrada
+      valorentrada,
     } = req.body;
     //console.log('REQ.BODY::', req.body);
 
@@ -260,7 +260,6 @@ const createVendasBilhete = async (req, res) => {
           @empresa, @idcentrocusto, @idgrupo, @id, @valorentrada
         )
       `);
-
     const idvenda = result.recordset[0].idvenda;
 
     res.status(201).json({ success: true, idvenda, message: 'Venda criada com sucesso' });
@@ -298,14 +297,32 @@ const updateVendasBilhete = async (req, res) => {
       idcentrocusto,
       idgrupo,
       id,
-      valorentrada
+      valorentrada,
+      idtitulo,
+      idplanoconta,
     } = req.body;
-    //console.log('REQ.BODY::', req.body);
+
+    console.log('--- updateVendasBilhete START ---');
+    console.log('params.idvenda =', req.params.idvenda);
+    console.log('Recebido no body:', {
+      datavenda,
+      datavencimento,
+      documento,
+      valortotal,
+      idtitulo,
+      id,
+      empresa,
+    });
+
     const dataVendaNorm = normalizeDate(datavenda);
     const dataVencimentoNorm = normalizeDate(datavencimento);
+   //console.log('Datas normalizadas:', { dataVendaNorm, dataVencimentoNorm });
 
     const pool = await poolPromise;
-    await pool
+
+    // ====== UPDATE vendasbilhetes ======
+    //console.log('Executando UPDATE em vendasbilhetes...');
+    const updateResult = await pool
       .request()
       .input('idvenda', req.params.idvenda)
       .input('datavenda', dataVendaNorm)
@@ -365,9 +382,123 @@ const updateVendasBilhete = async (req, res) => {
         WHERE idvenda = @idvenda
       `);
 
+      console.log('UPDATE result:', {
+      rowsAffected: updateResult.rowsAffected,
+      recordsetLength: updateResult.recordset ? updateResult.recordset.length : 0,
+    });
+
+    // ====== DELETE titulosreceber (sempre tenta remover) ======
+    try {
+      //console.log('Executando DELETE em titulosreceber (idvendabilhete =', req.params.idvenda, ')');
+      const delResult = await pool.request()
+        .input('idvenda', req.params.idvenda)
+        .query(`
+          DELETE FROM titulosreceber
+          WHERE idvendabilhete = @idvenda
+        `);
+      //console.log('DELETE result:', { rowsAffected: delResult.rowsAffected });
+    } catch (delErr) {
+      console.error('Erro ao executar DELETE em titulosreceber:', delErr.message || delErr);
+      // continuar — talvez não exista nenhum título para deletar
+    }
+
+    // ====== Se idtitulo > 0 -> INSERT titulosreceber ======
+    if (typeof idtitulo === 'undefined') {
+      console.warn('idtitulo está undefined no body. Nenhum título será inserido.');
+    } else if (Number(idtitulo) > 0) {
+      //console.log('idtitulo > 0, tentando inserir novo título. idtitulo =', idtitulo);
+      try {
+        const insertResult = await pool
+          .request()
+          .input('dataemissao', dataVendaNorm)
+          .input('datavencimento', dataVencimentoNorm)
+          .input('datacompetencia', dataVendaNorm)
+          .input('descricao', 'Venda Aereo ' + id)
+          .input('documento', id)
+          .input('valor', valortotal)
+          .input('valorpago', 0)
+          .input('descontopago', 0)
+          .input('juropago', 0)
+          .input('parcela', 1)
+          .input('identidade', identidade)
+          .input('idmoeda', idmoeda)
+          .input('idformapagamento', idformapagamento)
+          .input('idplanoconta', idplanoconta)
+          .input('idfilial', idfilial)
+          .input('chave', chave)
+          .input('empresa', empresa)
+          .input('id', idtitulo)
+          .input('idvendabilhete', req.params.idvenda)
+          .query(`
+            INSERT INTO titulosreceber (
+              dataemissao,
+              datavencimento,
+              datacompetencia,
+              descricao,
+              documento,
+              valor,
+              valorpago,
+              descontopago,
+              juropago,
+              parcela,
+              identidade,
+              idmoeda,
+              idformapagamento,
+              idplanoconta,
+              idfilial,
+              chave,
+              empresa,
+              id,
+              idvendabilhete
+            )
+            OUTPUT INSERTED.idtitulo
+            VALUES (
+              @dataemissao,
+              @datavencimento,
+              @datacompetencia,
+              @descricao,
+              @documento,
+              @valor,
+              @valorpago,
+              @descontopago,
+              @juropago,
+              @parcela,
+              @identidade,
+              @idmoeda,
+              @idformapagamento,
+              @idplanoconta,
+              @idfilial,
+              @chave,
+              @empresa,
+              @id,
+              @idvendabilhete
+            )
+          `);
+
+        console.log('INSERT result:', {
+          rowsAffected: insertResult.rowsAffected,
+          recordset: insertResult.recordset,
+        });
+
+        if (insertResult.recordset && insertResult.recordset.length > 0) {
+          console.log('INSERTED idtitulo =', insertResult.recordset[0].idtitulo);
+        } else {
+          console.warn('Nenhum idtitulo retornado no recordset do INSERT. Verifique a tabela OUTPUT ou permissões.');
+        }
+      } catch (insErr) {
+        console.error('Erro ao inserir titulosreceber:', insErr.message || insErr);
+        // opcional: você pode rethrow para abortar toda a operação
+        // throw insErr;
+      }
+    } else {
+      console.log('idtitulo <= 0, nenhum título será inserido (idtitulo =', idtitulo, ').');
+    }
+
+    console.log('--- updateVendasBilhete END (sucesso) ---');
     res.json({ success: true, message: 'Venda atualizada com sucesso' });
+
   } catch (error) {
-    
+    console.error('Erro geral em updateVendasBilhete:', error.message || error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

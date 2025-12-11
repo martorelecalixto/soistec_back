@@ -424,9 +424,12 @@ const getUsuarios = async (req, res) => {
 
    const query =
     `SELECT idusuario, nome, email, celular, isnull(ativo,0) as ativo,
-      case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idvendedor FROM usuarios ${whereClause}`
+      case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idempresa, idvendedor FROM usuarios ${whereClause}`
 
+    //  console.log(empresa);
+   //   console.log(nome);
    const result = await request.query(query);
+   //console.log(result.recordset);
 
     res.json(result.recordset);    
   } catch (error) {
@@ -450,7 +453,7 @@ const getUsuarioById = async (req, res) => {
       .input('idsuario', req.params.idusuario)
       .query(
         `SELECT idusuario, nome, email, celular, isnull(ativo,0) as ativo,
-        case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idvendedor FROM usuarios  WHERE idusuario = @idusuario ORDER BY nome`
+        case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idempresa, idvendedor FROM usuarios  WHERE idusuario = @idusuario ORDER BY nome`
       );
 
     //  .query('SELECT * FROM atividades  WHERE id = @id');
@@ -469,7 +472,7 @@ const getUsuarioById = async (req, res) => {
 const createUsuario = async (req, res) => {
   try {
     const {
-      nome, empresa, email, senha, celular, ativo, idvendedor
+      nome, empresa, email, senha, celular, ativo, idvendedor, idempresa
     } = req.body;
 
     // ✅ Criptografar a senha antes de salvar
@@ -485,11 +488,12 @@ const createUsuario = async (req, res) => {
       .input('celular', celular)
       .input('ativo', ativo)
       .input('idvendedor', idvendedor)
+      .input('idempresa', idempresa)
       .query(
         `INSERT INTO usuarios (
-          nome, empresa, email, senha, celular, ativo, idvendedor
+          nome, empresa, email, senha, celular, ativo, idvendedor, idempresa
         ) VALUES (
-          @nome, @empresa, @email, @senha, @celular, @ativo, @idvendedor
+          @nome, @empresa, @email, @senha, @celular, @ativo, @idvendedor, @idempresa
         )`
       );
 

@@ -1,3 +1,4 @@
+const sql = require("mssql");
 const { poolPromise } = require('../db');
 
 function normalizeDate(dateString) {
@@ -378,6 +379,304 @@ const createVendasHotel = async (req, res) => {
   }
 };
 
+const updateVendasHotel = async (req, res) => {
+  try {
+   // console.log("=== INICIANDO updateVendasHotel ===");
+
+    const {
+      datavenda,
+      datavencimento,
+      documento,
+      valortotal,
+      descontototal,
+      valortaxatotal,
+      valoroutrostotal,
+      valordutotal,
+      valorcomissaototal,
+      valorfornecedortotal,
+      cartao_sigla,
+      cartao_numero,
+      cartao_mesvencimento,
+      cartao_anovencimento,
+      observacao,
+      solicitante,
+      identidade,
+      idvendedor,
+      idemissor,
+      idmoeda,
+      idformapagamento,
+      idfilial,
+      idfatura,
+      idreciboreceber,
+      chave,
+      excluido,
+      empresa,
+      idcentrocusto,
+      idgrupo,
+      id,
+      valorentrada,
+      idplanoconta,
+      idtitulo,
+      idplanocontafor,
+      idformapagamentofor,
+      idempresa
+    } = req.body;
+
+    const dataVendaNorm = normalizeDate(datavenda);
+    const dataVencimentoNorm = normalizeDate(datavencimento);
+
+    const pool = await poolPromise;
+
+    // ==========================================================
+    // UPDATE PRINCIPAL
+    // ==========================================================
+    const updateResult = await pool
+      .request()
+      .input("idvenda", req.params.idvenda)
+      .input("datavenda", dataVendaNorm)
+      .input("datavencimento", dataVencimentoNorm)
+      .input("documento", documento)
+      .input("valortotal", valortotal)
+      .input("descontototal", descontototal)
+      .input("valortaxatotal", valortaxatotal)
+      .input("valoroutrostotal", valoroutrostotal)
+      .input("valordutotal", valordutotal)
+      .input("valorcomissaototal", valorcomissaototal)
+      .input("valorfornecedortotal", valorfornecedortotal)
+      .input("cartao_sigla", cartao_sigla)
+      .input("cartao_numero", cartao_numero)
+      .input("cartao_mesvencimento", cartao_mesvencimento)
+      .input("cartao_anovencimento", cartao_anovencimento)
+      .input("observacao", observacao)
+      .input("solicitante", solicitante)
+      .input("identidade", identidade)
+      .input("idvendedor", idvendedor)
+      .input("idemissor", idemissor)
+      .input("idmoeda", idmoeda)
+      .input("idformapagamento", idformapagamento)
+      .input("idfilial", idfilial)
+      .input("idfatura", idfatura)
+      .input("idreciboreceber", idreciboreceber)
+      .input("chave", chave)
+      .input("excluido", excluido)
+      .input("empresa", empresa)
+      .input("idcentrocusto", idcentrocusto)
+      .input("idgrupo", idgrupo)
+      .input("id", id)
+      .input("valorentrada", valorentrada)
+      .query(`
+        UPDATE vendashoteis SET
+          datavenda = @datavenda,
+          datavencimento = @datavencimento,
+          documento = @documento,
+          valortotal = @valortotal,
+          descontototal = @descontototal,
+          valortaxatotal = @valortaxatotal,
+          valoroutrostotal = @valoroutrostotal,
+          valordutotal = @valordutotal,
+          valorcomissaototal = @valorcomissaototal,
+          valorfornecedortotal = @valorfornecedortotal,
+          cartao_sigla = @cartao_sigla,
+          cartao_numero = @cartao_numero,
+          cartao_mesvencimento = @cartao_mesvencimento,
+          cartao_anovencimento = @cartao_anovencimento,
+          observacao = @observacao,
+          solicitante = @solicitante,
+          identidade = @identidade,
+          idvendedor = @idvendedor,
+          idemissor = @idemissor,
+          idmoeda = @idmoeda,
+          idformapagamento = @idformapagamento,
+          idfilial = @idfilial,
+          idfatura = @idfatura,
+          idreciboreceber = @idreciboreceber,
+          chave = @chave,
+          excluido = @excluido,
+          empresa = @empresa,
+          idcentrocusto = @idcentrocusto,
+          idgrupo = @idgrupo,
+          id = @id,
+          valorentrada = @valorentrada
+        WHERE idvenda = @idvenda
+      `);
+
+    //console.log("UPDATE OK:", updateResult.rowsAffected);
+
+    // ==========================================================
+    // DELETE DOS TÍTULOS RECEBER
+    // ==========================================================
+    await pool
+      .request()
+      .input("idvenda", req.params.idvenda)
+      .query("DELETE FROM titulosreceber WHERE idvendahotel = @idvenda");
+
+    // ==========================================================
+    // INSERT TITULOS RECEBER
+    // ==========================================================
+    if (Number(idtitulo) > 0) {
+      const insertResult = await pool
+        .request()
+        .input("dataemissao", dataVendaNorm)
+        .input("datavencimento", dataVencimentoNorm)
+        .input("datacompetencia", dataVendaNorm)
+        .input("descricao", "Venda Serviço " + id)
+        .input("documento", id)
+        .input("valor", valortotal)
+        .input("valorpago", 0)
+        .input("descontopago", 0)
+        .input("juropago", 0)
+        .input("parcela", 1)
+        .input("identidade", identidade)
+        .input("idmoeda", idmoeda)
+        .input("idformapagamento", idformapagamento)
+        .input("idplanoconta", idplanoconta)
+        .input("idfilial", idfilial)
+        .input("chave", chave)
+        .input("empresa", empresa)
+        .input("id", idtitulo)
+        .input("idvendahotel", req.params.idvenda)
+        .query(`
+          INSERT INTO titulosreceber (
+            dataemissao, datavencimento, datacompetencia, descricao,
+            documento, valor, valorpago, descontopago, juropago, parcela,
+            identidade, idmoeda, idformapagamento, idplanoconta,
+            idfilial, chave, empresa, id, idvendahotel
+          )
+          OUTPUT INSERTED.idtitulo
+          VALUES (
+            @dataemissao, @datavencimento, @datacompetencia, @descricao,
+            @documento, @valor, @valorpago, @descontopago, @juropago, @parcela,
+            @identidade, @idmoeda, @idformapagamento, @idplanoconta,
+            @idfilial, @chave, @empresa, @id, @idvendahotel
+          )
+        `);
+
+      //console.log("INSERT TITULO RECEBER:", insertResult.recordset);
+    }
+
+    // ==========================================================
+    // DELETE DOS TÍTULOS PAGAR
+    // ==========================================================
+    await pool
+      .request()
+      .input("idvenda", req.params.idvenda)
+      .query("DELETE FROM titulospagar WHERE idvendahotel = @idvenda");
+
+    // ================================================================
+    // TITULOS PAGAR - POR FORNECEDOR
+    // ================================================================
+    if (Number(idplanocontafor) > 0 && Number(idformapagamentofor) > 0) {
+      const consresultPag = await pool
+        .request()
+        .input("idvenda", req.params.idvenda)
+        .query(`
+          SELECT idfornecedor, SUM(ISNULL(ValorFornecedor,0)) AS valor
+          FROM ItensVendaHotel
+          WHERE ISNULL(ValorFornecedor,0) > 0
+            AND idvenda = @idvenda
+          GROUP BY idfornecedor
+        `);
+
+      for (const fornecedor of consresultPag.recordset) {
+        //console.log(idempresa);
+        const novoTitulo = await incTituloPag(idempresa); // <-- AGORA FUNCIONA
+
+        await pool
+          .request()
+          .input("dataemissao", dataVendaNorm)
+          .input("datavencimento", dataVencimentoNorm)
+          .input("datacompetencia", dataVendaNorm)
+          .input("descricao", "Venda Serviço " + id)
+          .input("documento", id)
+          .input("valor", fornecedor.valor)
+          .input("valorpago", 0)
+          .input("descontopago", 0)
+          .input("juropago", 0)
+          .input("parcela", 1)
+          .input("identidade", fornecedor.idfornecedor)
+          .input("idmoeda", idmoeda)
+          .input("idformapagamento", idformapagamentofor)
+          .input("idplanoconta", idplanocontafor)
+          .input("idfilial", idfilial)
+          .input("chave", chave)
+          .input("empresa", empresa)
+          .input("id", novoTitulo)
+          .input("idvendahotel", req.params.idvenda)
+          .query(`
+            INSERT INTO titulospagar (
+              dataemissao, datavencimento, datacompetencia,
+              descricao, documento, valor, valorpago, descontopago,
+              juropago, parcela, identidade, idmoeda,
+              idformapagamento, idplanoconta, idfilial,
+              chave, empresa, id, idvendahotel
+            )
+            VALUES (
+              @dataemissao, @datavencimento, @datacompetencia,
+              @descricao, @documento, @valor, @valorpago, @descontopago,
+              @juropago, @parcela, @identidade, @idmoeda,
+              @idformapagamento, @idplanoconta, @idfilial,
+              @chave, @empresa, @id, @idvendahotel
+            )
+          `);
+      }
+    }
+
+    res.json({ success: true, message: "Venda atualizada com sucesso" });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ====================================================================
+// FUNÇÃO incTituloPag (NÃO É API!)
+// ====================================================================
+async function incTituloPag(idempresa) {
+  const pool = await poolPromise;
+  let atualizado = false;
+  let valorAtualizado = 0;
+
+  while (!atualizado) {
+    const transaction = new sql.Transaction(pool);
+    try {
+      await transaction.begin();
+      const request = new sql.Request(transaction);
+
+      const coluna = `id_${idempresa}`;
+
+      const check = await request
+        .input("coluna", sql.NVarChar, coluna)
+        .query(`
+          SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_NAME = 'IncTituloPag' AND COLUMN_NAME = @coluna
+        `);
+
+      if (check.recordset.length === 0) {
+        await request.batch(`ALTER TABLE IncTituloPag ADD ${coluna} INT DEFAULT 1`);
+      } else {
+        await request.batch(`UPDATE IncTituloPag SET ${coluna} = ${coluna} + 1`);
+      }
+
+      await transaction.commit();
+      atualizado = true;
+
+      const res2 = await pool.request().query(`SELECT ${coluna} AS valor FROM IncTituloPag`);
+      valorAtualizado = res2.recordset[0].valor;
+
+    } catch (err) {
+      await transaction.rollback();
+      console.error("Erro incTituloPag, tentando novamente...", err);
+      //console.log("Erro incTituloPag, tentando novamente...", err);
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+
+  return valorAtualizado;
+}
+
+
+/*
 // Atualizar uma vendas existente
 const updateVendasHotel = async (req, res) => {
   try {
@@ -413,14 +712,18 @@ const updateVendasHotel = async (req, res) => {
       idcentrocusto,
       idgrupo,
       id,
-      valorentrada
+      valorentrada,
+      idplanoconta,
+      idtitulo,
+      idplanocontafor,
+      idformapagamentofor
     } = req.body;
 
     const dataVendaNorm = normalizeDate(datavenda);
     const dataVencimentoNorm = normalizeDate(datavencimento);
 
     const pool = await poolPromise;
-    await pool
+    const updateResult =await pool
       .request()
       .input('idvenda', req.params.idvenda)
       .input('datavenda', dataVendaNorm)
@@ -490,12 +793,291 @@ const updateVendasHotel = async (req, res) => {
         WHERE idvenda = @idvenda
       `);
 
+      console.log('UPDATE result:', {
+      rowsAffected: updateResult.rowsAffected,
+      recordsetLength: updateResult.recordset ? updateResult.recordset.length : 0,
+    });
+
+    // ====== DELETE titulosreceber (sempre tenta remover) ======
+    try {
+      //console.log('Executando DELETE em titulosreceber (idvendabilhete =', req.params.idvenda, ')');
+      const delResult = await pool.request()
+        .input('idvenda', req.params.idvenda)
+        .query(`
+          DELETE FROM titulosreceber
+          WHERE idvendahotel = @idvenda
+        `);
+      //console.log('DELETE result:', { rowsAffected: delResult.rowsAffected });
+    } catch (delErr) {
+      console.error('Erro ao executar DELETE em titulosreceber:', delErr.message || delErr);
+      // continuar — talvez não exista nenhum título para deletar
+    }
+
+    // ====== Se idtitulo > 0 -> INSERT titulosreceber ======
+    if (typeof idtitulo === 'undefined') {
+      console.warn('idtitulo está undefined no body. Nenhum título será inserido.');
+    } else if (Number(idtitulo) > 0) {
+      //console.log('idtitulo > 0, tentando inserir novo título. idtitulo =', idtitulo);
+      try {
+        const insertResult = await pool
+          .request()
+          .input('dataemissao', dataVendaNorm)
+          .input('datavencimento', dataVencimentoNorm)
+          .input('datacompetencia', dataVendaNorm)
+          .input('descricao', 'Venda Serviço ' + id)
+          .input('documento', id)
+          .input('valor', valortotal)
+          .input('valorpago', 0)
+          .input('descontopago', 0)
+          .input('juropago', 0)
+          .input('parcela', 1)
+          .input('identidade', identidade)
+          .input('idmoeda', idmoeda)
+          .input('idformapagamento', idformapagamento)
+          .input('idplanoconta', idplanoconta)
+          .input('idfilial', idfilial)
+          .input('chave', chave)
+          .input('empresa', empresa)
+          .input('id', idtitulo)
+          .input('idvendahotel', req.params.idvenda)
+          .query(`
+            INSERT INTO titulosreceber (
+              dataemissao,
+              datavencimento,
+              datacompetencia,
+              descricao,
+              documento,
+              valor,
+              valorpago,
+              descontopago,
+              juropago,
+              parcela,
+              identidade,
+              idmoeda,
+              idformapagamento,
+              idplanoconta,
+              idfilial,
+              chave,
+              empresa,
+              id,
+              idvendahotel
+            )
+            OUTPUT INSERTED.idtitulo
+            VALUES (
+              @dataemissao,
+              @datavencimento,
+              @datacompetencia,
+              @descricao,
+              @documento,
+              @valor,
+              @valorpago,
+              @descontopago,
+              @juropago,
+              @parcela,
+              @identidade,
+              @idmoeda,
+              @idformapagamento,
+              @idplanoconta,
+              @idfilial,
+              @chave,
+              @empresa,
+              @id,
+              @idvendahotel
+            )
+          `);
+
+        console.log('INSERT result:', {
+          rowsAffected: insertResult.rowsAffected,
+          recordset: insertResult.recordset,
+        });
+
+        if (insertResult.recordset && insertResult.recordset.length > 0) {
+          console.log('INSERTED idtitulo =', insertResult.recordset[0].idtitulo);
+        } else {
+          console.warn('Nenhum idtitulo retornado no recordset do INSERT. Verifique a tabela OUTPUT ou permissões.');
+        }
+      } catch (insErr) {
+        console.error('Erro ao inserir titulosreceber:', insErr.message || insErr);
+        // opcional: você pode rethrow para abortar toda a operação
+        // throw insErr;
+      }
+    } else {
+      console.log('idtitulo <= 0, nenhum título será inserido (idtitulo =', idtitulo, ').');
+    }
+
+    if((Number(idplanocontafor) > 0) && (Number(idformapagamentofor) > 0)){
+    const consresultPag = await pool
+      .request()
+      .input('idvenda', req.params.idvenda)
+      .query(`
+        SELECT        idfornecedor, SUM(isnull(ValorFornecedor,0)) as valor
+        FROM            ItensVendaHotel
+        WHERE isnull(ValorFornecedor,0) > 0
+        AND idvendahotel = @idvenda                
+        GROUP BY IdFornecedor
+      `);
+
+      if(consresultPag.recordset.length > 0){
+        for (const fornecedor of consresultPag) {
+
+          let numTitulo = incTituloPag(empresa);
+
+            try {
+              const insertResultPag = await pool
+                .request()
+                .input('dataemissao', dataVendaNorm)
+                .input('datavencimento', dataVencimentoNorm)
+                .input('datacompetencia', dataVendaNorm)
+                .input('descricao', 'Venda Serviço ' + id)
+                .input('documento', id)
+                .input('valor', fornecedor.valor)
+                .input('valorpago', 0)
+                .input('descontopago', 0)
+                .input('juropago', 0)
+                .input('parcela', 1)
+                .input('identidade', fornecedor.idfornecedor)
+                .input('idmoeda', idmoeda)
+                .input('idformapagamento', idformapagamentofor)
+                .input('idplanoconta', idplanocontafor)
+                .input('idfilial', idfilial)
+                .input('chave', chave)
+                .input('empresa', empresa)
+                .input('id', numTitulo)
+                .input('idvendahotel', req.params.idvenda)
+                .query(`
+                  INSERT INTO titulospagar (
+                    dataemissao,
+                    datavencimento,
+                    datacompetencia,
+                    descricao,
+                    documento,
+                    valor,
+                    valorpago,
+                    descontopago,
+                    juropago,
+                    parcela,
+                    identidade,
+                    idmoeda,
+                    idformapagamento,
+                    idplanoconta,
+                    idfilial,
+                    chave,
+                    empresa,
+                    id,
+                    idvendahotel
+                  )
+                  OUTPUT INSERTED.idtitulo
+                  VALUES (
+                    @dataemissao,
+                    @datavencimento,
+                    @datacompetencia,
+                    @descricao,
+                    @documento,
+                    @valor,
+                    @valorpago,
+                    @descontopago,
+                    @juropago,
+                    @parcela,
+                    @identidade,
+                    @idmoeda,
+                    @idformapagamento,
+                    @idplanoconta,
+                    @idfilial,
+                    @chave,
+                    @empresa,
+                    @id,
+                    @idvendahotel
+                  )
+                `);
+
+              console.log('INSERT result:', {
+                rowsAffected: insertResultPag.rowsAffected,
+                recordset: insertResultPag.recordset,
+              });
+
+              if (insertResultPag.recordset && insertResultPag.recordset.length > 0) {
+                console.log('INSERTED idtitulo =', insertResultPag.recordset[0].idtitulo);
+              } else {
+                console.warn('Nenhum idtitulo retornado no recordset do INSERT. Verifique a tabela OUTPUT ou permissões.');
+              }
+            } catch (insErr) {
+              console.error('Erro ao inserir titulosreceber:', insErr.message || insErr);
+              // opcional: você pode rethrow para abortar toda a operação
+              // throw insErr;
+            }
+
+
+
+
+
+
+
+
+
+
+
+        }
+        
+      }
+
+    }
+
+
+    console.log('--- updateVendasServicos END (sucesso) ---');
     res.json({ success: true, message: 'Venda atualizada com sucesso' });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const incTituloPag = async (req, res) => {
+  const idempresa = req.params.idempresa;
+  const pool = await poolPromise; // ✅ usa o pool compartilhado
+  let atualizado = false;
+  let valorAtualizado = 0;
+ 
+  while (!atualizado) {
+    const transaction = new sql.Transaction(pool);
+    try {
+      await transaction.begin();
+
+      const request = new sql.Request(transaction);
+
+      // Verifica se a coluna já existe
+      const checkColumnSql = `
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_NAME = 'IncTituloPag' AND COLUMN_NAME = @coluna
+      `;
+      request.input('coluna', sql.NVarChar, `id_${idempresa}`);
+      const checkResult = await request.query(checkColumnSql);
+
+      if (checkResult.recordset.length === 0) {
+        const addColumnSql = `ALTER TABLE IncTituloPag ADD id_${idempresa} INT`;
+        await request.batch(addColumnSql);
+        const updateSql = `UPDATE IncTituloPag SET id_${idempresa} = 1`;
+        await request.batch(updateSql);
+      } else {
+        const updateSql = `UPDATE IncTituloPag SET id_${idempresa} = id_${idempresa} + 1`;
+        await request.batch(updateSql);
+      }
+
+      await transaction.commit();
+      atualizado = true;
+
+      const result = await pool.request().query(`SELECT id_${idempresa} AS valor FROM IncTituloPag`);
+      valorAtualizado = result.recordset[0].valor;
+ 
+    } catch (err) {
+      await transaction.rollback();
+      console.error('Erro durante transação, tentando novamente...', err);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  return res.status(200).json({ novoId: valorAtualizado });
+};
+*/
 
 // Deletar uma vendas
 const deleteVendasHotel = async (req, res) => {
