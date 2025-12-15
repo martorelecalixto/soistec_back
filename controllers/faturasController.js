@@ -585,7 +585,8 @@ const getEmissao = async (req, res) => {
                                 Entidades ON VendasBilhetes.IdEntidade = Entidades.IdEntidade ON FormaPagamento.IdFormaPagamento = VendasBilhetes.IdFormaPagamento LEFT OUTER JOIN
                                 Filiais ON VendasBilhetes.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
                                 ItensVendaBilhete ON VendasBilhetes.IdVenda = ItensVendaBilhete.IdVenda
-        WHERE           (ISNULL(VendasBilhetes.idfatura,0) = 0) AND (ISNULL(VendasBilhetes.valortotal,0) > 0)  ${whereClauseAereo} 
+        WHERE           (ISNULL(VendasBilhetes.idfatura,0) = 0) AND (ISNULL(VendasBilhetes.valortotal,0) > 0) 
+        AND FormaPagamento.gerarfatura = 1 ${whereClauseAereo} 
 
         GROUP BY VendasBilhetes.idvenda, VendasBilhetes.valortotal, 
                 VendasBilhetes.observacao, VendasBilhetes.solicitante, 
@@ -666,7 +667,7 @@ const getEmissao = async (req, res) => {
                                 Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
                                 ItensVendaHotel ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda
         WHERE           (ISNULL(VendasHoteis.idfatura,0) = 0) AND (ISNULL(VendasHoteis.valortotal,0) > 0)
-        ${whereClauseServico}
+        AND FormaPagamento.gerarfatura = 1  ${whereClauseServico}
         GROUP BY VendasHoteis.idvenda, VendasHoteis.valortotal,
                 VendasHoteis.observacao, VendasHoteis.solicitante,
                 VendasHoteis.identidade, VendasHoteis.id, 

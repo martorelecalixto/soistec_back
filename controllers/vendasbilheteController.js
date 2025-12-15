@@ -522,7 +522,7 @@ const getRelatoriosAnalitico = async (req, res) => {
   try {
     const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
       vencimentoinicial, vencimentofinal, idformapagamento, idvendedor, idemissor,  idgrupo,
-      aereoinicial, aereofinal, faturainicial, faturafinal, pax, tipo, idoperadora
+      aereoinicial, aereofinal, faturainicial, faturafinal, pax, tipo, idoperadora, bilhete
      } = req.query;
    //  console.log('req.query::', req.query);
     const sql = require('mssql');
@@ -602,6 +602,11 @@ const getRelatoriosAnalitico = async (req, res) => {
     if (pax) {
       request.input('pax', `%${pax}%`);
       whereClause += ' AND ItensVendaBilhete.pax LIKE @pax';
+    }
+
+    if (bilhete) {
+      request.input('bilhete', `%${bilhete}%`);
+      whereClause += ' AND ItensVendaBilhete.bilhete LIKE @bilhete';
     }
 
     if (aereoinicial) {
@@ -702,7 +707,7 @@ const getRelatoriosSintetico = async (req, res) => {
   try {
     const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
       vencimentoinicial, vencimentofinal, idformapagamento, idvendedor, idemissor,  idgrupo,
-      aereoinicial, aereofinal, faturainicial, faturafinal, pax, tipo, idoperadora
+      aereoinicial, aereofinal, faturainicial, faturafinal, pax, tipo, idoperadora, bilhete
      } = req.query;
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
@@ -778,6 +783,11 @@ const getRelatoriosSintetico = async (req, res) => {
     if (pax) {
       request.input('pax', `%${pax}%`);
       whereClause += ' AND ItensVendaBilhete.pax LIKE @pax';
+    }
+
+    if (bilhete) {
+      request.input('bilhete', `%${bilhete}%`);
+      whereClause += ' AND ItensVendaBilhete.bilhete LIKE @bilhete';
     }
 
     if (aereoinicial) {
