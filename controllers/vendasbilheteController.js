@@ -302,9 +302,9 @@ const updateVendasBilhete = async (req, res) => {
       idplanoconta,
     } = req.body;
 
-    console.log('--- updateVendasBilhete START ---');
-    console.log('params.idvenda =', req.params.idvenda);
-    console.log('Recebido no body:', {
+    //console.log('--- updateVendasBilhete START ---');
+    //console.log('params.idvenda =', req.params.idvenda);
+    /*console.log('Recebido no body:', {
       datavenda,
       datavencimento,
       documento,
@@ -312,7 +312,7 @@ const updateVendasBilhete = async (req, res) => {
       idtitulo,
       id,
       empresa,
-    });
+    });*/
 
     const dataVendaNorm = normalizeDate(datavenda);
     const dataVencimentoNorm = normalizeDate(datavencimento);
@@ -382,10 +382,10 @@ const updateVendasBilhete = async (req, res) => {
         WHERE idvenda = @idvenda
       `);
 
-      console.log('UPDATE result:', {
+    /*  console.log('UPDATE result:', {
       rowsAffected: updateResult.rowsAffected,
       recordsetLength: updateResult.recordset ? updateResult.recordset.length : 0,
-    });
+    });*/
 
     // ====== DELETE titulosreceber (sempre tenta remover) ======
     try {
@@ -475,10 +475,10 @@ const updateVendasBilhete = async (req, res) => {
             )
           `);
 
-        console.log('INSERT result:', {
+      /*  console.log('INSERT result:', {
           rowsAffected: insertResult.rowsAffected,
           recordset: insertResult.recordset,
-        });
+        });*/
 
         if (insertResult.recordset && insertResult.recordset.length > 0) {
           console.log('INSERTED idtitulo =', insertResult.recordset[0].idtitulo);
@@ -494,7 +494,7 @@ const updateVendasBilhete = async (req, res) => {
       console.log('idtitulo <= 0, nenhum título será inserido (idtitulo =', idtitulo, ').');
     }
 
-    console.log('--- updateVendasBilhete END (sucesso) ---');
+    //.log('--- updateVendasBilhete END (sucesso) ---');
     res.json({ success: true, message: 'Venda atualizada com sucesso' });
 
   } catch (error) {
