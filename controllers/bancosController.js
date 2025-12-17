@@ -169,7 +169,7 @@ const updateBanco = async (req, res) => {
     const {
       nome, numero
     } = req.body;
-console.log(req.params.idbanco);
+ // console.log(req.params.idbanco);
     const pool = await poolPromise;
     await pool
       .request()
@@ -346,11 +346,12 @@ const getLancamentoSaldoAtual = async (req, res) => {
   try {
     const { empresa, idfilial,  idmoeda, idcontabancaria, data  } = req.query;
     const sql = require('mssql');
+   // console.log(req.query);
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
-
+    //console.log(req.query);
     // Parâmetros obrigatórios
     const pool = await poolPromise;
     const request = pool.request();
@@ -379,7 +380,7 @@ const getLancamentoSaldoAtual = async (req, res) => {
 
     if (data) {
       request.input('data', data); // Formata a data para incluir hora
-      whereClause += ' AND lancamentos.datapagamento >= @data';
+      whereClause += ' AND lancamentos.datapagamento <= @data';
     }else{
       whereClause += ' AND lancamentos.idcontabancaria IS NULL ';}
     
@@ -392,11 +393,13 @@ const getLancamentoSaldoAtual = async (req, res) => {
                   ContasBancarias ON Lancamentos.IdContaBancaria = ContasBancarias.IdContaBancaria INNER JOIN
                   FormaPagamento ON Lancamentos.IdOperacaoBancaria = FormaPagamento.IdFormaPagamento
             ${whereClause}  `
-
+    //console.log(query);
     const result = await request.query(query);
+    //console.log(result.body);
 
     // Retorna apenas o valor (número)
     const valor = result.recordset.length > 0 ? result.recordset[0].valorpago : 0;
+    //console.log(valor);
     res.json(valor);
 
   } catch (error) {

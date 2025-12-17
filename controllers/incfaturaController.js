@@ -29,6 +29,7 @@ const incFatura = async (req, res) => {
         await request.batch(updateSql);
       } else {
         const updateSql = `UPDATE IncFatura SET id_${idempresa} = id_${idempresa} + 1`;
+        //await request.batch(`UPDATE IncTituloPag SET ${coluna} = ISNULL(${coluna}, 0) + 1`);
         await request.batch(updateSql);
       }
 

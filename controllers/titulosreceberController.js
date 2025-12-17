@@ -617,7 +617,7 @@ const deleteTituloReceberByVendaHotel = async (req, res) => {
 // Deletar uma baixa
 const deleteBaixaReceber = async (req, res) => {
   try {
-    console.log('Deletando Baixa Receber ANTIGA');
+   // console.log('Deletando Baixa Receber ANTIGA');
 
     const pool = await poolPromise;
     await pool
@@ -634,7 +634,7 @@ const deleteBaixaReceber = async (req, res) => {
 // Deletar uma baixa
 const deleteBaixasReceber = async (req, res) => {
   try {
-    console.log('Deletando Baixa Receber');
+   // console.log('Deletando Baixa Receber');
     const { id, idlancamento, idtituloreceber, valorpago, descontopago, juropago } = req.query;
     const sql = require('mssql');
 
@@ -644,7 +644,7 @@ const deleteBaixasReceber = async (req, res) => {
       .input('id', id)
       .query('DELETE FROM baixasreceber WHERE id = @id');
 
-      console.log('Baixa Receber Deletada: ' + id);
+     // console.log('Baixa Receber Deletada: ' + id);
 
     const poolLanc = await poolPromise;
     await poolLanc
@@ -652,7 +652,7 @@ const deleteBaixasReceber = async (req, res) => {
       .input('idlancamento', idlancamento)
       .query('DELETE FROM lancamentos WHERE idlancamento = @idlancamento');
 
-      console.log('Lançamento Deletado: ' + idlancamento);
+     // console.log('Lançamento Deletado: ' + idlancamento);
 
     //**************TITULO RECEBER*************** */ 
     const poolRec = await poolPromise;
@@ -670,7 +670,7 @@ const deleteBaixasReceber = async (req, res) => {
           WHERE idtitulo =  @idtituloreceber
       `);
 
-      console.log('Titulo Receber Atualizado: ' + idtituloreceber);
+      //console.log('Titulo Receber Atualizado: ' + idtituloreceber);
 
     res.json({ success: true, message: 'Baixa deletada com sucesso' });
   } catch (error) {
@@ -693,7 +693,8 @@ const createBaixaReceber = async (req, res) => {
           idcontabancaria,
           idoperacaobancaria, 
           idfilial,
-          empresa
+          empresa,
+          idmoeda
     } = req.body;
 
     const dataBaixaNorm = normalizeDate(databaixa);
@@ -713,6 +714,7 @@ const createBaixaReceber = async (req, res) => {
       .input('idfilial', idfilial)
       .input('chave', uuidv4())
       .input('empresa', empresa)
+      .input('idmoeda', idmoeda)
       .query(`
         INSERT INTO lancamentos (
             datapagamento,
@@ -725,7 +727,8 @@ const createBaixaReceber = async (req, res) => {
             idoperacaobancaria,
             idfilial,
             chave,
-            empresa
+            empresa,
+            idmoeda
         )
         OUTPUT INSERTED.idlancamento
         VALUES (
@@ -739,7 +742,8 @@ const createBaixaReceber = async (req, res) => {
             @idoperacaobancaria,
             @idfilial,
             @chave,
-            @empresa
+            @empresa,
+            @idmoeda
         )
       `);
     const idlancamento = resultLanc.recordset[0].idlancamento;
@@ -838,7 +842,8 @@ const createBaixasReceberGenerica = async (req, res) => {
         idcontabancaria,
         idoperacaobancaria,
         idfilial,
-        empresa
+        empresa,
+        idmoeda
       } = baixa;
 
       const dataBaixaNorm = normalizeDate(databaixa);
@@ -858,6 +863,7 @@ const createBaixasReceberGenerica = async (req, res) => {
         .input('idfilial', idfilial)
         .input('chave', uuidv4())
         .input('empresa', empresa)
+        .input('idmoeda', idmoeda)
         .query(`
           INSERT INTO lancamentos (
               datapagamento,
@@ -870,7 +876,8 @@ const createBaixasReceberGenerica = async (req, res) => {
               idoperacaobancaria,
               idfilial,
               chave,
-              empresa
+              empresa,
+              idmoeda
           )
           OUTPUT INSERTED.idlancamento
           VALUES (
@@ -884,7 +891,8 @@ const createBaixasReceberGenerica = async (req, res) => {
               @idoperacaobancaria,
               @idfilial,
               @chave,
-              @empresa
+              @empresa,
+              @idmoeda
           )
         `);
       const idlancamento = resultLanc.recordset[0].idlancamento;

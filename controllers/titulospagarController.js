@@ -599,7 +599,7 @@ const deleteBaixasPagar = async (req, res) => {
       .input('idlancamento', idlancamento)
       .query('DELETE FROM lancamentos WHERE idlancamento = @idlancamento');
 
-      console.log('Lançamento Deletado: ' + idlancamento);
+  //    console.log('Lançamento Deletado: ' + idlancamento);
 
     //**************TITULO PAGAR*************** */ 
     const poolRec = await poolPromise;
@@ -617,7 +617,7 @@ const deleteBaixasPagar = async (req, res) => {
           WHERE idtitulo =  @idtitulopagar
       `);
 
-      console.log('Titulo Pagar Atualizado: ' + idtitulopagar);
+     // console.log('Titulo Pagar Atualizado: ' + idtitulopagar);
 
     res.json({ success: true, message: 'Baixa deletada com sucesso' });
   } catch (error) {
@@ -640,7 +640,8 @@ const createBaixaPagar = async (req, res) => {
           idcontabancaria,
           idoperacaobancaria, 
           idfilial,
-          empresa
+          empresa,
+          idmoeda
     } = req.body;
 
     const dataBaixaNorm = normalizeDate(databaixa);
@@ -660,6 +661,7 @@ const createBaixaPagar = async (req, res) => {
       .input('idfilial', idfilial)
       .input('chave', uuidv4())
       .input('empresa', empresa)
+      .input('idmoeda', idmoeda)
       .query(`
         INSERT INTO lancamentos (
             datapagamento,
@@ -672,7 +674,8 @@ const createBaixaPagar = async (req, res) => {
             idoperacaobancaria,
             idfilial,
             chave,
-            empresa
+            empresa,
+            idmoeda
         )
         OUTPUT INSERTED.idlancamento
         VALUES (
@@ -686,7 +689,8 @@ const createBaixaPagar = async (req, res) => {
             @idoperacaobancaria,
             @idfilial,
             @chave,
-            @empresa
+            @empresa,
+            @idmoeda
         )
       `);
     const idlancamento = resultLanc.recordset[0].idlancamento;
@@ -785,7 +789,8 @@ const createBaixasPagarGenerica = async (req, res) => {
         idcontabancaria,
         idoperacaobancaria,
         idfilial,
-        empresa
+        empresa,
+        idmoeda
       } = baixa;
 
       const dataBaixaNorm = normalizeDate(databaixa);
@@ -805,6 +810,7 @@ const createBaixasPagarGenerica = async (req, res) => {
         .input('idfilial', idfilial)        
         .input('chave', uuidv4())
         .input('empresa', empresa)
+        .input('idmoeda', idmoeda)
         .query(`
           INSERT INTO lancamentos (
               datapagamento,
@@ -817,7 +823,8 @@ const createBaixasPagarGenerica = async (req, res) => {
               idoperacaobancaria,
               idfilial,
               chave,
-              empresa
+              empresa,
+              idmoeda
           )
           OUTPUT INSERTED.idlancamento
           VALUES (
@@ -831,7 +838,8 @@ const createBaixasPagarGenerica = async (req, res) => {
               @idoperacaobancaria,
               @idfilial,
               @chave,
-              @empresa
+              @empresa,
+              @idmoeda
           )
         `);
       const idlancamento = resultLanc.recordset[0].idlancamento;
@@ -915,7 +923,7 @@ const createBaixasPagarGenerica = async (req, res) => {
 // Criar um novo titulo
 const createTituloPagar = async (req, res) => {
   try {
-    console.log('createTituloPagar');
+    //console.log('createTituloPagar');
 
     const {
           dataemissao,
@@ -1035,7 +1043,7 @@ const createTituloPagar = async (req, res) => {
         )
       `);
     const idtitulo = result.recordset[0].idtitulo;
-    console.log('Titulo Pagar Criado: ' + idtitulo);
+    //console.log('Titulo Pagar Criado: ' + idtitulo);
 
     res.status(201).json({ success: true, idtitulo, message: 'titulo criada com sucesso' });
   } catch (error) {

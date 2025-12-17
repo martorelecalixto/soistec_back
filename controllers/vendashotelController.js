@@ -580,6 +580,7 @@ const updateVendasHotel = async (req, res) => {
       for (const fornecedor of consresultPag.recordset) {
         //console.log(idempresa);
         const novoTitulo = await incTituloPag(idempresa); // <-- AGORA FUNCIONA
+        //console.log(novoTitulo);
 
         await pool
           .request()
@@ -620,6 +621,7 @@ const updateVendasHotel = async (req, res) => {
           `);
       }
     }
+    //console.log("UPDATE OK:", updateResult.rowsAffected);
 
     res.json({ success: true, message: "Venda atualizada com sucesso" });
 
@@ -655,7 +657,8 @@ async function incTituloPag(idempresa) {
       if (check.recordset.length === 0) {
         await request.batch(`ALTER TABLE IncTituloPag ADD ${coluna} INT DEFAULT 1`);
       } else {
-        await request.batch(`UPDATE IncTituloPag SET ${coluna} = ${coluna} + 1`);
+       // await request.batch(`UPDATE IncTituloPag SET ${coluna} = ${coluna} + 1`);
+        await request.batch(`UPDATE IncTituloPag SET ${coluna} = ISNULL(${coluna}, 0) + 1`);
       }
 
       await transaction.commit();
