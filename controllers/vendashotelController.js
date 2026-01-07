@@ -11,7 +11,11 @@ function normalizeDate(dateString) {
 // Obter todas as vendashotel
 const getVendasHotel = async (req, res) => {
   try {
-    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal, idvendedor } = req.query;
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal, idvendedor, vencimentoinicial, vencimentofinal,
+      servicoinicial, servicofinal, faturainicial, faturafinal, pax,  tituloinicial, titulofinal
+     } = req.query;
+    // console.log('query::', req.query);
+   
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -26,6 +30,9 @@ const getVendasHotel = async (req, res) => {
 
     // Parâmetros opcionais
     let whereClause = 'WHERE vendashoteis.empresa = @empresa AND vendashoteis.id > 0 ';
+    let whereClauseAux = ' AND IsNull(Faturas.IdFatura,0) = 0 ';
+    let orderClause = '';
+    let groupClause = '';
 
     // Filtros opcionais
     if (idfilial) {
@@ -59,7 +66,52 @@ const getVendasHotel = async (req, res) => {
       whereClause += ' AND vendashoteis.idvendedor = @idvendedor';
     }
 
-    whereClause += 
+    if (vencimentoinicial) {
+      request.input('vencimentoinicial', vencimentoinicial);
+      whereClause += ' AND vendashoteis.datavencimento >= @vencimentoinicial';
+    }
+    
+    if (vencimentofinal) {
+      request.input('vencimentofinal', vencimentofinal);
+      whereClause += ' AND vendashoteis.datavencimento <= @vencimentofinal';
+    }
+
+    if (pax) {
+      request.input('pax', `%${pax}%`);
+      whereClause += ' AND ItensVendaHotel.pax LIKE @pax';
+    }
+
+    if (servicoinicial) {
+      request.input('servicoinicial', servicoinicial);
+      whereClause += ' AND vendashoteis.id >= @servicoinicial';
+    }
+    
+    if (servicofinal) {
+      request.input('servicofinal', servicofinal);
+      whereClause += ' AND vendashoteis.id <= @servicofinal';
+    }
+
+    if (faturainicial) {
+      request.input('faturainicial', faturainicial);
+      whereClause += ' AND Faturas.id >= @faturainicial';
+    }
+    
+    if (faturafinal) {
+      request.input('faturafinal', faturafinal);
+      whereClause += ' AND Faturas.id <= @faturafinal';
+    }
+
+    if (tituloinicial) {
+      request.input('tituloinicial', tituloinicial);
+      whereClause += ' AND titulosreceber.id >= @tituloinicial';
+    }
+    
+    if (titulofinal) {
+      request.input('titulofinal', titulofinal);
+      whereClause += ' AND titulosreceber.id <= @titulofinal';
+    }
+
+    groupClause += 
                 ' GROUP BY ' +
                 '    vendashoteis.idvenda, ' +
                 '    vendashoteis.datavenda, ' +
@@ -93,7 +145,7 @@ const getVendasHotel = async (req, res) => {
                 '    vendashoteis.idgrupo, ' +
                 '    vendashoteis.id, ' +
                 '    vendashoteis.valorentrada, ' +
-                '    entidades.nome, ' +
+                '    entidades_3.nome, ' +
                 '    formapagamento.nome, ' +
                 '    entidades_1.nome, ' +
                 '    entidades_2.nome, '+
@@ -101,7 +153,7 @@ const getVendasHotel = async (req, res) => {
                 '    faturas.id,'+
                 '    titulosreceber.valorpago';
 
-    whereClause += ' ORDER BY vendashoteis.datavenda desc, vendashoteis.id ';
+    orderClause += ' ORDER BY vendashoteis.datavenda desc, vendashoteis.id ';
 
     const query =
      `
@@ -138,25 +190,91 @@ const getVendasHotel = async (req, res) => {
             vendashoteis.idgrupo,
             vendashoteis.id,
             vendashoteis.valorentrada,
-            entidades.nome AS entidade,
+            entidades_3.nome AS entidade,
             formapagamento.nome AS pagamento,
             entidades_1.nome AS vendedor,
             entidades_2.nome AS emissor,
             recibosreceber.id AS recibo, 
             faturas.id AS fatura, 
             ISNULL(titulosreceber.valorpago,0) AS valorpago
-        FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                        FormaPagamento RIGHT OUTER JOIN
-                        vendashoteis INNER JOIN
-                        Entidades ON vendashoteis.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
-                        TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel ON FormaPagamento.IdFormaPagamento = vendashoteis.IdFormaPagamento LEFT OUTER JOIN
-                        Entidades AS entidades_1 ON vendashoteis.IdVendedor = entidades_1.IdEntidade ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                        Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                        Faturas ON vendashoteis.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
-                        Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                        RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                        Grupos ON vendashoteis.IdGrupo = Grupos.Id LEFT OUTER JOIN
-                        ItensVendaHotel ON vendashoteis.IdVenda = ItensVendaHotel.IdVenda ${whereClause}  `
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+        SELECT 
+            vendashoteis.idvenda,
+            vendashoteis.datavenda,
+            vendashoteis.datavencimento,
+            vendashoteis.documento,
+            vendashoteis.valortotal,
+            vendashoteis.descontototal,
+            vendashoteis.valortaxatotal,
+            vendashoteis.valoroutrostotal,
+            vendashoteis.valordutotal,
+            vendashoteis.valorcomissaototal,
+            vendashoteis.valorfornecedortotal,
+            vendashoteis.cartao_sigla,
+            vendashoteis.cartao_numero,
+            vendashoteis.cartao_mesvencimento,
+            vendashoteis.cartao_anovencimento,
+            vendashoteis.observacao,
+            vendashoteis.solicitante,
+            vendashoteis.identidade,
+            vendashoteis.idvendedor,
+            vendashoteis.idemissor,
+            vendashoteis.idmoeda,
+            vendashoteis.idformapagamento,
+            vendashoteis.idfilial,
+            vendashoteis.idfatura,
+            vendashoteis.idreciboreceber,
+            vendashoteis.chave,
+            vendashoteis.excluido,
+            vendashoteis.empresa,
+            vendashoteis.idcentrocusto,
+            vendashoteis.idgrupo,
+            vendashoteis.id,
+            vendashoteis.valorentrada,
+            entidades_3.nome AS entidade,
+            formapagamento.nome AS pagamento,
+            entidades_1.nome AS vendedor,
+            entidades_2.nome AS emissor,
+            recibosreceber.id AS recibo, 
+            faturas.id AS fatura, 
+            ISNULL(titulosreceber.valorpago,0) AS valorpago
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause}
+
+    `
    const result = await request.query(query);
    //console.log(result.recordset);
    res.json(result.recordset);    
@@ -678,410 +796,6 @@ async function incTituloPag(idempresa) {
   return valorAtualizado;
 }
 
-
-/*
-// Atualizar uma vendas existente
-const updateVendasHotel = async (req, res) => {
-  try {
-   // console.log('ENTROU NA API');
-    const {
-      datavenda,
-      datavencimento,
-      documento,
-      valortotal,
-      descontototal,
-      valortaxatotal,
-      valoroutrostotal,
-      valordutotal,
-      valorcomissaototal,
-      valorfornecedortotal,
-      cartao_sigla,
-      cartao_numero,
-      cartao_mesvencimento,
-      cartao_anovencimento,
-      observacao,
-      solicitante,
-      identidade,
-      idvendedor,
-      idemissor,
-      idmoeda,
-      idformapagamento,
-      idfilial,
-      idfatura,
-      idreciboreceber,
-      chave,
-      excluido,
-      empresa,
-      idcentrocusto,
-      idgrupo,
-      id,
-      valorentrada,
-      idplanoconta,
-      idtitulo,
-      idplanocontafor,
-      idformapagamentofor
-    } = req.body;
-
-    const dataVendaNorm = normalizeDate(datavenda);
-    const dataVencimentoNorm = normalizeDate(datavencimento);
-
-    const pool = await poolPromise;
-    const updateResult =await pool
-      .request()
-      .input('idvenda', req.params.idvenda)
-      .input('datavenda', dataVendaNorm)
-      .input('datavencimento', dataVencimentoNorm)
-      .input('documento', documento)
-      .input('valortotal', valortotal)
-      .input('descontototal', descontototal)
-      .input('valortaxatotal', valortaxatotal)
-      .input('valoroutrostotal', valoroutrostotal)
-      .input('valordutotal', valordutotal)
-      .input('valorcomissaototal', valorcomissaototal)
-      .input('valorfornecedortotal', valorfornecedortotal)
-      .input('cartao_sigla', cartao_sigla)
-      .input('cartao_numero', cartao_numero)
-      .input('cartao_mesvencimento', cartao_mesvencimento)
-      .input('cartao_anovencimento', cartao_anovencimento)
-      .input('observacao', observacao)
-      .input('solicitante', solicitante)
-      .input('identidade', identidade)
-      .input('idvendedor', idvendedor)
-      .input('idemissor', idemissor)
-      .input('idmoeda', idmoeda)
-      .input('idformapagamento', idformapagamento)
-      .input('idfilial', idfilial)
-      .input('idfatura', idfatura)
-      .input('idreciboreceber', idreciboreceber)
-      .input('chave', chave)
-      .input('excluido', excluido)
-      .input('empresa', empresa)
-      .input('idcentrocusto', idcentrocusto)
-      .input('idgrupo', idgrupo)
-      .input('id', id)
-      .input('valorentrada', valorentrada)
-      .query(`
-        UPDATE vendashoteis SET
-          datavenda = @datavenda,
-          datavencimento = @datavencimento,
-          documento = @documento,
-          valortotal = @valortotal,
-          descontototal = @descontototal,
-          valortaxatotal = @valortaxatotal,
-          valoroutrostotal = @valoroutrostotal,
-          valordutotal = @valordutotal,
-          valorcomissaototal = @valorcomissaototal,
-          valorfornecedortotal = @valorfornecedortotal,
-          cartao_sigla = @cartao_sigla,
-          cartao_numero = @cartao_numero,
-          cartao_mesvencimento = @cartao_mesvencimento,
-          cartao_anovencimento = @cartao_anovencimento,
-          observacao = @observacao,
-          solicitante = @solicitante,
-          identidade = @identidade,
-          idvendedor = @idvendedor,
-          idemissor = @idemissor,
-          idmoeda = @idmoeda,
-          idformapagamento = @idformapagamento,
-          idfilial = @idfilial,
-          idfatura = @idfatura,
-          idreciboreceber = @idreciboreceber,
-          chave = @chave,
-          excluido = @excluido,
-          empresa = @empresa,
-          idcentrocusto = @idcentrocusto,
-          idgrupo = @idgrupo,
-          id = @id,
-          valorentrada = @valorentrada
-        WHERE idvenda = @idvenda
-      `);
-
-      console.log('UPDATE result:', {
-      rowsAffected: updateResult.rowsAffected,
-      recordsetLength: updateResult.recordset ? updateResult.recordset.length : 0,
-    });
-
-    // ====== DELETE titulosreceber (sempre tenta remover) ======
-    try {
-      //console.log('Executando DELETE em titulosreceber (idvendabilhete =', req.params.idvenda, ')');
-      const delResult = await pool.request()
-        .input('idvenda', req.params.idvenda)
-        .query(`
-          DELETE FROM titulosreceber
-          WHERE idvendahotel = @idvenda
-        `);
-      //console.log('DELETE result:', { rowsAffected: delResult.rowsAffected });
-    } catch (delErr) {
-      console.error('Erro ao executar DELETE em titulosreceber:', delErr.message || delErr);
-      // continuar — talvez não exista nenhum título para deletar
-    }
-
-    // ====== Se idtitulo > 0 -> INSERT titulosreceber ======
-    if (typeof idtitulo === 'undefined') {
-      console.warn('idtitulo está undefined no body. Nenhum título será inserido.');
-    } else if (Number(idtitulo) > 0) {
-      //console.log('idtitulo > 0, tentando inserir novo título. idtitulo =', idtitulo);
-      try {
-        const insertResult = await pool
-          .request()
-          .input('dataemissao', dataVendaNorm)
-          .input('datavencimento', dataVencimentoNorm)
-          .input('datacompetencia', dataVendaNorm)
-          .input('descricao', 'Venda Serviço ' + id)
-          .input('documento', id)
-          .input('valor', valortotal)
-          .input('valorpago', 0)
-          .input('descontopago', 0)
-          .input('juropago', 0)
-          .input('parcela', 1)
-          .input('identidade', identidade)
-          .input('idmoeda', idmoeda)
-          .input('idformapagamento', idformapagamento)
-          .input('idplanoconta', idplanoconta)
-          .input('idfilial', idfilial)
-          .input('chave', chave)
-          .input('empresa', empresa)
-          .input('id', idtitulo)
-          .input('idvendahotel', req.params.idvenda)
-          .query(`
-            INSERT INTO titulosreceber (
-              dataemissao,
-              datavencimento,
-              datacompetencia,
-              descricao,
-              documento,
-              valor,
-              valorpago,
-              descontopago,
-              juropago,
-              parcela,
-              identidade,
-              idmoeda,
-              idformapagamento,
-              idplanoconta,
-              idfilial,
-              chave,
-              empresa,
-              id,
-              idvendahotel
-            )
-            OUTPUT INSERTED.idtitulo
-            VALUES (
-              @dataemissao,
-              @datavencimento,
-              @datacompetencia,
-              @descricao,
-              @documento,
-              @valor,
-              @valorpago,
-              @descontopago,
-              @juropago,
-              @parcela,
-              @identidade,
-              @idmoeda,
-              @idformapagamento,
-              @idplanoconta,
-              @idfilial,
-              @chave,
-              @empresa,
-              @id,
-              @idvendahotel
-            )
-          `);
-
-        console.log('INSERT result:', {
-          rowsAffected: insertResult.rowsAffected,
-          recordset: insertResult.recordset,
-        });
-
-        if (insertResult.recordset && insertResult.recordset.length > 0) {
-          console.log('INSERTED idtitulo =', insertResult.recordset[0].idtitulo);
-        } else {
-          console.warn('Nenhum idtitulo retornado no recordset do INSERT. Verifique a tabela OUTPUT ou permissões.');
-        }
-      } catch (insErr) {
-        console.error('Erro ao inserir titulosreceber:', insErr.message || insErr);
-        // opcional: você pode rethrow para abortar toda a operação
-        // throw insErr;
-      }
-    } else {
-      console.log('idtitulo <= 0, nenhum título será inserido (idtitulo =', idtitulo, ').');
-    }
-
-    if((Number(idplanocontafor) > 0) && (Number(idformapagamentofor) > 0)){
-    const consresultPag = await pool
-      .request()
-      .input('idvenda', req.params.idvenda)
-      .query(`
-        SELECT        idfornecedor, SUM(isnull(ValorFornecedor,0)) as valor
-        FROM            ItensVendaHotel
-        WHERE isnull(ValorFornecedor,0) > 0
-        AND idvendahotel = @idvenda                
-        GROUP BY IdFornecedor
-      `);
-
-      if(consresultPag.recordset.length > 0){
-        for (const fornecedor of consresultPag) {
-
-          let numTitulo = incTituloPag(empresa);
-
-            try {
-              const insertResultPag = await pool
-                .request()
-                .input('dataemissao', dataVendaNorm)
-                .input('datavencimento', dataVencimentoNorm)
-                .input('datacompetencia', dataVendaNorm)
-                .input('descricao', 'Venda Serviço ' + id)
-                .input('documento', id)
-                .input('valor', fornecedor.valor)
-                .input('valorpago', 0)
-                .input('descontopago', 0)
-                .input('juropago', 0)
-                .input('parcela', 1)
-                .input('identidade', fornecedor.idfornecedor)
-                .input('idmoeda', idmoeda)
-                .input('idformapagamento', idformapagamentofor)
-                .input('idplanoconta', idplanocontafor)
-                .input('idfilial', idfilial)
-                .input('chave', chave)
-                .input('empresa', empresa)
-                .input('id', numTitulo)
-                .input('idvendahotel', req.params.idvenda)
-                .query(`
-                  INSERT INTO titulospagar (
-                    dataemissao,
-                    datavencimento,
-                    datacompetencia,
-                    descricao,
-                    documento,
-                    valor,
-                    valorpago,
-                    descontopago,
-                    juropago,
-                    parcela,
-                    identidade,
-                    idmoeda,
-                    idformapagamento,
-                    idplanoconta,
-                    idfilial,
-                    chave,
-                    empresa,
-                    id,
-                    idvendahotel
-                  )
-                  OUTPUT INSERTED.idtitulo
-                  VALUES (
-                    @dataemissao,
-                    @datavencimento,
-                    @datacompetencia,
-                    @descricao,
-                    @documento,
-                    @valor,
-                    @valorpago,
-                    @descontopago,
-                    @juropago,
-                    @parcela,
-                    @identidade,
-                    @idmoeda,
-                    @idformapagamento,
-                    @idplanoconta,
-                    @idfilial,
-                    @chave,
-                    @empresa,
-                    @id,
-                    @idvendahotel
-                  )
-                `);
-
-              console.log('INSERT result:', {
-                rowsAffected: insertResultPag.rowsAffected,
-                recordset: insertResultPag.recordset,
-              });
-
-              if (insertResultPag.recordset && insertResultPag.recordset.length > 0) {
-                console.log('INSERTED idtitulo =', insertResultPag.recordset[0].idtitulo);
-              } else {
-                console.warn('Nenhum idtitulo retornado no recordset do INSERT. Verifique a tabela OUTPUT ou permissões.');
-              }
-            } catch (insErr) {
-              console.error('Erro ao inserir titulosreceber:', insErr.message || insErr);
-              // opcional: você pode rethrow para abortar toda a operação
-              // throw insErr;
-            }
-
-
-
-
-
-
-
-
-
-
-
-        }
-        
-      }
-
-    }
-
-
-    console.log('--- updateVendasServicos END (sucesso) ---');
-    res.json({ success: true, message: 'Venda atualizada com sucesso' });
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-const incTituloPag = async (req, res) => {
-  const idempresa = req.params.idempresa;
-  const pool = await poolPromise; // ✅ usa o pool compartilhado
-  let atualizado = false;
-  let valorAtualizado = 0;
- 
-  while (!atualizado) {
-    const transaction = new sql.Transaction(pool);
-    try {
-      await transaction.begin();
-
-      const request = new sql.Request(transaction);
-
-      // Verifica se a coluna já existe
-      const checkColumnSql = `
-        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_NAME = 'IncTituloPag' AND COLUMN_NAME = @coluna
-      `;
-      request.input('coluna', sql.NVarChar, `id_${idempresa}`);
-      const checkResult = await request.query(checkColumnSql);
-
-      if (checkResult.recordset.length === 0) {
-        const addColumnSql = `ALTER TABLE IncTituloPag ADD id_${idempresa} INT`;
-        await request.batch(addColumnSql);
-        const updateSql = `UPDATE IncTituloPag SET id_${idempresa} = 1`;
-        await request.batch(updateSql);
-      } else {
-        const updateSql = `UPDATE IncTituloPag SET id_${idempresa} = id_${idempresa} + 1`;
-        await request.batch(updateSql);
-      }
-
-      await transaction.commit();
-      atualizado = true;
-
-      const result = await pool.request().query(`SELECT id_${idempresa} AS valor FROM IncTituloPag`);
-      valorAtualizado = result.recordset[0].valor;
- 
-    } catch (err) {
-      await transaction.rollback();
-      console.error('Erro durante transação, tentando novamente...', err);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-  }
-
-  return res.status(200).json({ novoId: valorAtualizado });
-};
-*/
-
 // Deletar uma vendas
 const deleteVendasHotel = async (req, res) => {
   try {
@@ -1158,7 +872,8 @@ const getRelatoriosAnalitico = async (req, res) => {
   try {
     const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
       vencimentoinicial, vencimentofinal, idformapagamento, idvendedor, idemissor,  idgrupo,
-      servicoinicial, servicofinal, faturainicial, faturafinal, pax, tipo, idoperadora
+      servicoinicial, servicofinal, faturainicial, faturafinal, pax, tipo, idoperadora,
+      tituloinicial, titulofinal
      } = req.query;
     const sql = require('mssql');
     //console.log('REQUISIÇÃO::', req.query);
@@ -1177,6 +892,9 @@ const getRelatoriosAnalitico = async (req, res) => {
 
     // Parâmetros opcionais
     let whereClause = 'WHERE vendashoteis.empresa = @empresa AND vendashoteis.id > 0 ';
+    let whereClauseAux = ' AND IsNull(Faturas.IdFatura,0) = 0 ';
+    let orderClause = '';
+
 
     // Filtros opcionais
     if (idfilial) {
@@ -1259,66 +977,117 @@ const getRelatoriosAnalitico = async (req, res) => {
       whereClause += ' AND Faturas.id <= @faturafinal';
     }
 
+    if (tituloinicial) {
+      request.input('tituloinicial', tituloinicial);
+      whereClause += ' AND titulosreceber.id >= @tituloinicial';
+    }
+    
+    if (titulofinal) {
+      request.input('titulofinal', titulofinal);
+      whereClause += ' AND titulosreceber.id <= @titulofinal';
+    }
+
     if (idoperadora) {
       request.input('idoperadora', idoperadora);
       whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
     }
 
     if(tipo == 'Cliente')
-        whereClause += ' ORDER BY Entidades_3.nome, vendashoteis.datavenda, vendashoteis.id '
+        orderClause += ' ORDER BY 3, 5, 2 '
     else
     if(tipo == 'Emissao')
-      whereClause += ' ORDER BY vendashoteis.datavenda, Entidades_3.nome, vendashoteis.id '
+      orderClause += ' ORDER BY 5, 3, 2 '
     else
     if(tipo == 'Vencimento')
-      whereClause += ' ORDER BY vendashoteis.datavencimento, Entidades_3.nome, vendashoteis.id '
+      orderClause += ' ORDER BY 6, 3, 2 '
     else
     if(tipo == 'Emissor')
-      whereClause += ' ORDER BY Entidades_2.nome, vendashoteis.datavenda, vendashoteis.id '
+      orderClause += ' ORDER BY 12, 5, 2 '
     else
     if(tipo == 'Vendedor')
-      whereClause += ' ORDER BY Entidades_1.nome, vendashoteis.datavenda, vendashoteis.id '
+      orderClause += ' ORDER BY 11, 5, 2 '
     else
     if(tipo == 'Operadora')
-      whereClause += ' ORDER BY Entidades_4.nome, vendashoteis.datavenda, vendashoteis.id ';
+      orderClause += ' ORDER BY 9, 5, 2 ';
 
     const query =
-     `SELECT        ItensVendaHotel.id, 
-                    vendashoteis.Id AS idvenda, 
-                    entidades_3.Nome AS entidade, 
-                    FormaPagamento.Nome AS pagamento, 
-                    vendashoteis.datavenda AS dataemissao, 
-                    vendashoteis.datavencimento, 
-                    isnull(RecibosReceber.Id,0) AS idrecibo, 
-                    isnull(Faturas.Id,0) AS idfatura, 
-                    Entidades_4.Nome AS operadora, 
-                    Entidades.Nome AS fornecedor, 
-                    Entidades_1.Nome AS vendedor, 
-                    Entidades_2.Nome AS emissor, 
-                    ItensVendaHotel.pax, 
-                    (isnull(ItensVendaHotel.pax,'')+ ' ' + isnull(ItensVendaHotel.descricao,'')+ ' ') AS descricao, 
-                    isnull(ItensVendaHotel.valorhotel,0) AS valor, 
-                    isnull(ItensVendaHotel.valortaxa,0) AS valortaxa,
-                    isnull(ItensVendaHotel.valorcomissao,0) AS valorservico, 
-                    isnull(ItensVendaHotel.valoroutros,0) AS valoroutros
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-                              
-    ${whereClause}  `
+     `
+          SELECT        ItensVendaHotel.id, 
+                        vendashoteis.Id AS idvenda, 
+                        entidades_3.Nome AS entidade, 
+                        FormaPagamento.Nome AS pagamento, 
+                        vendashoteis.datavenda AS dataemissao, 
+                        vendashoteis.datavencimento, 
+                        isnull(RecibosReceber.Id,0) AS idrecibo, 
+                        isnull(Faturas.Id,0) AS idfatura, 
+                        Entidades_4.Nome AS operadora, 
+                        Entidades.Nome AS fornecedor, 
+                        Entidades_1.Nome AS vendedor, 
+                        Entidades_2.Nome AS emissor, 
+                        ItensVendaHotel.pax, 
+                        (isnull(ItensVendaHotel.pax,'')+ ' ' + isnull(ItensVendaHotel.descricao,'')+ ' ') AS descricao, 
+                        isnull(ItensVendaHotel.valorhotel,0) AS valor, 
+                        isnull(ItensVendaHotel.valortaxa,0) AS valortaxa,
+                        isnull(ItensVendaHotel.valorcomissao,0) AS valorservico, 
+                        isnull(ItensVendaHotel.valoroutros,0) AS valoroutros,
+                        isnull(TitulosReceber.id,0) AS idtitulo
+          FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                  Moeda RIGHT OUTER JOIN
+                                  Entidades AS entidades_2 RIGHT OUTER JOIN
+                                  VendasHoteis INNER JOIN
+                                  Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                  Faturas LEFT OUTER JOIN
+                                  TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                  entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                  Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                  Entidades INNER JOIN
+                                  ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                  Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                  FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                  RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                  TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                  Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+          ${whereClause}  ${whereClauseAux} 
+          
+          UNION
+
+          SELECT        ItensVendaHotel.Id, 
+                        VendasHoteis.Id AS idvenda, 
+                        Entidades_3.Nome AS entidade, 
+                        FormaPagamento.Nome AS pagamento, 
+                        VendasHoteis.DataVenda AS dataemissao, 
+                        VendasHoteis.DataVencimento, 
+                        ISNULL(RecibosReceber.Id, 0) AS idrecibo, 
+                        ISNULL(Faturas.Id, 0) AS idfatura, 
+                        Entidades_4.Nome AS operadora, 
+                        Entidades.Nome AS fornecedor, 
+                        entidades_1.Nome AS vendedor, 
+                        entidades_2.Nome AS emissor, 
+                        ItensVendaHotel.Pax, 
+                        ISNULL(ItensVendaHotel.Pax, '') + ' ' + ISNULL(ItensVendaHotel.Descricao, '') + ' ' AS descricao, 
+                        ISNULL(ItensVendaHotel.ValorHotel, 0) AS valor, 
+                        ISNULL(ItensVendaHotel.ValorTaxa, 0) AS valortaxa, 
+                        ISNULL(ItensVendaHotel.ValorComissao, 0) AS valorservico, 
+                        ISNULL(ItensVendaHotel.ValorOutros, 0) AS valoroutros,
+                        isnull(TitulosReceber.id,0) AS idtitulo
+          FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                  Entidades AS entidades_2 RIGHT OUTER JOIN
+                                  Moeda RIGHT OUTER JOIN
+                                  TitulosReceber RIGHT OUTER JOIN
+                                  Faturas INNER JOIN
+                                  VendasHoteis INNER JOIN
+                                  Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                  entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                  Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                  Entidades INNER JOIN
+                                  ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                  Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                  FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                  RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                  Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause} ${orderClause}
+
+      `
    const result = await request.query(query);
    //console.log('DATA::', datainicial, datafinal);  
    //console.log('result::', result.recordset);
@@ -1334,8 +1103,10 @@ const getRelatoriosSintetico = async (req, res) => {
   try {
     const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal,
       vencimentoinicial, vencimentofinal, idformapagamento, idvendedor, idemissor,  idgrupo,
-      servicoinicial, servicofinal, faturainicial, faturafinal, pax, tipo, idoperadora
+      servicoinicial, servicofinal, faturainicial, faturafinal, pax, tipo, idoperadora,
+      tituloinicial, titulofinal
      } = req.query;
+     //console.log('REQUISIÇÃO::', req.query);
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -1350,6 +1121,9 @@ const getRelatoriosSintetico = async (req, res) => {
 
     // Parâmetros opcionais
     let whereClause = 'WHERE vendashoteis.empresa = @empresa AND vendashoteis.id > 0 ';
+    let whereClauseAux = ' AND IsNull(Faturas.IdFatura,0) = 0 ';
+    let orderClause = '';
+    let groupClause = '';
 
     // Filtros opcionais
     if (idfilial) {
@@ -1432,36 +1206,46 @@ const getRelatoriosSintetico = async (req, res) => {
       whereClause += ' AND Faturas.id <= @faturafinal';
     }
 
+    if (tituloinicial) {
+      request.input('tituloinicial', tituloinicial);
+      whereClause += ' AND titulosreceber.id >= @tituloinicial';
+    }
+    
+    if (titulofinal) {
+      request.input('titulofinal', titulofinal);
+      whereClause += ' AND titulosreceber.id <= @titulofinal';
+    }
+
     if (idoperadora) {
       request.input('idoperadora', idoperadora);
       whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
     }
-
+//console.log('01::');
     if(tipo == 'Cliente'){
-    whereClause +=  ' GROUP BY  ' +
+    groupClause +=  ' GROUP BY  ' +
                     '		Entidades_3.nome  ';
     }else    
     if(tipo == 'Emissao'){
-    whereClause +=  ' GROUP BY  ' +
+    groupClause +=  ' GROUP BY  ' +
                     '		vendashoteis.datavenda  ';
     }else    
     if(tipo == 'Vencimento'){
-    whereClause +=  ' GROUP BY  ' +
+    groupClause +=  ' GROUP BY  ' +
                     '		vendashoteis.datavencimento  ';
     }else    
     if(tipo == 'Vendedor'){
-    whereClause +=  ' GROUP BY  ' +
+    groupClause +=  ' GROUP BY  ' +
                     '		Entidades_1.nome  ';
     }else    
     if(tipo == 'Emissor'){
-    whereClause +=  ' GROUP BY  ' +
+    groupClause +=  ' GROUP BY  ' +
                     '		Entidades_2.nome  ';
     }else    
     if(tipo == 'Operadora'){
-    whereClause +=  ' GROUP BY  ' +
+    groupClause +=  ' GROUP BY  ' +
                     '		Entidades_4.nome  ';
     }else{
-    whereClause +=  ' GROUP BY vendashoteis.id, ' +
+    groupClause +=  ' GROUP BY vendashoteis.id, ' +
                     '   vendashoteis.observacao,  ' +
                     '		vendashoteis.solicitante, ' +
                     '   vendashoteis.datavenda,  ' +
@@ -1475,191 +1259,369 @@ const getRelatoriosSintetico = async (req, res) => {
                     '		faturas.id,  ' +
                     '		titulosreceber.valorpago ';
     }
-
+//console.log('02::');
     if(tipo == 'Cliente')
-        whereClause += ' ORDER BY Entidades_3.nome '
+        orderClause += ' ORDER BY 1 '
     else
     if(tipo == 'Emissao')
-      whereClause += ' ORDER BY vendashoteis.datavenda '
+      orderClause += ' ORDER BY 1 '
     else
     if(tipo == 'Vencimento')
-      whereClause += ' ORDER BY vendashoteis.datavencimento '
+      orderClause += ' ORDER BY 1 '
     else
     if(tipo == 'Emissor')
-      whereClause += ' ORDER BY Entidades_2.nome '
+      orderClause += ' ORDER BY 1 '
     else
     if(tipo == 'Vendedor')
-      whereClause += ' ORDER BY Entidades_1.nome '
+      orderClause += ' ORDER BY 1 '
     else
     if(tipo == 'Operadora')
-      whereClause += ' ORDER BY Entidades_4.nome ';
-
+      orderClause += ' ORDER BY 1 ';
+//console.log('03::');
     let query = '';
 
     if(tipo == 'Cliente'){
+  //    console.log('04::');
      query =
-     `SELECT      
-                  Entidades_3.nome AS entidade, 
-                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
-                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
-                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
-                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-        ${whereClause}  `
+     `
+        SELECT      
+                      Entidades_3.nome AS entidade, 
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+        SELECT      
+                      Entidades_3.nome AS entidade, 
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause} 
+
+        `
     }else    
     if(tipo == 'Emissao'){
      query =
-     `SELECT      
+     `
+        SELECT      
                   vendashoteis.datavenda AS dataemissao, 
-                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
-                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
-                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
-                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-        ${whereClause}  `
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+        SELECT      
+                  vendashoteis.datavenda AS dataemissao, 
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause}
+
+        
+        `
     }else    
     if(tipo == 'Vencimento'){
      query =
-     `SELECT      
+     `
+      
+        SELECT      
                   vendashoteis.datavencimento, 
-                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
-                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
-                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
-                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-        ${whereClause}  `
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+        SELECT      
+                  vendashoteis.datavencimento, 
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause}
+
+        `
     }else    
     if(tipo == 'Vendedor'){
      query =
-     `SELECT      
+     `
+        SELECT      
                   entidades_1.nome AS vendedor, 
-                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
-                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
-                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
-                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-        ${whereClause}  `
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+        SELECT      
+                  entidades_1.nome AS vendedor, 
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause}
+
+        `
     }else    
     if(tipo == 'Emissor'){
      query =
-     `SELECT      
+     `
+        SELECT      
                   entidades_2.nome AS emissor, 
-                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
-                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
-                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
-                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-        ${whereClause}  `
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+        SELECT      
+                  entidades_2.nome AS emissor, 
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause}
+
+        `
     }else    
     if(tipo == 'Operadora'){
      query =
-     `SELECT      
+     `
+        SELECT      
                   entidades_4.nome AS operadora,
-                  SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
-                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
-                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
-                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
-                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-        ${whereClause}  `
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+        SELECT      
+                  entidades_4.nome AS operadora,
+                      SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                      SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                      SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                      SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause}
+
+        `
     }else{
      query =
-     `SELECT      vendashoteis.id AS idvenda, 
+     `
+     SELECT      vendashoteis.id AS idvenda, 
                   vendashoteis.observacao, 
                   ISNULL(vendashoteis.solicitante,'') AS solicitante, 
                   Entidades_3.nome AS entidade, 
@@ -1676,24 +1638,64 @@ const getRelatoriosSintetico = async (req, res) => {
                   SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
                   SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
                   SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
-            FROM            Entidades AS entidades_2 RIGHT OUTER JOIN
-                      Entidades AS entidades_1 RIGHT OUTER JOIN
-                      Entidades INNER JOIN
-                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
-                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade RIGHT OUTER JOIN
-                      Faturas RIGHT OUTER JOIN
-                      vendashoteis INNER JOIN
-                      Entidades AS Entidades_3 ON vendashoteis.IdEntidade = Entidades_3.IdEntidade ON 
-                      Faturas.IdFatura = vendashoteis.IdFatura ON ItensVendaHotel.IdVenda = vendashoteis.IdVenda ON 
-                      entidades_1.IdEntidade = vendashoteis.IdVendedor ON entidades_2.IdEntidade = vendashoteis.IdEmissor LEFT OUTER JOIN
-                      RecibosReceber ON vendashoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
-                      TitulosReceber ON vendashoteis.IdVenda = TitulosReceber.IdVendaHotel LEFT OUTER JOIN
-                      FormaPagamento ON vendashoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                      Moeda ON vendashoteis.IdMoeda = Moeda.IdMoeda LEFT OUTER JOIN
-                      Filiais ON vendashoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
-                      Grupos ON vendashoteis.IdGrupo = Grupos.Id                         
-        ${whereClause}  `
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade LEFT OUTER JOIN
+                                      Faturas LEFT OUTER JOIN
+                                      TitulosReceber ON Faturas.IdFatura = TitulosReceber.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON entidades_2.IdEntidade = VendasHoteis.IdEmissor ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      TitulosReceber AS TitulosReceber_1 ON VendasHoteis.IdVenda = TitulosReceber_1.IdVendaHotel LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+              ${whereClause}  ${whereClauseAux} ${groupClause} 
+              
+              UNION
+
+     SELECT      vendashoteis.id AS idvenda, 
+                  vendashoteis.observacao, 
+                  ISNULL(vendashoteis.solicitante,'') AS solicitante, 
+                  Entidades_3.nome AS entidade, 
+                  formapagamento.nome AS pagamento,
+                  vendashoteis.datavenda AS dataemissao, 
+                  vendashoteis.datavencimento,  
+                  entidades_1.nome AS vendedor, 
+                  entidades_2.nome AS emissor, 
+                  filiais.nome AS filial,
+                  isnull(recibosreceber.id,0) AS idrecibo, 
+                  isnull(faturas.id,0) AS idfatura, 
+                  ISNULL(titulosreceber.valorpago,0) AS valorpago,
+                  SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
+                  SUM(ISNULL(ItensVendaHotel.ValorTaxa,0)) as valortaxa,
+                  SUM(ISNULL(ItensVendaHotel.ValorComissao,0)) as valorservico,
+                  SUM(ISNULL(ItensVendaHotel.Valoroutros,0)) as valoroutros		
+              FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
+                                      Entidades AS entidades_2 RIGHT OUTER JOIN
+                                      Moeda RIGHT OUTER JOIN
+                                      TitulosReceber RIGHT OUTER JOIN
+                                      Faturas INNER JOIN
+                                      VendasHoteis INNER JOIN
+                                      Entidades AS Entidades_3 ON VendasHoteis.IdEntidade = Entidades_3.IdEntidade ON Faturas.IdFatura = VendasHoteis.IdFatura ON TitulosReceber.IdFatura = Faturas.IdFatura ON Moeda.IdMoeda = VendasHoteis.IdMoeda ON 
+                                      entidades_2.IdEntidade = VendasHoteis.IdEmissor ON entidades_1.IdEntidade = VendasHoteis.IdVendedor LEFT OUTER JOIN
+                                      Filiais ON VendasHoteis.IdFilial = Filiais.IdFilial LEFT OUTER JOIN
+                                      Entidades INNER JOIN
+                                      ItensVendaHotel ON Entidades.IdEntidade = ItensVendaHotel.IdFornecedor INNER JOIN
+                                      Entidades AS Entidades_4 ON ItensVendaHotel.IdOperadora = Entidades_4.IdEntidade ON VendasHoteis.IdVenda = ItensVendaHotel.IdVenda LEFT OUTER JOIN
+                                      FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id
+                  ${whereClause}  ${groupClause} ${orderClause}
+
+
+        `
     }
+    //console.log('QUERY FINAL::', query);
    const result = await request.query(query);
    //console.log('DATA::', datainicial, datafinal);  
    //console.log('result::', result.recordset);

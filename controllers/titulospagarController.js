@@ -11,8 +11,10 @@ function normalizeDate(dateString) {
 // Obter todos os titulos pagar
 const getTituloPagar = async (req, res) => {
   try {
-    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal  } = req.query;
+    const { empresa, idfilial, identidade, idmoeda, datainicial, datafinal, tituloinicial, titulofinal, 
+      aereoinicial, aereofinal, servicoinicial, servicofinal } = req.query;
     const sql = require('mssql');
+    //console.log('REQUISIÇÃO::', req.query);
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
@@ -25,75 +27,150 @@ const getTituloPagar = async (req, res) => {
     request.input('empresa', empresa);
 
     // Parâmetros opcionais
-    let whereClause = 'WHERE titulospagar.empresa = @empresa AND titulospagar.id > 0 ';
+    let whereClauseGeral = ' WHERE titulospagar.empresa = @empresa AND titulospagar.id > 0 ';
+    let whereClauseSer = '';
+    let whereClauseAer = '';
+    let whereClause = ' AND IsNull(TitulosPagar.IdVendaBilhete,0) = 0  AND IsNull(TitulosPagar.IdVendaHotel,0) = 0';
+    let orderClause = '';
 
     // Filtros opcionais
     if (idfilial) {
       request.input('idfilial', idfilial);
-      whereClause += ' AND titulospagar.idfilial = @idfilial';
+      whereClauseGeral += ' AND titulospagar.idfilial = @idfilial';
     }
 
     if (identidade) {
       request.input('identidade', identidade);
-      whereClause += ' AND titulospagar.identidade = @identidade';
+      whereClauseGeral += ' AND titulospagar.identidade = @identidade';
     }
 
     if (idmoeda) {
       request.input('idmoeda', idmoeda);
-      whereClause += ' AND titulospagar.idmoeda = @idmoeda';
+      whereClauseGeral += ' AND titulospagar.idmoeda = @idmoeda';
     }
     
     if (datainicial) {
       request.input('datainicial', datainicial); // Formata a data para incluir hora
-      whereClause += ' AND titulospagar.datavencimento >= @datainicial';
+      whereClauseGeral += ' AND titulospagar.datavencimento >= @datainicial';
     }
     
     if (datafinal) {
       request.input('datafinal', datafinal);
-      whereClause += ' AND titulospagar.datavencimento <= @datafinal';
+      whereClauseGeral += ' AND titulospagar.datavencimento <= @datafinal';
     }
     
-    whereClause += ' ORDER BY titulospagar.datavencimento desc ';
+    if (tituloinicial) {
+      request.input('tituloinicial', tituloinicial);
+      whereClauseGeral += ' AND titulosPagar.id >= @tituloinicial';
+    }
+    
+    if (titulofinal) {
+      request.input('titulofinal', titulofinal);
+      whereClauseGeral += ' AND titulosPagar.id <= @titulofinal';
+    }
 
-    const query =
+    if (aereoinicial) {
+      request.input('aereoinicial', aereoinicial);
+      request.input('aereoinicial2', aereoinicial);
+      whereClause += ' AND titulosPagar.idvendabilhete > 0';//como no inicio da clausula exige idvendabilhete= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND titulosPagar.idvendahotel = -1';
+      whereClauseAer += ' AND vendasbilhetes.id >= @aereoinicial';
+    }
+    
+    if (aereofinal) {
+      request.input('aereofinal', aereofinal);
+      request.input('aereofinal2', aereofinal);
+      whereClause += ' AND titulosPagar.idvendabilhete > 0';//como no inicio da clausula exige idvendabilhete= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND titulosPagar.idvendahotel = -1';
+      whereClauseAer += ' AND vendasbilhetes.id <= @aereofinal';
+    }
+
+    if (servicoinicial) {
+      request.input('servicoinicial', servicoinicial);
+      whereClause += ' AND titulosPagar.idvendahotel > 0';//como no inicio da clausula exige idvendahotel= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND vendashoteis.id >= @servicoinicial';
+      whereClauseAer += ' AND titulosPagar.idvendahotel = -1';
+    }
+    
+    if (servicofinal) {
+      request.input('servicofinal', servicofinal);
+      whereClause += ' AND titulosPagar.idvendahotel > 0';//como no inicio da clausula exige idvendahotel= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND vendashoteis.id <= @servicofinal';
+      whereClauseAer += ' AND titulosPagar.idvendahotel = -1';
+    }
+
+    orderClause += ' ORDER BY TABELA.datavencimento desc ';
+
+    let script =
      `
-        SELECT 
-            TitulosPagar.idtitulo,
-            TitulosPagar.dataemissao,
-            TitulosPagar.datavencimento,
-            TitulosPagar.datacompetencia,
-            TitulosPagar.descricao,
-            TitulosPagar.documento,
-            TitulosPagar.valor,
-            TitulosPagar.valorpago,
-            TitulosPagar.descontopago,
-            TitulosPagar.juropago,
-            TitulosPagar.parcela,
-            TitulosPagar.idvendabilhete,
-            TitulosPagar.idvendahotel,
-            TitulosPagar.idvendapacote,
-            TitulosPagar.identidade,
-            TitulosPagar.idmoeda,
-            TitulosPagar.idformapagamento,
-            TitulosPagar.idplanoconta,
-            TitulosPagar.idcentrocusto,
-            TitulosPagar.idfilial,
-            TitulosPagar.chave,
-            TitulosPagar.empresa,
-            TitulosPagar.idnotacredito,
-            TitulosPagar.idnotadebito,
-            TitulosPagar.idreembolso,
-            TitulosPagar.id,
-            entidades.nome AS entidade,
-            formapagamento.nome AS pagamento,
-            planoconta.nome AS planoconta
-            FROM            TitulosPagar LEFT OUTER JOIN
-                            PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta LEFT OUTER JOIN
-                            Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
-                            FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento
+        SELECT        TABELA.idtitulo, TABELA.dataemissao, TABELA.datavencimento, TABELA.datacompetencia, 
+                      TABELA.descricao, TABELA.documento, TABELA.valor, TABELA.valorpago, 
+                      TABELA.descontopago, TABELA.juropago, TABELA.parcela, 
+                      TABELA.idvendabilhete, TABELA.idvendahotel, TABELA.idvendapacote, TABELA.identidade, 
+                      TABELA.idmoeda, TABELA.idformapagamento, TABELA.idplanoconta, TABELA.idcentrocusto, 
+                      TABELA.idfilial, TABELA.chave, TABELA.empresa, 
+                      TABELA.idnotacredito, TABELA.idnotadebito, TABELA.idreembolso, TABELA.id, 
+                      TABELA.entidade, TABELA.pagamento, TABELA.planoconta
+          FROM(
+              SELECT        TitulosPagar.IdTitulo, TitulosPagar.DataEmissao, TitulosPagar.DataVencimento, TitulosPagar.DataCompetencia, TitulosPagar.Descricao, TitulosPagar.Documento, TitulosPagar.Valor, TitulosPagar.ValorPago, 
+                                      TitulosPagar.DescontoPago, TitulosPagar.JuroPago, TitulosPagar.Parcela, TitulosPagar.IdVendaBilhete, TitulosPagar.IdVendaHotel, TitulosPagar.IdVendaPacote, 
+                                      TitulosPagar.IdEntidade, TitulosPagar.IdMoeda, TitulosPagar.IdFormaPagamento, TitulosPagar.IdPlanoConta, TitulosPagar.IdCentroCusto, TitulosPagar.IdFilial, TitulosPagar.Chave, TitulosPagar.Empresa, 
+                                      TitulosPagar.IdNotaCredito, TitulosPagar.IdNotaDebito, TitulosPagar.IdReembolso, TitulosPagar.Id, 
+                                      Entidades.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta
+              FROM            TitulosPagar INNER JOIN
+                                      VendasBilhetes ON TitulosPagar.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                                      Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                                      FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta
 
-            ${whereClause}  `
+               ${whereClauseGeral} ${whereClauseAer} 
+
+              UNION
+
+              SELECT        TitulosPagar.IdTitulo, TitulosPagar.DataEmissao, TitulosPagar.DataVencimento, TitulosPagar.DataCompetencia, TitulosPagar.Descricao, TitulosPagar.Documento, TitulosPagar.Valor, TitulosPagar.ValorPago, 
+                                      TitulosPagar.DescontoPago, TitulosPagar.JuroPago, TitulosPagar.Parcela, TitulosPagar.IdVendaBilhete, TitulosPagar.IdVendaHotel, TitulosPagar.IdVendaPacote, 
+                                      TitulosPagar.IdEntidade, TitulosPagar.IdMoeda, TitulosPagar.IdFormaPagamento, TitulosPagar.IdPlanoConta, TitulosPagar.IdCentroCusto, TitulosPagar.IdFilial, TitulosPagar.Chave, TitulosPagar.Empresa, 
+                                      TitulosPagar.IdNotaCredito, TitulosPagar.IdNotaDebito, TitulosPagar.IdReembolso, TitulosPagar.Id, 
+                                      Entidades.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta
+              FROM            TitulosPagar INNER JOIN
+                                      VendasHoteis ON TitulosPagar.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                      Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                                      FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta
+
+              ${whereClauseGeral} ${whereClauseSer}
+
+              UNION
+
+              SELECT        TitulosPagar.IdTitulo, TitulosPagar.DataEmissao, TitulosPagar.DataVencimento, TitulosPagar.DataCompetencia, TitulosPagar.Descricao, TitulosPagar.Documento, TitulosPagar.Valor, TitulosPagar.ValorPago, 
+                                      TitulosPagar.DescontoPago, TitulosPagar.JuroPago, TitulosPagar.Parcela, TitulosPagar.IdVendaBilhete, TitulosPagar.IdVendaHotel, TitulosPagar.IdVendaPacote, 
+                                      TitulosPagar.IdEntidade, TitulosPagar.IdMoeda, TitulosPagar.IdFormaPagamento, TitulosPagar.IdPlanoConta, TitulosPagar.IdCentroCusto, TitulosPagar.IdFilial, TitulosPagar.Chave, TitulosPagar.Empresa, 
+                                      TitulosPagar.IdNotaCredito, TitulosPagar.IdNotaDebito, TitulosPagar.IdReembolso, TitulosPagar.Id, 
+                                      Entidades.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta
+              FROM            TitulosPagar LEFT OUTER JOIN
+                                      FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                                      Entidades ON TitulosPagar.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                                      PlanoConta ON TitulosPagar.IdPlanoConta = PlanoConta.IdPlanoConta
+
+              ${whereClauseGeral} ${whereClause}
+
+                
+
+          ) AS TABELA
+          GROUP BY        TABELA.idtitulo, TABELA.dataemissao, TABELA.datavencimento, TABELA.datacompetencia, TABELA.descricao, TABELA.documento, TABELA.valor, TABELA.valorpago, 
+                                  TABELA.descontopago, TABELA.juropago, TABELA.parcela, TABELA.idvendabilhete, TABELA.idvendahotel, TABELA.idvendapacote,  
+                                  TABELA.identidade, TABELA.idmoeda, TABELA.idformapagamento, TABELA.idplanoconta, TABELA.idcentrocusto, TABELA.idfilial, TABELA.chave, TABELA.empresa, 
+                                  TABELA.idnotacredito, TABELA.idnotadebito, TABELA.idreembolso, TABELA.id, 
+                                  TABELA.entidade, TABELA.pagamento, TABELA.planoconta
+     
+            
+      `
+   const query = 
+     `  ${script}  ${orderClause} `
+
+    //console.log('QUERY::', query);
    const result = await request.query(query);
+
    res.json(result.recordset);    
   } catch (error) {
     res.status(500).send(error.message);
@@ -844,7 +921,7 @@ const createBaixasPagarGenerica = async (req, res) => {
         `);
       const idlancamento = resultLanc.recordset[0].idlancamento;
 
-      //************** BAIXA RECEBER *************** */ 
+      //************** BAIXA PAGAR *************** */ 
       const pool = await poolPromise;
       const result = await pool
         .request()
@@ -1060,7 +1137,7 @@ const getRelatoriosAnalitico = async (req, res) => {
             servicofinal, tipo, situacao
      } = req.query;
     const sql = require('mssql');
-    //console.log('REQUISIÇÃO::', req.query);
+   // console.log('REQUISIÇÃO::', req.query);
     //console.log('EMPRESA::', empresa);
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -1078,57 +1155,62 @@ const getRelatoriosAnalitico = async (req, res) => {
     let script = '';
 
     // Parâmetros opcionais
-    let whereClause = 'WHERE titulospagar.empresa = @empresa AND titulospagar.id > 0 ';
+    let whereClauseGeral = ' WHERE titulospagar.empresa = @empresa AND titulospagar.id > 0 ';
+    let whereClauseSer = '';
+    let whereClauseAer = '';
+    let whereClauseFat = '';
+    let whereClause = ' AND IsNull(titulospagar.IdVendaBilhete,0) = 0  AND IsNull(titulospagar.IdVendaHotel,0) = 0';
+
 
     // Filtros opcionais
     if (idfilial) {
       request.input('idfilial', idfilial);
-      whereClause += ' AND titulospagar.idfilial = @idfilial';
+      whereClauseGeral += ' AND titulospagar.idfilial = @idfilial';
     }
 
     if (identidade) {
       request.input('identidade', identidade);
-      whereClause += ' AND titulospagar.identidade = @identidade';
+      whereClauseGeral += ' AND titulospagar.identidade = @identidade';
     }
 
     if (idmoeda) {
       request.input('idmoeda', idmoeda);
-      whereClause += ' AND titulospagar.idmoeda = @idmoeda';
+      whereClauseGeral += ' AND titulospagar.idmoeda = @idmoeda';
     }
     
     if (idgrupo) {
       request.input('idgrupo', idgrupo);
-      whereClause += ' AND (vendasbilhetes.idgrupo = @idgrupo OR vendashoteis.idgrupo = @idgrupo) ';
+      whereClauseGeral += ' AND (vendasbilhetes.idgrupo = @idgrupo OR vendashoteis.idgrupo = @idgrupo) ';
     }
 
     if (idformapagamento) {
       request.input('idformapagamento', idformapagamento);
-      whereClause += ' AND titulospagar.idformapagamento = @idformapagamento';
+      whereClauseGeral += ' AND titulospagar.idformapagamento = @idformapagamento';
     }
 
     if (datainicial) {
       request.input('datainicial', datainicial);
-      whereClause += ' AND titulospagar.dataemissao >= @datainicial';
+      whereClauseGeral += ' AND titulospagar.dataemissao >= @datainicial';
     }
     
     if (datafinal) {
       request.input('datafinal', datafinal);
-      whereClause += ' AND titulospagar.dataemissao <= @datafinal';
+      whereClauseGeral += ' AND titulospagar.dataemissao <= @datafinal';
     }
 
     if (vencimentoinicial) {
       request.input('vencimentoinicial', vencimentoinicial);
-      whereClause += ' AND titulospagar.datavencimento >= @vencimentoinicial';
+      whereClauseGeral += ' AND titulospagar.datavencimento >= @vencimentoinicial';
     }
     
     if (vencimentofinal) {
       request.input('vencimentofinal', vencimentofinal);
-      whereClause += ' AND titulospagar.datavencimento <= @vencimentofinal';
+      whereClauseGeral += ' AND titulospagar.datavencimento <= @vencimentofinal';
     }
 
     if (tituloinicial) {
       request.input('tituloinicial', tituloinicial);
-      whereClause += ' AND titulospagar.id >= @tituloinicial';
+      whereClauseGeral += ' AND titulospagar.id >= @tituloinicial';
     }
     
     if (titulofinal) {
@@ -1138,48 +1220,64 @@ const getRelatoriosAnalitico = async (req, res) => {
 
     if (aereoinicial) {
       request.input('aereoinicial', aereoinicial);
-      whereClause += ' AND vendasbilhetes.id >= @aereoinicial';
+      request.input('aereoinicial2', aereoinicial);
+      whereClause += ' AND titulospagar.idvendabilhete > 0';//como no inicio da clausula exige idvendabilhete= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND titulospagar.idvendahotel = -1';
+      whereClauseAer += ' AND vendasbilhetes.id >= @aereoinicial';
+      whereClauseFat += ' AND vendasbilhetes.id >= @aereoinicial2';
     }
     
     if (aereofinal) {
       request.input('aereofinal', aereofinal);
-      whereClause += ' AND vendasbilhetes.id <= @aereofinal';
+      request.input('aereofinal2', aereofinal);
+      whereClause += ' AND titulospagar.idvendabilhete > 0';//como no inicio da clausula exige idvendabilhete= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND titulospagar.idvendahotel = -1';
+      whereClauseAer += ' AND vendasbilhetes.id <= @aereofinal';
+      whereClauseFat += ' AND vendasbilhetes.id <= @aereofinal2';
     }
 
     if (servicoinicial) {
       request.input('servicoinicial', servicoinicial);
-      whereClause += ' AND vendashoteis.id >= @servicoinicial';
+      whereClause += ' AND titulospagar.idvendahotel > 0';//como no inicio da clausula exige idvendahotel= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND vendashoteis.id >= @servicoinicial';
+      whereClauseAer += ' AND titulospagar.idvendahotel = -1';
+      whereClauseFat += ' AND vendashoteis.id >= @servicoinicial';
     }
     
     if (servicofinal) {
       request.input('servicofinal', servicofinal);
-      whereClause += ' AND vendashoteis.id <= @servicofinal';
+      whereClause += ' AND titulospagar.idvendahotel > 0';//como no inicio da clausula exige idvendahote= 0, aqui mantem esse filtro
+      whereClauseSer += ' AND vendashoteis.id <= @servicofinal';
+      whereClauseAer += ' AND titulospagar.idvendahotel = -1';
+      whereClauseFat += ' AND vendashoteis.id <= @servicofinal';
     }
 
     if(situacao == 'ABERTO')
-      whereClause += ' AND titulospagar.valor > titulospagar.valorpago '
+      whereClauseGeral += ' AND titulospagar.valor > titulospagar.valorpago '
     if(situacao == 'QUITADO')
-      whereClause += ' AND titulospagar.valor = titulospagar.valorpago '
+      whereClauseGeral += ' AND titulospagar.valor = titulospagar.valorpago '
 
 
     if(tipo == 'Fornecedor')
-        orderClause += ' ORDER BY Entidades.nome, titulospagar.dataemissao, titulospagar.id '
+        orderClause += ' ORDER BY TABELA.entidade, TABELA.dataemissao, TABELA.idtitulo '
     else
     if(tipo == 'Emissao')
-      orderClause += ' ORDER BY titulospagar.dataemissao, Entidades.nome, titulospagar.id '
+      orderClause += ' ORDER BY TABELA.dataemissao, TABELA.entidade, TABELA.idtitulo '
     else
     if(tipo == 'Vencimento')
-      orderClause += ' ORDER BY titulospagar.datavencimento, Entidades.nome, titulospagar.id '
+      orderClause += ' ORDER BY TABELA.datavencimento, TABELA.entidade, TABELA.idtitulo '
     else
     if(tipo == 'Pagamento')
-      orderClause += ' ORDER BY FormaPagamento.nome, titulospagar.dataemissao, titulospagar.id '
+      orderClause += ' ORDER BY TABELA.pagamento, TABELA.dataemissao, TABELA.idtitulo '
     else
     if(tipo == 'PlanoConta')
-      orderClause += ' ORDER BY PlanoConta.nome, titulospagar.dataemissao, titulospagar.id'
+      orderClause += ' ORDER BY TABELA.planoconta, TABELA.dataemissao, TABELA.idtitulo '
     else
     if(tipo == 'Baixa'){
-      whereClause += ' AND BaixasPagar.id > 0';
-      orderClause += ' ORDER BY titulospagar.id, BaixasPagar.databaixa';
+      whereClause += ' AND BaixasPagar.id > 0   AND BaixasPagar.valorpago > 0 ';
+      whereClauseSer += ' AND BaixasPagar.id > 0 AND BaixasPagar.valorpago > 0 ';
+      whereClauseAer += ' AND BaixasPagar.id > 0 AND BaixasPagar.valorpago > 0 ';
+      orderClause += ' ORDER BY TABELA.id, TABELA.datapagamento';
     }
 
     if(tipo == 'Baixa'){
@@ -1191,10 +1289,27 @@ const getRelatoriosAnalitico = async (req, res) => {
       groupClause += ' GROUP BY   Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, titulospagar.Id, titulospagar.Valor, titulospagar.ValorPago, titulospagar.Descricao, titulospagar.DataEmissao, titulospagar.DataVencimento, titulospagar.descontopago, titulospagar.juropago ';
     }
 
-
     if(tipo == 'Baixa'){
       script =
       `
+        SELECT        TABELA.entidade, 
+                      TABELA.filial, 
+                      TABELA.planoconta, 
+                      TABELA.pagamento,
+                      TABELA.idtitulo, 
+                      TABELA.valor, 
+                      TABELA.valorpago, 
+                      TABELA.valoraberto,
+                      TABELA.descontopago, 
+                      TABELA.juropago, 
+                      TABELA.descricao, 
+                      TABELA.dataemissao, 
+                      TABELA.datavencimento,
+                      TABELA.id,
+                      TABELA.datapagamento,
+                      TABELA.valorbaixa,
+            					TABELA.contabancaria
+        FROM(
         SELECT        Entidades.Nome AS entidade, 
                       Filiais.Nome AS filial, 
                       PlanoConta.Nome AS planoconta, 
@@ -1211,28 +1326,42 @@ const getRelatoriosAnalitico = async (req, res) => {
                       BaixasPagar.id,
                       BaixasPagar.databaixa AS datapagamento,
                       BaixasPagar.ValorPago AS valorbaixa,
-                      BaixasPagar.juropago,
-                      BaixasPagar.descontopago,
             					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
         FROM            PlanoConta INNER JOIN
                                 Entidades INNER JOIN
                                 TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
-                                Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta LEFT OUTER JOIN
-                                Grupos RIGHT OUTER JOIN
-                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo ON TitulosPagar.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
-                                Grupos AS Grupos_1 RIGHT OUTER JOIN
-                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON TitulosPagar.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                                Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta INNER JOIN
+                                VendasHoteis ON TitulosPagar.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                Grupos ON VendasHoteis.IdGrupo = Grupos.Id LEFT OUTER JOIN
                                 ContasBancarias INNER JOIN
                                 Lancamentos INNER JOIN
                                 BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
                                 Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
-                                
-       `
-    }else{
-    //const query =
-    script =
-      `
+
+         ${whereClauseGeral} ${whereClauseSer}   
+
+        GROUP BY      Entidades.Nome, 
+                      Filiais.Nome, 
+                      PlanoConta.Nome, 
+                      FormaPagamento.Nome,
+                      TitulosPagar.Id, 
+                      TitulosPagar.valor, 
+                      TitulosPagar.valorpago, 
+                      TitulosPagar.valor,
+                      TitulosPagar.descontopago, 
+                      TitulosPagar.juropago, 
+                      TitulosPagar.descricao, 
+                      TitulosPagar.dataemissao, 
+                      TitulosPagar.datavencimento,
+                      BaixasPagar.id,
+                      BaixasPagar.databaixa,
+                      BaixasPagar.ValorPago,
+            					Bancos.nome,
+                      ContasBancarias.NumeroConta
+        
+        UNION
+        
         SELECT        Entidades.Nome AS entidade, 
                       Filiais.Nome AS filial, 
                       PlanoConta.Nome AS planoconta, 
@@ -1245,26 +1374,201 @@ const getRelatoriosAnalitico = async (req, res) => {
                       isnull(TitulosPagar.juropago,0) AS juropago, 
                       TitulosPagar.descricao, 
                       TitulosPagar.dataemissao, 
-                      TitulosPagar.datavencimento
+                      TitulosPagar.datavencimento,
+                      BaixasPagar.id,
+                      BaixasPagar.databaixa AS datapagamento,
+                      BaixasPagar.ValorPago AS valorbaixa,
+            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
+      FROM            PlanoConta INNER JOIN
+                              Entidades INNER JOIN
+                              TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
+                              FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                              Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta INNER JOIN
+                              VendasBilhetes ON TitulosPagar.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                              Grupos ON VendasBilhetes.IdGrupo = Grupos.Id LEFT OUTER JOIN
+                              ContasBancarias INNER JOIN
+                              Lancamentos INNER JOIN
+                              BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                              Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
+                                
+        ${whereClauseGeral} ${whereClauseAer} 
+
+        GROUP BY      Entidades.Nome, 
+                      Filiais.Nome, 
+                      PlanoConta.Nome, 
+                      FormaPagamento.Nome,
+                      TitulosPagar.Id, 
+                      TitulosPagar.valor, 
+                      TitulosPagar.valorpago, 
+                      TitulosPagar.valor,
+                      TitulosPagar.descontopago, 
+                      TitulosPagar.juropago, 
+                      TitulosPagar.descricao, 
+                      TitulosPagar.dataemissao, 
+                      TitulosPagar.datavencimento,
+                      BaixasPagar.id,
+                      BaixasPagar.databaixa,
+                      BaixasPagar.ValorPago,
+            					Bancos.nome,
+                      ContasBancarias.NumeroConta
+       
+        UNION
+        
+        SELECT        Entidades.Nome AS entidade, 
+                      Filiais.Nome AS filial, 
+                      PlanoConta.Nome AS planoconta, 
+                      FormaPagamento.Nome AS pagamento,
+                      TitulosPagar.Id AS idtitulo, 
+                      TitulosPagar.valor, 
+                      isnull(TitulosPagar.valorpago,0) AS valorpago, 
+                      (isnull(TitulosPagar.valor,0) - isnull(TitulosPagar.valorpago,0)) AS valoraberto,
+                      isnull(TitulosPagar.descontopago,0) AS descontopago, 
+                      isnull(TitulosPagar.juropago,0) AS juropago, 
+                      TitulosPagar.descricao, 
+                      TitulosPagar.dataemissao, 
+                      TitulosPagar.datavencimento,
+                      BaixasPagar.id,
+                      BaixasPagar.databaixa AS datapagamento,
+                      BaixasPagar.ValorPago AS valorbaixa,
+            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
+          FROM            PlanoConta INNER JOIN
+                                  Entidades INNER JOIN
+                                  TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
+                                  FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                  Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta LEFT OUTER JOIN
+                                  ContasBancarias INNER JOIN
+                                  Lancamentos INNER JOIN
+                                  BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                  Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
+
+           ${whereClauseGeral} ${whereClause}
+                                
+        GROUP BY      Entidades.Nome, 
+                      Filiais.Nome, 
+                      PlanoConta.Nome, 
+                      FormaPagamento.Nome,
+                      TitulosPagar.Id, 
+                      TitulosPagar.valor, 
+                      TitulosPagar.valorpago, 
+                      TitulosPagar.valor,
+                      TitulosPagar.descontopago, 
+                      TitulosPagar.juropago, 
+                      TitulosPagar.descricao, 
+                      TitulosPagar.dataemissao, 
+                      TitulosPagar.datavencimento,
+                      BaixasPagar.id,
+                      BaixasPagar.databaixa,
+                      BaixasPagar.ValorPago,
+            					Bancos.nome,
+                      ContasBancarias.NumeroConta
+
+        
+        ) as TABELA
+        GROUP BY      TABELA.entidade, 
+                      TABELA.filial, 
+                      TABELA.planoconta, 
+                      TABELA.pagamento,
+                      TABELA.idtitulo, 
+                      TABELA.valor, 
+                      TABELA.valorpago, 
+                      TABELA.valoraberto,
+                      TABELA.descontopago, 
+                      TABELA.juropago, 
+                      TABELA.descricao, 
+                      TABELA.dataemissao, 
+                      TABELA.datavencimento,
+                      TABELA.id,
+                      TABELA.datapagamento,
+                      TABELA.valorbaixa,
+            					TABELA.contabancaria
+
+
+       `
+    }else{
+      //console.log('GERAL');
+      //const query =
+    script =
+      `
+        SELECT        TABELA.entidade, TABELA.filial, TABELA.planoconta, TABELA.pagamento, TABELA.idtitulo, TABELA.Valor, TABELA.valorpago, TABELA.valoraberto, TABELA.descontopago, TABELA.juropago, 
+                                TABELA.descricao, TABELA.dataemissao, TABELA.datavencimento 
+        FROM(
+        SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosPagar.Id AS idtitulo, TitulosPagar.Valor, ISNULL(TitulosPagar.ValorPago, 
+                                0) AS valorpago, ISNULL(TitulosPagar.Valor, 0) - ISNULL(TitulosPagar.ValorPago, 0) AS valoraberto, ISNULL(TitulosPagar.DescontoPago, 0) AS descontopago, ISNULL(TitulosPagar.JuroPago, 0) AS juropago, 
+                                TitulosPagar.Descricao, TitulosPagar.DataEmissao, TitulosPagar.DataVencimento
+        FROM            PlanoConta INNER JOIN
+                                Entidades INNER JOIN
+                                TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
+                                FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta INNER JOIN
+                                VendasHoteis ON TitulosPagar.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                Grupos ON VendasHoteis.IdGrupo = Grupos.Id LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
+
+         ${whereClauseGeral} ${whereClauseSer}   
+
+        GROUP BY Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosPagar.Id, TitulosPagar.Valor, TitulosPagar.ValorPago, TitulosPagar.Descricao, TitulosPagar.DataEmissao, 
+                                TitulosPagar.DataVencimento, TitulosPagar.DescontoPago, TitulosPagar.JuroPago
+        
+        UNION
+
+        SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosPagar.Id AS idtitulo, TitulosPagar.Valor, ISNULL(TitulosPagar.ValorPago, 
+                                0) AS valorpago, ISNULL(TitulosPagar.Valor, 0) - ISNULL(TitulosPagar.ValorPago, 0) AS valoraberto, ISNULL(TitulosPagar.DescontoPago, 0) AS descontopago, ISNULL(TitulosPagar.JuroPago, 0) AS juropago, 
+                                TitulosPagar.Descricao, TitulosPagar.DataEmissao, TitulosPagar.DataVencimento
+        FROM            PlanoConta INNER JOIN
+                                Entidades INNER JOIN
+                                TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
+                                FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta INNER JOIN
+                                VendasBilhetes ON TitulosPagar.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
+                                Grupos ON VendasBilhetes.IdGrupo = Grupos.Id LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
+
+        ${whereClauseGeral} ${whereClauseAer} 
+
+        GROUP BY Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosPagar.Id, TitulosPagar.Valor, TitulosPagar.ValorPago, TitulosPagar.Descricao, TitulosPagar.DataEmissao, 
+        TitulosPagar.DataVencimento, TitulosPagar.DescontoPago, TitulosPagar.JuroPago
+        
+        UNION
+
+        
+        SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosPagar.Id AS idtitulo, TitulosPagar.Valor, ISNULL(TitulosPagar.ValorPago, 0) 
+                                AS valorpago, ISNULL(TitulosPagar.Valor, 0) - ISNULL(TitulosPagar.ValorPago, 0) AS valoraberto, ISNULL(TitulosPagar.DescontoPago, 0) AS descontopago, ISNULL(TitulosPagar.JuroPago, 0) AS juropago, 
+                                TitulosPagar.Descricao, TitulosPagar.DataEmissao, TitulosPagar.DataVencimento
         FROM            PlanoConta INNER JOIN
                                 Entidades INNER JOIN
                                 TitulosPagar ON Entidades.IdEntidade = TitulosPagar.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosPagar.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
                                 Filiais ON TitulosPagar.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosPagar.IdPlanoConta LEFT OUTER JOIN
-                                Grupos RIGHT OUTER JOIN
-                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo ON TitulosPagar.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
-                                Grupos AS Grupos_1 RIGHT OUTER JOIN
-                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON TitulosPagar.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
                                 ContasBancarias INNER JOIN
                                 Lancamentos INNER JOIN
                                 BaixasPagar ON Lancamentos.IdLancamento = BaixasPagar.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
                                 Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosPagar.IdTitulo = BaixasPagar.IdTituloPagar
+
+        ${whereClauseGeral} ${whereClause}
                                 
+        GROUP BY Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosPagar.Id, TitulosPagar.Valor, TitulosPagar.ValorPago, TitulosPagar.Descricao, TitulosPagar.DataEmissao, 
+                                TitulosPagar.DataVencimento, TitulosPagar.DescontoPago, TitulosPagar.JuroPago
+
+        
+        ) as TABELA
+        GROUP BY TABELA.entidade, TABELA.filial, TABELA.planoconta, TABELA.pagamento, TABELA.idtitulo, TABELA.Valor, TABELA.valorpago, TABELA.valoraberto, TABELA.descontopago, TABELA.juropago, 
+                 TABELA.descricao, TABELA.dataemissao, TABELA.datavencimento
+                 
+       
+
        `
     }
 
-    const query = 
-     `  ${script} ${whereClause} ${groupClause} ${orderClause} `
+   const query = 
+     `  ${script}  ${orderClause} `
+
+   //console.log('QUERY::', query);
 
    const result = await request.query(query);
    //console.log('DATA::', datainicial, datafinal);  

@@ -324,21 +324,25 @@ const getFatura = async (req, res) => {
     if (bilheteinicial) {
       request.input('bilheteinicial', bilheteinicial);
       whereClauseBilhete += ' AND vb.id >= @bilheteinicial';
+      whereClauseServico += ' AND vh.id = -1';
     }
     
     if (bilhetefinal) {
       request.input('bilhetefinal', bilhetefinal);
       whereClauseBilhete += ' AND vb.id <= @bilhetefinal';
+      whereClauseServico += ' AND vh.id = -1';
     }
 
     if (servicoinicial) {
       request.input('servicoinicial', servicoinicial);
       whereClauseServico += ' AND vh.id >= @servicoinicial';
+      whereClauseBilhete += ' AND vb.id = -1';
     }
     
     if (servicofinal) {
       request.input('servicofinal', servicofinal);
       whereClauseServico += ' AND vh.id <= @servicofinal';
+      whereClauseBilhete += ' AND vb.id = -1';
     }
 
     if (datainicial) {
@@ -817,73 +821,77 @@ const createFatura = async (req, res) => {
       listaIdFatura.push(idfatura);
 
       //************** INSERE TITULO RECEBER *************** */ 
-      const pool = await poolPromise;
-      await pool
-        .request()
-        .input('dataemissao', dataEmissaoNorm)
-        .input('datavencimento', dataVencimentoNorm)
-        .input('datacompetencia', dataEmissaoNorm)
-        .input('descricao', 'Fatura ' + id)
-        .input('documento', id)
-        .input('valor', valor)
-        .input('valorpago', 0)
-        .input('descontopago', 0)
-        .input('juropago', 0)
-        .input('parcela', 1)
-        .input('idfatura', idfatura)
-        .input('identidade', identidade)
-        .input('idmoeda', idmoeda)
-        .input('idformapagamento', idformapagamento)
-        .input('idplanoconta', idplanoconta)
-        .input('idfilial', idfilial)
-        .input('chave', uuidv4())
-        .input('empresa', empresa)
-        .input('id', idtitulo)
-        .query(`
-          INSERT INTO titulosreceber (
-              dataemissao,
-              datavencimento,
-              datacompetencia,
-              descricao,
-              documento,
-              valor,
-              valorpago,
-              descontopago,
-              juropago,
-              parcela,
-              idfatura,
-              identidade,
-              idmoeda,
-              idformapagamento,
-              idplanoconta,
-              idfilial,
-              chave,
-              empresa,
-              id
-          )
-          OUTPUT INSERTED.idtitulo
-          VALUES (
-              @dataemissao,
-              @datavencimento,
-              @datacompetencia,
-              @descricao,
-              @documento,
-              @valor,
-              @valorpago,
-              @descontopago,
-              @juropago,
-              @parcela,
-              @idfatura,
-              @identidade,
-              @idmoeda,
-              @idformapagamento,
-              @idplanoconta,
-              @idfilial,
-              @chave,
-              @empresa,
-              @id
-          )
-        `);
+      if (typeof idtitulo === 'undefined') {
+        console.warn('idtitulo está undefined no body. Nenhum título será inserido.');
+      } else if (Number(idtitulo) > 0) {      
+        const pool = await poolPromise;
+        await pool
+          .request()
+          .input('dataemissao', dataEmissaoNorm)
+          .input('datavencimento', dataVencimentoNorm)
+          .input('datacompetencia', dataEmissaoNorm)
+          .input('descricao', 'Fatura ' + id)
+          .input('documento', id)
+          .input('valor', valor)
+          .input('valorpago', 0)
+          .input('descontopago', 0)
+          .input('juropago', 0)
+          .input('parcela', 1)
+          .input('idfatura', idfatura)
+          .input('identidade', identidade)
+          .input('idmoeda', idmoeda)
+          .input('idformapagamento', idformapagamento)
+          .input('idplanoconta', idplanoconta)
+          .input('idfilial', idfilial)
+          .input('chave', uuidv4())
+          .input('empresa', empresa)
+          .input('id', idtitulo)
+          .query(`
+            INSERT INTO titulosreceber (
+                dataemissao,
+                datavencimento,
+                datacompetencia,
+                descricao,
+                documento,
+                valor,
+                valorpago,
+                descontopago,
+                juropago,
+                parcela,
+                idfatura,
+                identidade,
+                idmoeda,
+                idformapagamento,
+                idplanoconta,
+                idfilial,
+                chave,
+                empresa,
+                id
+            )
+            OUTPUT INSERTED.idtitulo
+            VALUES (
+                @dataemissao,
+                @datavencimento,
+                @datacompetencia,
+                @descricao,
+                @documento,
+                @valor,
+                @valorpago,
+                @descontopago,
+                @juropago,
+                @parcela,
+                @idfatura,
+                @identidade,
+                @idmoeda,
+                @idformapagamento,
+                @idplanoconta,
+                @idfilial,
+                @chave,
+                @empresa,
+                @id
+            )
+          `);
+      }
 
         // Atualiza bilhetes
         for (const idvenda of bilhete) {
@@ -1041,8 +1049,9 @@ const getRelatoriosAnalitico = async (req, res) => {
   try {
     //console.log('getEmissao');
     const { empresa, idfilial, identidade, idmoeda, idgrupo, idoperadora, datainicial, datafinal, 
-       vencimentoinicial, vencimentofinal, bilheteinicial, bilhetefinal, servicoinicial, servicofinal, 
+       vencimentoinicial, vencimentofinal, aereoinicial, aereofinal, servicoinicial, servicofinal, 
        faturainicial, faturafinal, pax, tipo  } = req.query;
+      // console.log(req.query);
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
@@ -1066,7 +1075,7 @@ const getRelatoriosAnalitico = async (req, res) => {
     unionClause = ' UNION ';
 
     if ( ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!idgrupo)&&(!idoperadora)&&(!datainicial)&&(!datafinal)&&(!vencimentoinicial)&&(!vencimentofinal)&&
-         (!bilheteinicial)&&(!bilhetefinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
+         (!aereoinicial)&&(!aereofinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
       semFiltros = 'true';
 
     //console.log('Sem filtros: ' + semFiltros);
@@ -1085,7 +1094,7 @@ const getRelatoriosAnalitico = async (req, res) => {
         orderbyClause += ' ORDER BY 7, 5, 1 '
       else
       if(tipo == 'Operadora')
-        orderbyClause += ' ORDER BY 12, 6, 1 '
+        orderbyClause += ' ORDER BY 11, 6, 1 '
       else
       if(tipo == 'Fatura')
         orderbyClause += ' ORDER BY 1, 6, 5 ';
@@ -1132,12 +1141,12 @@ const getRelatoriosAnalitico = async (req, res) => {
         request.input('idgrupo', idgrupo);
         whereClauseAereo += ' AND VendasBilhetes.idgrupo = @idgrupo';
       }
-
+//console.log('Vencimento Inicial: ' + vencimentoinicial);
       if (vencimentoinicial) {
         request.input('vencimentoinicial', vencimentoinicial);
         whereClauseAereo += ' AND VendasBilhetes.datavencimento >= @vencimentoinicial';
       }
-      
+   //   console.log('Vencimento Final: ' + vencimentofinal);
       if (vencimentofinal) {
         request.input('vencimentofinal', vencimentofinal);
         whereClauseAereo += ' AND VendasBilhetes.datavencimento <= @vencimentofinal';
@@ -1155,32 +1164,42 @@ const getRelatoriosAnalitico = async (req, res) => {
 
       if (idoperadora) {
         request.input('idoperadora', idoperadora);
-        whereClause += ' AND ItensVendaBilhete.idoperadora = @idoperadora';
+        whereClauseAereo += ' AND ItensVendaBilhete.idoperadora = @idoperadora';
       }
 
       if (pax) {
         request.input('pax', `%${pax}%`);
-        whereClause += ' AND ItensVendaBilhete.pax LIKE @pax';
+        whereClauseAereo += ' AND ItensVendaBilhete.pax LIKE @pax';
+      }
+
+      if (aereoinicial) {
+        request.input('aereoinicial', aereoinicial);
+        whereClauseAereo += ' AND vendasbilhetes.id >= @aereoinicial';
+      }
+      
+      if (aereofinal) {
+        request.input('aereofinal', aereofinal);
+        whereClauseAereo += ' AND vendasbilhetes.id <= @aereofinal';
       }
 
       if (servicoinicial) {
-        request.input('bilheteinicial', bilheteinicial);
-        whereClause += ' AND vendasbilhetes.id >= @bilheteinicial';
+       // request.input('aereoinicial', aereoinicial);
+        whereClauseAereo += ' AND vendasbilhetes.id = -1';
       }
       
       if (servicofinal) {
-        request.input('bilhetefinal', bilhetefinal);
-        whereClause += ' AND vendasbilhetes.id <= @bilhetefinal';
+        //request.input('aereofinal', aereofinal);
+        whereClauseAereo += ' AND vendasbilhetes.id = -1';
       }
 
       if (faturainicial) {
         request.input('faturainicial', faturainicial);
-        whereClause += ' AND Faturas.id >= @faturainicial';
+        whereClauseAereo += ' AND Faturas.id >= @faturainicial';
       }
       
       if (faturafinal) {
         request.input('faturafinal', faturafinal);
-        whereClause += ' AND Faturas.id <= @faturafinal';
+        whereClauseAereo += ' AND Faturas.id <= @faturafinal';
       }
 
       if(tipo == 'SemFatura'){
@@ -1193,8 +1212,7 @@ const getRelatoriosAnalitico = async (req, res) => {
                 VendasBilhetes.datavencimento,
                 ISNULL(VendasBilhetes.ValorTotal, 0) AS valoroutros, 
                 FormaPagamento.Nome AS pagamento, 
-                'AEREO' AS tipo,
-                Entidades_4.nome AS operadora
+                'AEREO' AS tipo
           FROM            TitulosReceber RIGHT OUTER JOIN
                                   Faturas RIGHT OUTER JOIN
                                   Moeda INNER JOIN
@@ -1218,11 +1236,11 @@ const getRelatoriosAnalitico = async (req, res) => {
                 VendasBilhetes.DataVencimento,
                 VendasBilhetes.ValorTotal, 
                 VendasBilhetes.Id, 
-                FormaPagamento.Nome,
-                Entidades_4.nome    
+                FormaPagamento.Nome
           
           `
       }else{
+       // console.log('ENTROU TIPO NORMAL');
       scriptAereo = 
         `
           SELECT      Faturas.Id AS idfatura,
@@ -1235,7 +1253,6 @@ const getRelatoriosAnalitico = async (req, res) => {
                 ISNULL(VendasBilhetes.ValorTotal, 0) AS valoroutros, 
                 VendasBilhetes.Id AS idvenda, 
                 FormaPagamento.Nome AS pagamento, 
-                'AEREO' AS tipo,
                 Entidades_4.nome AS operadora
           FROM            TitulosReceber RIGHT OUTER JOIN
                                   Filiais RIGHT OUTER JOIN
@@ -1307,18 +1324,19 @@ const getRelatoriosAnalitico = async (req, res) => {
       }
 
       if (idgrupo) {
-        request.input('idgrupo', idgrupo);
-        whereClauseAereo += ' AND VendasHoteis.idgrupo = @idgrupo';
+        request.input('idgrupo2', idgrupo);
+        whereClauseServico += ' AND VendasHoteis.idgrupo = @idgrupo2';
       }
-
+//console.log('Vencimento Inicial******: ' + vencimentoinicial);
       if (vencimentoinicial) {
-        request.input('vencimentoinicial', vencimentoinicial);
-        whereClauseAereo += ' AND VendasHoteis.datavencimento >= @vencimentoinicial';
+        request.input('vencimentoinicial2', vencimentoinicial);
+        whereClauseServico += ' AND VendasHoteis.datavencimento >= @vencimentoinicial2';
       }
+     // console.log('Vencimento Final******: ' + vencimentofinal);
       
       if (vencimentofinal) {
-        request.input('vencimentofinal', vencimentofinal);
-        whereClauseAereo += ' AND VendasHoteis.datavencimento <= @vencimentofinal';
+        request.input('vencimentofinal2', vencimentofinal);
+        whereClauseServico += ' AND VendasHoteis.datavencimento <= @vencimentofinal2';
       }
       
       if (datainicial) {
@@ -1332,33 +1350,43 @@ const getRelatoriosAnalitico = async (req, res) => {
       }
 
       if (idoperadora) {
-        request.input('idoperadora', idoperadora);
-        whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
+        request.input('idoperadora2', idoperadora);
+        whereClauseServico += ' AND ItensVendaHotel.idoperadora = @idoperadora2';
       }
 
       if (pax) {
-        request.input('pax', `%${pax}%`);
-        whereClause += ' AND ItensVendaHotel.pax LIKE @pax';
+        request.input('pax2', `%${pax}%`);
+        whereClauseServico += ' AND ItensVendaHotel.pax LIKE @pax2';
+      }
+
+      if (aereoinicial) {
+        //request.input('servicoinicial2', servicoinicial);
+        whereClauseServico += ' AND vendashoteis.id = -1';
+      }
+      
+      if (aereofinal) {
+       // request.input('servicofinal2', servicofinal);
+        whereClauseServico += ' AND vendashoteis.id = -1';
       }
 
       if (servicoinicial) {
-        request.input('servicoinicial', servicoinicial);
-        whereClause += ' AND vendashoteis.id >= @servicoinicial';
+        request.input('servicoinicial2', servicoinicial);
+        whereClauseServico += ' AND vendashoteis.id >= @servicoinicial2';
       }
       
       if (servicofinal) {
-        request.input('servicofinal', servicofinal);
-        whereClause += ' AND vendashoteis.id <= @servicofinal';
+        request.input('servicofinal2', servicofinal);
+        whereClauseServico += ' AND vendashoteis.id <= @servicofinal2';
       }
 
       if (faturainicial) {
-        request.input('faturainicial', faturainicial);
-        whereClause += ' AND Faturas.id >= @faturainicial';
+        request.input('faturainicial2', faturainicial);
+        whereClauseServico += ' AND Faturas.id >= @faturainicial2';
       }
       
       if (faturafinal) {
-        request.input('faturafinal', faturafinal);
-        whereClause += ' AND Faturas.id <= @faturafinal';
+        request.input('faturafinal2', faturafinal);
+        whereClauseServico += ' AND Faturas.id <= @faturafinal2';
       }
 
       if(tipo == 'SemFatura'){
@@ -1374,8 +1402,7 @@ const getRelatoriosAnalitico = async (req, res) => {
                 VendasHoteis.datavencimento,
                 ISNULL(VendasHoteis.ValorTotal, 0) AS valoroutros, 
                 FormaPagamento.Nome AS pagamento, 
-                'SERVICO' AS tipo,
-                Entidades_4.nome AS operadora
+                'SERVICO' AS tipo
           FROM            TitulosReceber RIGHT OUTER JOIN
                                   Faturas RIGHT OUTER JOIN
                                   Moeda INNER JOIN
@@ -1399,11 +1426,11 @@ const getRelatoriosAnalitico = async (req, res) => {
                 VendasHoteis.DataVencimento,
                 VendasHoteis.ValorTotal, 
                 VendasHoteis.Id, 
-                FormaPagamento.Nome,
-                Entidades_4.nome
+                FormaPagamento.Nome
         
         `
       }else{
+       // console.log('ENTROU TIPO NORMAL SERVICO');
           scriptServico = 
           `
           ${unionClause}
@@ -1418,7 +1445,6 @@ const getRelatoriosAnalitico = async (req, res) => {
                 ISNULL(VendasHoteis.ValorTotal, 0) AS valoroutros, 
                 VendasHoteis.Id AS idvenda, 
                 FormaPagamento.Nome AS pagamento, 
-                'SERVICO' AS tipo,
                 Entidades_4.nome AS operadora
           FROM            TitulosReceber RIGHT OUTER JOIN
                                   Filiais RIGHT OUTER JOIN
@@ -1457,8 +1483,9 @@ const getRelatoriosAnalitico = async (req, res) => {
     
     const query =
      `  ${scriptAereo} ${scriptServico} ${orderbyClause} `
-   
+  // console.log(query);
     const result = await request.query(query);
+  //  console.log(result.recordset);
     
    res.json(result.recordset);    
   } catch (error) {
@@ -1472,7 +1499,7 @@ const getRelatoriosSintetico = async (req, res) => {
   try {
     //console.log('getEmissao');
     const { empresa, idfilial, identidade, idmoeda, idgrupo, idoperadora, datainicial, datafinal, 
-       vencimentoinicial, vencimentofinal, bilheteinicial, bilhetefinal, servicoinicial, servicofinal, 
+       vencimentoinicial, vencimentofinal, aereoinicial, aereofinal, servicoinicial, servicofinal, 
        faturainicial, faturafinal, pax, tipo  } = req.query;
     const sql = require('mssql');
     // Verifica se o parâmetro 'empresa' foi fornecido
@@ -1498,7 +1525,7 @@ const getRelatoriosSintetico = async (req, res) => {
     unionClause = ' UNION ';
 
     if ( ((!idfilial)&&(!identidade)&&(!idmoeda)&&(!idgrupo)&&(!idoperadora)&&(!datainicial)&&(!datafinal)&&(!vencimentoinicial)&&(!vencimentofinal)&&
-         (!bilheteinicial)&&(!bilhetefinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
+         (!aereoinicial)&&(!aereofinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
       semFiltros = 'true';
 
       if(tipo == 'Cliente'){
@@ -1662,32 +1689,42 @@ const getRelatoriosSintetico = async (req, res) => {
 
       if (idoperadora) {
         request.input('idoperadora', idoperadora);
-        whereClause += ' AND ItensVendaBilhete.idoperadora = @idoperadora';
+        whereClauseAereo += ' AND ItensVendaBilhete.idoperadora = @idoperadora';
       }
 
       if (pax) {
         request.input('pax', `%${pax}%`);
-        whereClause += ' AND ItensVendaBilhete.pax LIKE @pax';
+        whereClauseAereo += ' AND ItensVendaBilhete.pax LIKE @pax';
+      }
+
+      if (aereoinicial) {
+        request.input('aereoinicial', aereoinicial);
+        whereClauseAereo += ' AND vendasbilhetes.id >= @aereoinicial';
+      }
+      
+      if (aereofinal) {
+        request.input('aereofinal', aereofinal);
+        whereClauseAereo += ' AND vendasbilhetes.id <= @aereofinal';
       }
 
       if (servicoinicial) {
-        request.input('bilheteinicial', bilheteinicial);
-        whereClause += ' AND vendasbilhetes.id >= @bilheteinicial';
+       // request.input('aereoinicial', aereoinicial);
+        whereClauseAereo += ' AND vendasbilhetes.id = -1';
       }
       
       if (servicofinal) {
-        request.input('bilhetefinal', bilhetefinal);
-        whereClause += ' AND vendasbilhetes.id <= @bilhetefinal';
+        //request.input('aereofinal', aereofinal);
+        whereClauseAereo += ' AND vendasbilhetes.id = -1';
       }
 
       if (faturainicial) {
         request.input('faturainicial', faturainicial);
-        whereClause += ' AND Faturas.id >= @faturainicial';
+        whereClauseAereo += ' AND Faturas.id >= @faturainicial';
       }
       
       if (faturafinal) {
         request.input('faturafinal', faturafinal);
-        whereClause += ' AND Faturas.id <= @faturafinal';
+        whereClauseAereo += ' AND Faturas.id <= @faturafinal';
       }
 
       scriptAereo = 
@@ -1752,18 +1789,18 @@ const getRelatoriosSintetico = async (req, res) => {
       }
 
       if (idgrupo) {
-        request.input('idgrupo', idgrupo);
-        whereClauseAereo += ' AND VendasHoteis.idgrupo = @idgrupo';
+        request.input('idgrupo2', idgrupo);
+        whereClauseAereo += ' AND VendasHoteis.idgrupo = @idgrupo2';
       }
 
       if (vencimentoinicial) {
-        request.input('vencimentoinicial', vencimentoinicial);
-        whereClauseAereo += ' AND VendasHoteis.datavencimento >= @vencimentoinicial';
+        request.input('vencimentoinicial2', vencimentoinicial);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento >= @vencimentoinicial2';
       }
       
       if (vencimentofinal) {
-        request.input('vencimentofinal', vencimentofinal);
-        whereClauseAereo += ' AND VendasHoteis.datavencimento <= @vencimentofinal';
+        request.input('vencimentofinal2', vencimentofinal);
+        whereClauseAereo += ' AND VendasHoteis.datavencimento <= @vencimentofinal2';
       }
       
       if (datainicial) {
@@ -1777,33 +1814,43 @@ const getRelatoriosSintetico = async (req, res) => {
       }
 
       if (idoperadora) {
-        request.input('idoperadora', idoperadora);
-        whereClause += ' AND ItensVendaHotel.idoperadora = @idoperadora';
+        request.input('idoperadora2', idoperadora);
+        whereClauseServico += ' AND ItensVendaHotel.idoperadora = @idoperadora2';
       }
 
       if (pax) {
-        request.input('pax', `%${pax}%`);
-        whereClause += ' AND ItensVendaHotel.pax LIKE @pax';
+        request.input('pax2', `%${pax}%`);
+        whereClauseServico += ' AND ItensVendaHotel.pax LIKE @pax2';
+      }
+
+      if (aereoinicial) {
+        //request.input('servicoinicial2', servicoinicial);
+        whereClauseServico += ' AND vendashoteis.id = -1';
+      }
+      
+      if (aereofinal) {
+        //request.input('servicofinal2', servicofinal);
+        whereClauseServico += ' AND vendashoteis.id = -1';
       }
 
       if (servicoinicial) {
-        request.input('servicoinicial', servicoinicial);
-        whereClause += ' AND vendashoteis.id >= @servicoinicial';
+        request.input('servicoinicial2', servicoinicial);
+        whereClauseServico += ' AND vendashoteis.id >= @servicoinicial2';
       }
       
       if (servicofinal) {
-        request.input('servicofinal', servicofinal);
-        whereClause += ' AND vendashoteis.id <= @servicofinal';
+        request.input('servicofinal2', servicofinal);
+        whereClauseServico += ' AND vendashoteis.id <= @servicofinal2';
       }
 
       if (faturainicial) {
-        request.input('faturainicial', faturainicial);
-        whereClause += ' AND Faturas.id >= @faturainicial';
+        request.input('faturainicial2', faturainicial);
+        whereClauseServico += ' AND Faturas.id >= @faturainicial2';
       }
       
       if (faturafinal) {
-        request.input('faturafinal', faturafinal);
-        whereClause += ' AND Faturas.id <= @faturafinal';
+        request.input('faturafinal2', faturafinal);
+        whereClauseServico += ' AND Faturas.id <= @faturafinal2';
       }
 
 
