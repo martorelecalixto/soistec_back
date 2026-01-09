@@ -1069,6 +1069,7 @@ const getRelatoriosAnalitico = async (req, res) => {
 
 
     let orderbyClause = '';
+    let scriptGeral = '';
     let scriptAereo = '';
     let scriptServico = '';
     let unionClause = '';
@@ -1243,15 +1244,22 @@ const getRelatoriosAnalitico = async (req, res) => {
        // console.log('ENTROU TIPO NORMAL');
       scriptAereo = 
         `
-          SELECT      Faturas.Id AS idfatura,
+                SELECT      Tabela.idfatura,
+                Tabela.valor, 
+                Tabela.valorpago,
+                Tabela.idtitulo,
+                Tabela.entidade, 
+                Tabela.dataemissao, 
+                Tabela.datavencimento,
+                Tabela.pagamento
+          FROM(
+                SELECT      Faturas.Id AS idfatura,
                 Faturas.valor, 
                 Isnull(TitulosReceber.ValorPago,0) AS valorpago,
                 TitulosReceber.id AS idtitulo,
                 entidades_3.Nome AS entidade, 
                 Faturas.dataemissao, 
                 Faturas.datavencimento,
-                ISNULL(VendasBilhetes.ValorTotal, 0) AS valoroutros, 
-                VendasBilhetes.Id AS idvenda, 
                 FormaPagamento.Nome AS pagamento, 
                 Entidades_4.nome AS operadora
           FROM            TitulosReceber RIGHT OUTER JOIN
@@ -1276,8 +1284,6 @@ const getRelatoriosAnalitico = async (req, res) => {
                 entidades_3.Nome, 
                 Faturas.DataEmissao, 
                 Faturas.DataVencimento,
-                VendasBilhetes.ValorTotal, 
-                VendasBilhetes.Id, 
                 FormaPagamento.Nome,
                 TitulosReceber.ValorPago,
                 TitulosReceber.id,
@@ -1442,8 +1448,6 @@ const getRelatoriosAnalitico = async (req, res) => {
                 entidades_3.Nome AS entidade, 
                 Faturas.dataemissao, 
                 Faturas.datavencimento,
-                ISNULL(VendasHoteis.ValorTotal, 0) AS valoroutros, 
-                VendasHoteis.Id AS idvenda, 
                 FormaPagamento.Nome AS pagamento, 
                 Entidades_4.nome AS operadora
           FROM            TitulosReceber RIGHT OUTER JOIN
@@ -1468,12 +1472,21 @@ const getRelatoriosAnalitico = async (req, res) => {
                 entidades_3.Nome, 
                 Faturas.DataEmissao, 
                 Faturas.DataVencimento,
-                VendasHoteis.ValorTotal, 
-                VendasHoteis.Id, 
                 FormaPagamento.Nome,
                 TitulosReceber.ValorPago,
                 TitulosReceber.id,
                 Entidades_4.nome
+
+      ) AS Tabela
+                GROUP BY      Tabela.idfatura,
+                Tabela.valor, 
+                Tabela.valorpago,
+                Tabela.idtitulo,
+                Tabela.entidade, 
+                Tabela.dataemissao, 
+                Tabela.datavencimento,
+                Tabela.pagamento
+
         
         `
 
@@ -1483,7 +1496,7 @@ const getRelatoriosAnalitico = async (req, res) => {
     
     const query =
      `  ${scriptAereo} ${scriptServico} ${orderbyClause} `
-  // console.log(query);
+   //console.log(query);
     const result = await request.query(query);
   //  console.log(result.recordset);
     

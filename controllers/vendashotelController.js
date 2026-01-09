@@ -153,11 +153,53 @@ const getVendasHotel = async (req, res) => {
                 '    faturas.id,'+
                 '    titulosreceber.valorpago';
 
-    orderClause += ' ORDER BY vendashoteis.datavenda desc, vendashoteis.id ';
+    orderClause += ' ORDER BY Tabela.datavenda desc, Tabela.id ';
 
     const query =
      `
         SELECT 
+            Tabela.idvenda,
+            Tabela.datavenda,
+            Tabela.datavencimento,
+            Tabela.documento,
+            Tabela.valortotal,
+            Tabela.descontototal,
+            Tabela.valortaxatotal,
+            Tabela.valoroutrostotal,
+            Tabela.valordutotal,
+            Tabela.valorcomissaototal,
+            Tabela.valorfornecedortotal,
+            Tabela.cartao_sigla,
+            Tabela.cartao_numero,
+            Tabela.cartao_mesvencimento,
+            Tabela.cartao_anovencimento,
+            Tabela.observacao,
+            Tabela.solicitante,
+            Tabela.identidade,
+            Tabela.idvendedor,
+            Tabela.idemissor,
+            Tabela.idmoeda,
+            Tabela.idformapagamento,
+            Tabela.idfilial,
+            Tabela.idfatura,
+            Tabela.idreciboreceber,
+            Tabela.chave,
+            Tabela.excluido,
+            Tabela.empresa,
+            Tabela.idcentrocusto,
+            Tabela.idgrupo,
+            Tabela.id,
+            Tabela.valorentrada,
+            Tabela.entidade,
+            Tabela.pagamento,
+            Tabela.vendedor,
+            Tabela.emissor,
+            Tabela.recibo, 
+            Tabela.fatura, 
+            Tabela.valorpago
+  FROM(
+
+     SELECT 
             vendashoteis.idvenda,
             vendashoteis.datavenda,
             vendashoteis.datavencimento,
@@ -272,8 +314,49 @@ const getVendasHotel = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause}
-
+                  ${whereClause}  ${groupClause}
+      ) AS Tabela
+        GROUP BY 
+            Tabela.idvenda,
+            Tabela.datavenda,
+            Tabela.datavencimento,
+            Tabela.documento,
+            Tabela.valortotal,
+            Tabela.descontototal,
+            Tabela.valortaxatotal,
+            Tabela.valoroutrostotal,
+            Tabela.valordutotal,
+            Tabela.valorcomissaototal,
+            Tabela.valorfornecedortotal,
+            Tabela.cartao_sigla,
+            Tabela.cartao_numero,
+            Tabela.cartao_mesvencimento,
+            Tabela.cartao_anovencimento,
+            Tabela.observacao,
+            Tabela.solicitante,
+            Tabela.identidade,
+            Tabela.idvendedor,
+            Tabela.idemissor,
+            Tabela.idmoeda,
+            Tabela.idformapagamento,
+            Tabela.idfilial,
+            Tabela.idfatura,
+            Tabela.idreciboreceber,
+            Tabela.chave,
+            Tabela.excluido,
+            Tabela.empresa,
+            Tabela.idcentrocusto,
+            Tabela.idgrupo,
+            Tabela.id,
+            Tabela.valorentrada,
+            Tabela.entidade,
+            Tabela.pagamento,
+            Tabela.vendedor,
+            Tabela.emissor,
+            Tabela.recibo, 
+            Tabela.fatura, 
+            Tabela.valorpago
+      ${orderClause}
     `
    const result = await request.query(query);
    //console.log(result.recordset);
@@ -1012,7 +1095,27 @@ const getRelatoriosAnalitico = async (req, res) => {
 
     const query =
      `
-          SELECT        ItensVendaHotel.id, 
+          SELECT        Tabela.id, 
+                        Tabela.idvenda, 
+                        Tabela.entidade, 
+                        Tabela.pagamento, 
+                        Tabela.dataemissao, 
+                        Tabela.datavencimento, 
+                        Tabela.idrecibo, 
+                        Tabela.idfatura, 
+                        Tabela.operadora, 
+                        Tabela.fornecedor, 
+                        Tabela.vendedor, 
+                        Tabela.emissor, 
+                        Tabela.pax, 
+                        Tabela.descricao, 
+                        Tabela.valor, 
+                        Tabela.valortaxa,
+                        Tabela.valorservico, 
+                        Tabela.valoroutros,
+                        Tabela.idtitulo
+      FROM(
+     SELECT        ItensVendaHotel.id, 
                         vendashoteis.Id AS idvenda, 
                         entidades_3.Nome AS entidade, 
                         FormaPagamento.Nome AS pagamento, 
@@ -1085,7 +1188,29 @@ const getRelatoriosAnalitico = async (req, res) => {
                                   FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                   RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                   Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-              ${whereClause} ${orderClause}
+              ${whereClause} 
+
+        ) AS Tabela
+          GROUP BY      Tabela.id, 
+                        Tabela.idvenda, 
+                        Tabela.entidade, 
+                        Tabela.pagamento, 
+                        Tabela.dataemissao, 
+                        Tabela.datavencimento, 
+                        Tabela.idrecibo, 
+                        Tabela.idfatura, 
+                        Tabela.operadora, 
+                        Tabela.fornecedor, 
+                        Tabela.vendedor, 
+                        Tabela.emissor, 
+                        Tabela.pax, 
+                        Tabela.descricao, 
+                        Tabela.valor, 
+                        Tabela.valortaxa,
+                        Tabela.valorservico, 
+                        Tabela.valoroutros,
+                        Tabela.idtitulo
+          ${orderClause}
 
       `
    const result = await request.query(query);
@@ -1285,6 +1410,15 @@ const getRelatoriosSintetico = async (req, res) => {
      query =
      `
         SELECT      
+                      Tabela.entidade, 
+                      SUM(ISNULL(Tabela.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(Tabela.valor,0)) as valor,
+                      SUM(ISNULL(Tabela.valortaxa,0)) as valortaxa,
+                      SUM(ISNULL(Tabela.valorservico,0)) as valorservico,
+                      SUM(ISNULL(Tabela.valoroutros,0)) as valoroutros		
+    FROM(
+
+     SELECT      
                       Entidades_3.nome AS entidade, 
                       SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
                       SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
@@ -1333,7 +1467,10 @@ const getRelatoriosSintetico = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause} 
+                  ${whereClause}  ${groupClause} 
+    ) AS Tabela
+    GROUP BY Tabela.entidade
+    ${orderClause} 
 
         `
     }else    
@@ -1341,6 +1478,15 @@ const getRelatoriosSintetico = async (req, res) => {
      query =
      `
         SELECT      
+                      Tabela.dataemissao, 
+                      SUM(ISNULL(Tabela.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(Tabela.valor,0)) as valor,
+                      SUM(ISNULL(Tabela.valortaxa,0)) as valortaxa,
+                      SUM(ISNULL(Tabela.valorservico,0)) as valorservico,
+                      SUM(ISNULL(Tabela.valoroutros,0)) as valoroutros		
+    FROM(
+
+        SELECT      
                   vendashoteis.datavenda AS dataemissao, 
                       SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
                       SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
@@ -1389,15 +1535,24 @@ const getRelatoriosSintetico = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause}
-
+                  ${whereClause}  ${groupClause} 
+    ) AS Tabela
+    GROUP BY Tabela.dataemissao
+    ${orderClause}
         
         `
     }else    
     if(tipo == 'Vencimento'){
      query =
      `
-      
+        SELECT      
+                      Tabela.datavencimento, 
+                      SUM(ISNULL(Tabela.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(Tabela.valor,0)) as valor,
+                      SUM(ISNULL(Tabela.valortaxa,0)) as valortaxa,
+                      SUM(ISNULL(Tabela.valorservico,0)) as valorservico,
+                      SUM(ISNULL(Tabela.valoroutros,0)) as valoroutros		
+    FROM(      
         SELECT      
                   vendashoteis.datavencimento, 
                       SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
@@ -1447,7 +1602,10 @@ const getRelatoriosSintetico = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause}
+                  ${whereClause}  ${groupClause} 
+    ) AS Tabela
+    GROUP BY Tabela.datavencimento
+    ${orderClause}
 
         `
     }else    
@@ -1455,6 +1613,14 @@ const getRelatoriosSintetico = async (req, res) => {
      query =
      `
         SELECT      
+                      Tabela.vendedor, 
+                      SUM(ISNULL(Tabela.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(Tabela.valor,0)) as valor,
+                      SUM(ISNULL(Tabela.valortaxa,0)) as valortaxa,
+                      SUM(ISNULL(Tabela.valorservico,0)) as valorservico,
+                      SUM(ISNULL(Tabela.valoroutros,0)) as valoroutros		
+    FROM(
+        SELECT      
                   entidades_1.nome AS vendedor, 
                       SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
                       SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
@@ -1503,7 +1669,10 @@ const getRelatoriosSintetico = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause}
+                  ${whereClause}  ${groupClause}
+    ) AS Tabela
+    GROUP BY Tabela.vendedor
+     ${orderClause}
 
         `
     }else    
@@ -1511,6 +1680,14 @@ const getRelatoriosSintetico = async (req, res) => {
      query =
      `
         SELECT      
+                      Tabela.emissor, 
+                      SUM(ISNULL(Tabela.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(Tabela.valor,0)) as valor,
+                      SUM(ISNULL(Tabela.valortaxa,0)) as valortaxa,
+                      SUM(ISNULL(Tabela.valorservico,0)) as valorservico,
+                      SUM(ISNULL(Tabela.valoroutros,0)) as valoroutros		
+    FROM(
+        SELECT      
                   entidades_2.nome AS emissor, 
                       SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
                       SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
@@ -1559,7 +1736,10 @@ const getRelatoriosSintetico = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause}
+                  ${whereClause}  ${groupClause}
+    ) AS Tabela
+    GROUP BY Tabela.emissor
+     ${orderClause}
 
         `
     }else    
@@ -1567,6 +1747,14 @@ const getRelatoriosSintetico = async (req, res) => {
      query =
      `
         SELECT      
+                      Tabela.operadora, 
+                      SUM(ISNULL(Tabela.valorpago,0)) AS valorpago,
+                      SUM(ISNULL(Tabela.valor,0)) as valor,
+                      SUM(ISNULL(Tabela.valortaxa,0)) as valortaxa,
+                      SUM(ISNULL(Tabela.valorservico,0)) as valorservico,
+                      SUM(ISNULL(Tabela.valoroutros,0)) as valoroutros		
+    FROM(
+        SELECT      
                   entidades_4.nome AS operadora,
                       SUM(ISNULL(titulosreceber.valorpago,0)) AS valorpago,
                       SUM(ISNULL(ItensVendaHotel.ValorHotel,0)) as valor,
@@ -1615,12 +1803,34 @@ const getRelatoriosSintetico = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause}
+                  ${whereClause}  ${groupClause}
+    ) AS Tabela
+    GROUP BY Tabela.operadora
+     ${orderClause}
 
         `
     }else{
      query =
      `
+     SELECT      Tabela.idvenda, 
+                  Tabela.observacao, 
+                  Tabela.solicitante, 
+                  Tabela.entidade, 
+                  Tabela.pagamento,
+                  Tabela.dataemissao, 
+                  Tabela.datavencimento,  
+                  Tabela.vendedor, 
+                  Tabela.emissor, 
+                  Tabela.filial,
+                  Tabela.idrecibo, 
+                  Tabela.idfatura, 
+                  Tabela.valorpago,
+                  SUM(ISNULL(Tabela.valor,0)) as valor,
+                  SUM(ISNULL(Tabela.valortaxa,0)) as valortaxa,
+                  SUM(ISNULL(Tabela.valorservico,0)) as valorservico,
+                  SUM(ISNULL(Tabela.valoroutros,0)) as valoroutros		
+    FROM(
+
      SELECT      vendashoteis.id AS idvenda, 
                   vendashoteis.observacao, 
                   ISNULL(vendashoteis.solicitante,'') AS solicitante, 
@@ -1690,8 +1900,22 @@ const getRelatoriosSintetico = async (req, res) => {
                                       FormaPagamento ON VendasHoteis.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                       RecibosReceber ON VendasHoteis.IdReciboReceber = RecibosReceber.IdRecibo LEFT OUTER JOIN
                                       Grupos ON VendasHoteis.IdGrupo = Grupos.Id
-                  ${whereClause}  ${groupClause} ${orderClause}
-
+                  ${whereClause}  ${groupClause}
+    ) AS Tabela
+     GROUP BY     Tabela.idvenda, 
+                  Tabela.observacao, 
+                  Tabela.solicitante, 
+                  Tabela.entidade, 
+                  Tabela.pagamento,
+                  Tabela.dataemissao, 
+                  Tabela.datavencimento,  
+                  Tabela.vendedor, 
+                  Tabela.emissor, 
+                  Tabela.filial,
+                  Tabela.idrecibo, 
+                  Tabela.idfatura, 
+                  Tabela.valorpago
+        ${orderClause}
 
         `
     }
