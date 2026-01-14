@@ -1489,7 +1489,7 @@ const getRelatoriosAnalitico = async (req, res) => {
       //const query =
     script =
       `
-        SELECT        TABELA.entidade, TABELA.filial, TABELA.planoconta, TABELA.pagamento, TABELA.idtitulo, TABELA.Valor, TABELA.valorpago, TABELA.valoraberto, TABELA.descontopago, TABELA.juropago, 
+        SELECT        TABELA.entidade, TABELA.filial, TABELA.planoconta, TABELA.pagamento, TABELA.idtitulo, TABELA.valor, TABELA.valorpago, TABELA.valoraberto, TABELA.descontopago, TABELA.juropago, 
                                 TABELA.descricao, TABELA.dataemissao, TABELA.datavencimento 
         FROM(
         SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosPagar.Id AS idtitulo, TitulosPagar.Valor, ISNULL(TitulosPagar.ValorPago, 
