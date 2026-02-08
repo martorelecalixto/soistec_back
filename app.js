@@ -44,6 +44,14 @@ const recursosRoutes = require('./routes/recursosRoutes');
 const emailRoutes = require('./routes/emailRoutes');
 const emailanexoRoutes = require('./routes/emailanexoRoutes');
 const nfseRoutes = require('./routes/nfseRoutes');
+const ingressosRoutes = require('./routes/ingressosRoutes');
+const lotesRoutes = require('./routes/lotesRoutes');
+const eventosRoutes = require('./routes/eventosRoutes');
+const tiposeventosRoutes = require('./routes/tiposeventosRoutes');
+const incvendaseventoRoutes = require('./routes/incvendaseventoRoutes');
+const inceventosRoutes = require('./routes/inceventosRoutes');
+const itensvendaeventoRoutes = require('./routes/itensvendaeventoRoutes');
+const vendaseventoRoutes = require('./routes/vendaseventoRoutes');
 
 // Swagger
 const setupSwagger = require('./swagger');
@@ -100,6 +108,15 @@ app.use('/api/permissoes', permissoesRoutes);
 app.use('/api/usuariosgrupos', usuariosgruposRoutes);
 app.use('/api/recursos', recursosRoutes);
 app.use('/api/nfse', nfseRoutes);
+app.use('/api/ingressos', ingressosRoutes);
+app.use('/api/lotes', lotesRoutes);
+app.use('/api/eventos', eventosRoutes);
+app.use('/api/tiposeventos', tiposeventosRoutes);
+app.use('/api/incvendasevento', incvendaseventoRoutes);
+app.use('/api/inceventos', inceventosRoutes);
+app.use('/api/itensvendaevento', itensvendaeventoRoutes);
+app.use('/api/vendasevento', vendaseventoRoutes);
+
 
 // Swagger
 setupSwagger(app);

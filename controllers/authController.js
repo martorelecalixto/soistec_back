@@ -12,243 +12,6 @@ const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "minhaChaveRefreshSecre
 // Aqui vamos armazenar refresh tokens em memória (ideal é banco)
 let refreshTokens = [];
 
-/* VERSAO 01.0 - SEM REFRESH TOKEN
-const login = async (req, res) => {
-  const { email, senha } = req.body;
-
-  try {
-    const pool = await poolPromise;
-
-    // 1️⃣ Busca o usuário ativo pelo e-mail
-    const userResult = await pool
-      .request()
-      .input('email', email)
-      .query(`
-        SELECT idusuario, nome, email, senha, empresa, idempresa
-        FROM usuarios
-        WHERE email = @email AND ativo = 1
-      `);
-
-    if (userResult.recordset.length === 0) {
-      return res
-        .status(401)
-        .json({ success: false, message: 'E-mail não encontrado ou usuário inativo.' });
-    }
-
-    const usuario = userResult.recordset[0];
-
-    // 2️⃣ Verifica senha
-    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaCorreta) {
-      return res.status(401).json({ success: false, message: 'Senha incorreta' });
-    }
-
-    // 3️⃣ Busca grupos do usuário
-    const gruposResult = await pool
-      .request()
-      .input('idusuario', usuario.idusuario)
-      .query(`
-        SELECT gp.idgrupopermissao AS idgrupo, gp.nome AS nome_grupo
-        FROM usuariosgrupos ug
-        INNER JOIN GruposPermissoes gp ON gp.idgrupopermissao = ug.idgrupopermissao
-        WHERE ug.idusuario = @idusuario
-      `);
-
-    const grupos = gruposResult.recordset.map((g) => ({
-      id: g.idgrupo,
-      nome: g.nome_grupo,
-    }));
-
-    // 4️⃣ Busca permissões consolidadas dos grupos
-    const permissoesResult = await pool
-      .request()
-      .input('idusuario', usuario.idusuario)
-      .query(`
-        SELECT DISTINCT r.nome AS recurso, p.permitido
-        FROM usuariosgrupos ug
-        INNER JOIN permissoes p ON p.idgrupopermissao = ug.idgrupopermissao
-        INNER JOIN recursos r ON r.idrecurso = p.idrecurso
-        WHERE ug.idusuario = @idusuario 
-      `);
-
-    const permissoes = permissoesResult.recordset.map((p) => p.recurso);
-
-    // 5️⃣ Gera token JWT com dados + permissões
-    const tokenPayload = {
-      idusuario: usuario.idusuario,
-      nome: usuario.nome,
-      email: usuario.email,
-      empresa: usuario.empresa,
-      idempresa: usuario.idempresa,
-      grupos,
-      permissoes,
-    };
-
-    
-    //"30m" = 30 minutos
-    //"8h" = 8 horas
-    //"1d" = 1 dia    
-    
-    const token = jwt.sign(tokenPayload, SECRET_KEY, { expiresIn: '30m' });
-
-    // 6️⃣ Retorna resposta
-    return res.json({
-      success: true,
-      message: 'Login realizado com sucesso',
-      nome: usuario.nome,
-      email: usuario.email,
-      empresa: usuario.empresa,
-      idempresa: usuario.idempresa,
-      grupos,
-      permissoes,
-      fctoken: token,
-    });
-  } catch (error) {
-    console.error('Erro no login:', error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-const logout = async (req, res) => {
-  // Logout simples (sem blacklist de token)
-  res.json({ success: true, message: 'Logout realizado com sucesso' });
-};
-*/
-
-
-/* VERSAO 02.0 - COM REFRESH TOKEN
-// LOGIN
-const login = async (req, res) => {
-  const { email, senha } = req.body;
-
-  try {
-    const pool = await poolPromise;
-
-    // 1️⃣ Busca o usuário ativo
-    const userResult = await pool
-      .request()
-      .input("email", email)
-      .query(`
-        SELECT idusuario, nome, email, senha, empresa, idempresa
-        FROM usuarios
-        WHERE email = @email AND ativo = 1
-      `);
-
-    if (userResult.recordset.length === 0) {
-      return res
-        .status(401)
-        .json({ success: false, message: "E-mail não encontrado ou usuário inativo." });
-    }
-
-    const usuario = userResult.recordset[0];
-
-    // 2️⃣ Verifica senha
-    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaCorreta) {
-      return res.status(401).json({ success: false, message: "Senha incorreta" });
-    }
-
-    // 3️⃣ Busca grupos
-    const gruposResult = await pool
-      .request()
-      .input("idusuario", usuario.idusuario)
-      .query(`
-        SELECT gp.idgrupopermissao AS idgrupo, gp.nome AS nome_grupo
-        FROM usuariosgrupos ug
-        INNER JOIN GruposPermissoes gp ON gp.idgrupopermissao = ug.idgrupopermissao
-        WHERE ug.idusuario = @idusuario
-      `);
-
-    const grupos = gruposResult.recordset.map((g) => ({
-      id: g.idgrupo,
-      nome: g.nome_grupo,
-    }));
-
-    // 4️⃣ Busca permissões
-    const permissoesResult = await pool
-      .request()
-      .input("idusuario", usuario.idusuario)
-      .query(`
-        SELECT DISTINCT r.nome AS recurso, p.permitido
-        FROM usuariosgrupos ug
-        INNER JOIN permissoes p ON p.idgrupopermissao = ug.idgrupopermissao
-        INNER JOIN recursos r ON r.idrecurso = p.idrecurso
-        WHERE ug.idusuario = @idusuario 
-      `);
-
-    const permissoes = permissoesResult.recordset.map((p) => p.recurso);
-
-    // 5️⃣ Payload do token
-    const tokenPayload = {
-      idusuario: usuario.idusuario,
-      nome: usuario.nome,
-      email: usuario.email,
-      empresa: usuario.empresa,
-      idempresa: usuario.idempresa,
-      grupos,
-      permissoes,
-    };
-
-    // 🔑 Access Token expira em 30 minutos
-    const accessToken = jwt.sign(tokenPayload, SECRET_KEY, { expiresIn: "30m" });
-
-    // 🔑 Refresh Token expira em 7 dias
-    const refreshToken = jwt.sign({ idusuario: usuario.idusuario }, REFRESH_SECRET, {
-      expiresIn: "7d",
-    });
-
-    refreshTokens.push(refreshToken);
-
-    // 6️⃣ Retorno
-    return res.json({
-      success: true,
-      message: "Login realizado com sucesso",
-      nome: usuario.nome,
-      email: usuario.email,
-      empresa: usuario.empresa,
-      idempresa: usuario.idempresa,
-      grupos,
-      permissoes,
-      fctoken: accessToken,
-      refreshToken,
-    });
-  } catch (error) {
-    console.error("Erro no login:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// REFRESH TOKEN
-const refresh = (req, res) => {
-  const { token } = req.body;
-  if (!token || !refreshTokens.includes(token)) {
-    return res.status(403).json({ success: false, message: "Refresh token inválido" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, REFRESH_SECRET);
-
-    // cria novo access token
-    const newAccessToken = jwt.sign({ idusuario: decoded.idusuario }, SECRET_KEY, {
-      expiresIn: "30m",
-    });
-
-    return res.json({
-      success: true,
-      accessToken: newAccessToken,
-    });
-  } catch (err) {
-    return res.status(403).json({ success: false, message: "Refresh token expirado" });
-  }
-};
-
-// LOGOUT
-const logout = (req, res) => {
-  const { token } = req.body;
-  refreshTokens = refreshTokens.filter((t) => t !== token);
-  res.json({ success: true, message: "Logout realizado com sucesso" });
-};
-*/
 
 //LOGIN
 const login = async (req, res) => {
@@ -308,7 +71,8 @@ const login = async (req, res) => {
         INNER JOIN recursos r ON r.idrecurso = p.idrecurso
         WHERE ug.idusuario = @idusuario 
       `);
-
+//console.log(usuario.idusuario);
+//console.log('PERMISSOES RESULT::', permissoesResult.recordset);
     const permissoes = permissoesResult.recordset.map((p) => p.recurso);
 //console.log('PERMISSOES::', permissoes);
     // 5️⃣ Payload do token
@@ -514,7 +278,27 @@ const updateUsuario = async (req, res) => {
     //console.log('ENTROU UPDATE:');
 
     const pool = await poolPromise;
+    if (req.body.senha) {
+      const hashedSenha = await bcrypt.hash(req.body.senha, 10);
       await pool
+        .request()
+        .input('idusuario', req.params.idusuario)
+        .input('senha', hashedSenha)
+        .input('nome', nome)
+        .input('celular', celular)
+        .input('ativo', ativo)
+        .input('idvendedor', idvendedor)
+        .query(
+          `UPDATE usuarios SET
+            senha = @senha,
+            nome = @nome,
+            celular = @celular,
+            ativo = @ativo,
+            idvendedor = @idvendedor
+          WHERE idusuario = @idusuario`
+        );
+      } else {
+        await pool
         .request()
         .input('idusuario', req.params.idusuario)
         .input('nome', nome)
@@ -529,6 +313,7 @@ const updateUsuario = async (req, res) => {
             idvendedor = @idvendedor
           WHERE idusuario = @idusuario`
         );
+      }
 
     res.json({ success: true, message: 'Usuario atualizado com sucesso' });
      //   Console.log('SAIU UPDATE:');
