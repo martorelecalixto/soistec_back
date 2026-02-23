@@ -827,8 +827,21 @@ const updateVendasHotel = async (req, res) => {
     res.json({ success: true, message: "Venda atualizada com sucesso" });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+      //console.error(error);
+      //res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -881,15 +894,82 @@ async function incTituloPag(idempresa) {
 
 // Deletar uma vendas
 const deleteVendasHotel = async (req, res) => {
+
+  const pool = await poolPromise;
+
   try {
-    const pool = await poolPromise;
+    const delResult = await pool.request()
+      .input('idvenda', req.params.idvenda)
+      .query(`
+        DELETE FROM titulosreceber
+        WHERE idvendahotel = @idvenda
+      `);
+      console.log('DELETE titulosreceber result:', { rowsAffected: delResult.rowsAffected });
+
+    } catch (delErr) {
+      console.error('Erro ao executar DELETE em titulosreceber:', delErr.message || delErr);
+    if (delErr.number === 547) {
+        return res.status(409).json({
+            success: false,
+            type: "FK_CONSTRAINT",
+            message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+        });
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: "Erro interno ao deletar registro."
+    });    
+
+  }
+
+  try {
+    const delResult = await pool.request()
+      .input('idvenda', req.params.idvenda)
+      .query(`
+        DELETE FROM titulospagar
+        WHERE idvendahotel = @idvenda
+      `);
+      console.log('DELETE titulospagar result:', { rowsAffected: delResult.rowsAffected });
+
+    } catch (delErr) {
+      console.error('Erro ao executar DELETE em titulospagar:', delErr.message || delErr);
+    if (delErr.number === 547) {
+        return res.status(409).json({
+            success: false,
+            type: "FK_CONSTRAINT",
+            message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+        });
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: "Erro interno ao deletar registro."
+    });    
+
+  }
+
+  try {
     await pool
       .request()
       .input('idvenda', req.params.idvenda)
       .query('DELETE FROM vendashoteis WHERE idvenda = @idvenda');
     res.json({ success: true, message: 'Venda deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+      //res.status(500).json({ success: false, message: error.message });
   }
 };
 

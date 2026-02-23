@@ -639,10 +639,21 @@ const deleteEntidade = async (req, res) => {
       .query('DELETE FROM entidades WHERE identidade = @identidade');
     res.json({ success: true, message: 'Entidade deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+      //res.status(500).json({ success: false, message: error.message });
   }
-
-
 
 };
 
@@ -2477,82 +2488,6 @@ const createEndereco = async (req, res) => {
       .json({ success: false, message: "Erro ao criar endereço: " + error.message });
   }
 };
-
-
-/*
-// Criar um novo endereço para a entidade
-const createEndereco = async (req, res) => {
-  try {
-    const {
-      identidade, logradouro, complemento, numero, cep, bairro, cidade, estado,
-      ativo, referencia, selecionado
-  } = req.body;
-  /*
-  let ativoEnd = 0;
-  let identidadeEnd = 0;
-
-    // 🔹 Buscar as baixas de pagar
-    await pool
-    .request()
-    .input('identidade', identidade)
-    whereClause = ' WHERE Entidades_enderecos.identidade = @identidade AND Entidades_enderecos.ativo = 1';
-    const queryEnd = `
-      SELECT identidade FROM Entidades_enderecos
-      ${whereClause}
-    `;
-    const resultEnd = await request.query(queryEnd);
-    if (resultEnd.recordset.length == 0) {ativoEnd = 1; }//não achou endereço principal
-    else { identidadeEnd = resultEnd.recordset[0].identidade; ativoEnd = 1;}//achou endereço principal
-
-    if((identidadeEnd > 0)&&(ativo == 1)){//se o endereço atual for o principal, então o ja existente tem que deixar de ser
-    const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .input('identidade', identidadeEnd)
-      .input('ativo', 0)
-      .input('referencia', referencia)
-      .input('selecionado', selecionado)
-      .query(
-        `UPDATE entidades_enderecos set ativo = @ativo
-          WHERE identidade = @identidade `
-      );
-    }
-*//*
-    const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .input('identidade', identidade)
-      .input('logradouro', logradouro)
-      .input('complemento', complemento)
-      .input('numero', numero)
-      .input('cep', cep)
-      .input('bairro', bairro)
-      .input('cidade', cidade)
-      .input('estado', estado)
-      .input('ativo', ativo)
-      .input('referencia', referencia)
-      .input('selecionado', selecionado)
-      .query(
-        `INSERT INTO entidades_enderecos (
-          identidade, logradouro, complemento, numero, cep, bairro, cidade,
-          estado, ativo, referencia, selecionado
-        ) 
-        OUTPUT INSERTED.idendereco  
-        VALUES (
-          @identidade, @logradouro, @complemento, @numero, @cep, @bairro, @cidade,
-          @estado, @ativo, @referencia, @selecionado
-        )`
-      );
-
-    const id = result.recordset[0].identidade;
-
-    res.status(201).json({ success: true, id, message: 'endereço criado com sucesso' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-
-  }
-};
-*/
 
 // Atualizar um endereço da entidade existente
 const updateEndereco = async (req, res) => {

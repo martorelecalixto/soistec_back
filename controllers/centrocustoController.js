@@ -169,7 +169,20 @@ const deleteCentroCusto = async (req, res) => {
 
     res.json({ success: true, message: 'Centro Custo deletado com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+    
+     //res.status(500).json({ success: false, message: error.message });
   }
 };
 

@@ -199,7 +199,20 @@ const deleteBanco = async (req, res) => {
       .query('DELETE FROM bancos WHERE idbanco = @idbanco');
     res.json({ success: true, message: 'Banco deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+    
+     //res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -227,12 +240,7 @@ const getLancamento = async (req, res) => {
       request.input('idfilial', idfilial);
       whereClause += ' AND lancamentos.idfilial = @idfilial';
     }
-
-   // if (idmoeda) {
-   //   request.input('idmoeda', idmoeda);
-   //   whereClause += ' AND lancamentos.idmoeda = @idmoeda';
-   // }
-    
+   
     if (idcontabancaria) {
       request.input('idcontabancaria', idcontabancaria);
       whereClause += ' AND lancamentos.idcontabancaria = @idcontabancaria';

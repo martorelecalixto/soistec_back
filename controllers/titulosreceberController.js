@@ -676,7 +676,20 @@ const deleteTituloReceber = async (req, res) => {
       .query('DELETE FROM titulosreceber WHERE idtitulo = @idtitulo');
     res.json({ success: true, message: 'Titulo deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+     //res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -684,8 +697,6 @@ const deleteTituloReceber = async (req, res) => {
 const deleteTituloReceberByVendaBilhete = async (req, res) => {
   try {
     const idVenda = req.params.idvenda; // pega da rota
-
-   // console.log('Deletando Titulos da Venda Bilhete: ' + idVenda);
 
     const pool = await poolPromise;
     await pool
@@ -696,8 +707,21 @@ const deleteTituloReceberByVendaBilhete = async (req, res) => {
     res.json({ success: true, message: 'Titulos deletados com sucesso' });
     //console.log('Titulos Deletados da Venda Bilhete: ' + idVenda);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+     //console.error(error);
+     //res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -715,8 +739,21 @@ const deleteTituloReceberByVendaHotel = async (req, res) => {
     res.json({ success: true, message: 'Titulos deletados com sucesso' });
     //console.log('Titulos Deletados da Venda Bilhete: ' + idVenda);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+     //console.error(error);
+     //res.status(500).json({ success: false, message: error.message });
   }
 };
 

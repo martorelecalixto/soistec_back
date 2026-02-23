@@ -391,6 +391,7 @@ const getFatura = async (req, res) => {
                       tabela.id,
                       tabela.entidade,
                       tabela.valorentrada,
+                      tabela.idtitulo,
                       CAST(0 AS BIT) AS selecionado
           FROM(
           SELECT      ft.idfatura,
@@ -404,7 +405,8 @@ const getFatura = async (req, res) => {
                       ft.empresa,
                       ft.id,
                       ent.nome AS entidade,
-                      isnull(TitulosReceber.valorpago,0) AS valorentrada
+                      isnull(TitulosReceber.valorpago,0) AS valorentrada,
+                      isnull(TitulosReceber.id,0) AS idtitulo
           FROM            VendasBilhetes AS vb INNER JOIN
                                   ItensVendaBilhete AS ivb ON vb.IdVenda = ivb.IdVenda INNER JOIN
                                   Faturas AS ft ON vb.IdFatura = ft.IdFatura INNER JOIN
@@ -424,7 +426,8 @@ const getFatura = async (req, res) => {
                   ft.empresa,
                   ft.id,
                   ent.nome,
-                  titulosreceber.valorpago
+                  titulosreceber.valorpago,
+                  titulosreceber.id
 
           UNION ALL
 
@@ -439,7 +442,8 @@ const getFatura = async (req, res) => {
                       ft.empresa,
                       ft.id,
                       ent.nome AS entidade,
-                      isnull(TitulosReceber.valorpago,0) AS valorentrada
+                      isnull(TitulosReceber.valorpago,0) AS valorentrada,
+                      isnull(TitulosReceber.id,0) AS idtitulo
           FROM            VendasHoteis AS vh INNER JOIN
                                   ItensVendaHotel AS ivh ON vh.IdVenda = ivh.IdVenda INNER JOIN
                                   Faturas AS ft ON vh.IdFatura = ft.IdFatura INNER JOIN
@@ -460,7 +464,8 @@ const getFatura = async (req, res) => {
                       ft.empresa,
                       ft.id,
                       ent.nome,
-                      titulosreceber.valorpago
+                      titulosreceber.valorpago,
+                      titulosreceber.id
           ) AS tabela 
           group by    tabela.idfatura,
                       tabela.dataemissao,
@@ -473,7 +478,8 @@ const getFatura = async (req, res) => {
                       tabela.empresa,
                       tabela.id,
                       tabela.entidade,
-                      tabela.valorentrada
+                      tabela.valorentrada,
+                      tabela.idtitulo
                       
                       ORDER BY tabela.dataemissao desc, tabela.id `
     //console.log('QUERY: ' + query);

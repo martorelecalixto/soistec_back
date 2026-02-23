@@ -493,17 +493,6 @@ const updateVendasBilhete = async (req, res) => {
       idplanoconta,
     } = req.body;
 
-    //console.log('--- updateVendasBilhete START ---');
-    //console.log('params.idvenda =', req.params.idvenda);
-    /*console.log('Recebido no body:', {
-      datavenda,
-      datavencimento,
-      documento,
-      valortotal,
-      idtitulo,
-      id,
-      empresa,
-    });*/
 
     const dataVendaNorm = normalizeDate(datavenda);
     const dataVencimentoNorm = normalizeDate(datavencimento);
@@ -573,11 +562,6 @@ const updateVendasBilhete = async (req, res) => {
         WHERE idvenda = @idvenda
       `);
 
-    /*  console.log('UPDATE result:', {
-      rowsAffected: updateResult.rowsAffected,
-      recordsetLength: updateResult.recordset ? updateResult.recordset.length : 0,
-    });*/
-
     // ====== DELETE titulosreceber (sempre tenta remover) ======
     try {
       //console.log('Executando DELETE em titulosreceber (idvendabilhete =', req.params.idvenda, ')');
@@ -589,7 +573,20 @@ const updateVendasBilhete = async (req, res) => {
         `);
       //console.log('DELETE result:', { rowsAffected: delResult.rowsAffected });
     } catch (delErr) {
-      console.error('Erro ao executar DELETE em titulosreceber:', delErr.message || delErr);
+      if (delErr.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+      //console.error('Erro ao executar DELETE em titulosreceber:', delErr.message || delErr);
       // continuar — talvez não exista nenhum título para deletar
     }
 
@@ -666,10 +663,6 @@ const updateVendasBilhete = async (req, res) => {
             )
           `);
 
-      /*  console.log('INSERT result:', {
-          rowsAffected: insertResult.rowsAffected,
-          recordset: insertResult.recordset,
-        });*/
 
         if (insertResult.recordset && insertResult.recordset.length > 0) {
           console.log('INSERTED idtitulo =', insertResult.recordset[0].idtitulo);
@@ -677,9 +670,22 @@ const updateVendasBilhete = async (req, res) => {
           console.warn('Nenhum idtitulo retornado no recordset do INSERT. Verifique a tabela OUTPUT ou permissões.');
         }
       } catch (insErr) {
-        console.error('Erro ao inserir titulosreceber:', insErr.message || insErr);
-        // opcional: você pode rethrow para abortar toda a operação
-        // throw insErr;
+          if (insErr.number === 547) {
+              return res.status(409).json({
+                  success: false,
+                  type: "FK_CONSTRAINT",
+                  message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+              });
+          }
+
+          return res.status(500).json({
+              success: false,
+              message: "Erro interno ao deletar registro."
+          });    
+
+         //console.error('Erro ao inserir titulosreceber:', insErr.message || insErr);
+         // opcional: você pode rethrow para abortar toda a operação
+         // throw insErr;
       }
     } else {
       console.log('idtitulo <= 0, nenhum título será inserido (idtitulo =', idtitulo, ').');
@@ -689,22 +695,80 @@ const updateVendasBilhete = async (req, res) => {
     res.json({ success: true, message: 'Venda atualizada com sucesso' });
 
   } catch (error) {
-    console.error('Erro geral em updateVendasBilhete:', error.message || error);
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+     //console.error('Erro geral em updateVendasBilhete:', error.message || error);
+     //res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Deletar uma vendas
 const deleteVendasBilhete = async (req, res) => {
+  console.log('--- deleteVendasBilhete START ---');
+
+  const pool = await poolPromise;
+
   try {
-    const pool = await poolPromise;
+    //console.log('Executando DELETE em titulosreceber (idvendabilhete =', req.params.idvenda, ')');
+    const delResult = await pool.request()
+      .input('idvenda', req.params.idvenda)
+      .query(`
+        DELETE FROM titulosreceber
+        WHERE idvendabilhete = @idvenda
+      `);
+      console.log('DELETE titulosreceber result:', { rowsAffected: delResult.rowsAffected });
+
+    } catch (delErr) {
+      console.error('Erro ao executar DELETE em titulosreceber:', delErr.message || delErr);
+    if (delErr.number === 547) {
+        return res.status(409).json({
+            success: false,
+            type: "FK_CONSTRAINT",
+            message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+        });
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: "Erro interno ao deletar registro."
+    });    
+
+  }
+
+ // console.log('DELETE titulosreceber result:', { rowsAffected: delResult.rowsAffected });
+  try {
     await pool
       .request()
       .input('idvenda', req.params.idvenda)
       .query('DELETE FROM vendasbilhetes WHERE idvenda = @idvenda');
     res.json({ success: true, message: 'Venda deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Erro ao deletar venda:', error.message || error);
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+      //res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -723,8 +787,7 @@ const getRelatoriosAnalitico = async (req, res) => {
     // Verifica se o parâmetro 'empresa' foi fornecido
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
-    }
-    
+    }    
 
     // Parâmetros obrigatórios
     const pool = await poolPromise;

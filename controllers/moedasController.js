@@ -109,7 +109,7 @@ const createMoeda = async (req, res) => {
     } = req.body;
 
     const pool = await poolPromise;
-    await pool
+    result = await pool
       .request()
       .input('nome', nome)
       .input('sigla', sigla)
@@ -132,7 +132,6 @@ const createMoeda = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Atualizar uma moeda existente
 const updateMoeda = async (req, res) => {
@@ -174,7 +173,6 @@ const updateMoeda = async (req, res) => {
   }
 };
 
-
 // Deletar uma moeda
 const deleteMoeda = async (req, res) => {
   try {
@@ -185,7 +183,20 @@ const deleteMoeda = async (req, res) => {
       .query('DELETE FROM moeda WHERE idmoeda = @idmoeda');
     res.json({ success: true, message: 'Moeda deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+
+      //res.status(500).json({ success: false, message: error.message });
   }
 };
 

@@ -128,7 +128,7 @@ const createFilial = async (req, res) => {
     } = req.body;
 
     const pool = await poolPromise;
-    await pool
+    result = await pool
       .request()
       .input('nome', nome)
       .input('cnpjcpf', cnpjcpf)
@@ -171,13 +171,13 @@ const createFilial = async (req, res) => {
           @valorpis, @valoripi, @valorir, @valorcsll, @valorinss, @empresa
         )`
       );
+      console.log(result);
 
     res.status(201).json({ success: true, message: 'Filial criada com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Atualizar uma filial existente
 const updateFilial = async (req, res) => {
@@ -269,7 +269,20 @@ const deleteFilial = async (req, res) => {
       .query('DELETE FROM filiais WHERE idfilial = @idfilial');
     res.json({ success: true, message: 'Filial deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+    
+    //res.status(500).json({ success: false, message: error.message });
   }
 };
 

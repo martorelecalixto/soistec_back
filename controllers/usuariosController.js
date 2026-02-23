@@ -52,6 +52,7 @@ const createUsuario = async (req, res) => {
   }
 };
 
+/*
 const updateUsuario = async (req, res) => {
   try {
     console.log('Request Body:', req.body); // Log do corpo da requisição
@@ -75,6 +76,49 @@ console.log('Usuário atualizado com sucesso'); // Log de sucesso
     res.status(500).json({ success: false, message: error.message });
   }
 };
+*/
+
+const updateUsuario = async (req, res) => {
+  try {
+    console.log('Request Body:', req.body);
+
+    const { nome, email, senha, idvendedor } = req.body;
+
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('idusuario', req.params.idusuario);
+    request.input('nome', nome);
+    request.input('email', email);
+    request.input('idvendedor', idvendedor);
+
+    let query = `
+      UPDATE usuarios 
+      SET nome = @nome, 
+          email = @email, 
+          idvendedor = @idvendedor
+    `;
+
+    // ✅ Só atualiza senha se não estiver vazia
+    if (senha && senha.trim() !== '') {
+      const hashedSenha = await bcrypt.hash(senha, 10);
+      request.input('senha', hashedSenha);
+      query += `, senha = @senha`;
+    }
+
+    query += ` WHERE idusuario = @idusuario`;
+
+    await request.query(query);
+
+    console.log('Usuário atualizado com sucesso');
+
+    res.json({ success: true, message: 'Usuário atualizado com sucesso' });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 const deleteUsuario = async (req, res) => {
   try {

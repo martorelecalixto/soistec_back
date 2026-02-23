@@ -42,7 +42,7 @@ const getVendasEventoDropDown = async (req, res) => {
 // Obter todas os venddas eventos
 const getVendasEvento = async (req, res) => {
   try {
-    const { empresa, descricao } = req.query;
+    const { empresa, idfilial, identidade, datainicial, datafinal, idinicial, idfinal } = req.query;
   //  console.log('Query Params:', req.query);
 
     // Verifica se o parâmetro 'empresa' foi fornecido
@@ -57,18 +57,52 @@ const getVendasEvento = async (req, res) => {
     request.input('empresa', empresa);
 
     // Parâmetros opcionais
-    let whereClause = 'WHERE empresa = @empresa';
+    let whereClause = 'WHERE VendasEventos.empresa = @empresa';
 
-    if (nome) {
-      whereClause += ' AND descricao LIKE @descricao ';
-      request.input('descricao', `%${descricao}%`);
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND vendaseventos.idfilial = @idfilial';
     }
 
-    whereClause += ' ORDER BY descricao ';
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND vendaseventos.identidade = @identidade';
+    }
+
+  
+    if (datainicial) {
+      request.input('datainicial', datainicial);
+      whereClause += ' AND vendaseventos.datacadastro >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND vendaseventos.datacadastro <= @datafinal';
+    }
+
+    if (idinicial) {
+      request.input('idinicial', idinicial);
+      whereClause += ' AND vendaseventos.id >= @idinicial';
+    }
+    
+    if (idfinal) {
+      request.input('idfinal', idfinal);
+      whereClause += ' AND vendaseventos.id <= @idfinal';
+    }
+
+    whereClause += ' ORDER BY vendaseventos.datacadastro ';
 
    const query =
-    `SELECT idvenda, id, idevento, identidade, idvendedor, idformapagamento, descricao, datacadastro, quantidade, idfilial, valortotal,
-      empresa FROM vendaseventos 
+    `
+      SELECT  entidades.nome as entidade, formapagamento.nome as pagamento,
+      VendasEventos.idvenda, VendasEventos.id, VendasEventos.idevento, VendasEventos.identidade, 
+      VendasEventos.idvendedor, VendasEventos.idformapagamento, VendasEventos.descricao, VendasEventos.datacadastro, 
+      VendasEventos.quantidade, VendasEventos.idfilial, VendasEventos.valortotal, VendasEventos.empresa
+      FROM            VendasEventos LEFT OUTER JOIN
+                              Eventos ON VendasEventos.IdEvento = Eventos.IdEvento LEFT OUTER JOIN
+                              FormaPagamento ON VendasEventos.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
+                              Entidades ON VendasEventos.IdEntidade = Entidades.IdEntidade
       ${whereClause}`
 
    const result = await request.query(query);

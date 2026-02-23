@@ -113,12 +113,6 @@ const getContasBancarias = async (req, res) => {
 // Obter uma conta bancaria pelo ID
 const getContaBancariaById = async (req, res) => {
   try {
-    //const { empresa } = req.query;
-
-    // Verifica se o parâmetro 'empresa' foi fornecido
-    //if (!empresa) {
-    //  return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
-   // }
     
     const pool = await poolPromise;
     const result = await pool
@@ -226,7 +220,20 @@ const deleteContaBancaria = async (req, res) => {
       .query('DELETE FROM contasbancarias WHERE idcontabancaria = @idcontabancaria');
     res.json({ success: true, message: 'Conta bancaria deletada com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      if (error.number === 547) {
+          return res.status(409).json({
+              success: false,
+              type: "FK_CONSTRAINT",
+              message: "Não é possível excluir este registro pois ele está sendo utilizado em outro cadastro."
+          });
+      }
+
+      return res.status(500).json({
+          success: false,
+          message: "Erro interno ao deletar registro."
+      });    
+    
+     //res.status(500).json({ success: false, message: error.message });
   }
 };
 
