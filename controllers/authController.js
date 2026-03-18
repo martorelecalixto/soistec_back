@@ -83,6 +83,7 @@ const login = async (req, res) => {
       empresa: usuario.empresa,
       idempresa: usuario.idempresa,
       idvendedor: usuario.idvendedor,
+      idusuario: usuario.idusuario,
       grupos,
       permissoes,
     };
@@ -109,6 +110,7 @@ const login = async (req, res) => {
       empresa: usuario.empresa,
       idempresa: usuario.idempresa,
       idvendedor: usuario.idvendedor,
+      idusuario: usuario.idusuario,
       grupos,
       permissoes,
       accessToken,
@@ -184,10 +186,51 @@ const getUsuarios = async (req, res) => {
       request.input('nome', `%${nome}%`);
     }
 
-    whereClause += ' ORDER BY nome ';
+    whereClause += ' ORDER BY email ';
 
    const query =
-    `SELECT idusuario, nome, email, celular, isnull(ativo,0) as ativo,
+    `SELECT idusuario, nome, email  , celular, isnull(ativo,0) as ativo,
+      case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idempresa, idvendedor FROM usuarios ${whereClause}`
+
+    //  console.log(empresa);
+   //   console.log(nome);
+   const result = await request.query(query);
+   //console.log(result.recordset);
+
+    res.json(result.recordset);    
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
+// Obter todos os usuarios
+const getUsuariosDropDown = async (req, res) => {
+  try {
+    const { empresa, nome } = req.query;
+
+    // Verifica se o parâmetro 'empresa' foi fornecido
+    if (!empresa) {
+      return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+    }
+
+    // Parâmetros obrigatórios
+    const pool = await poolPromise;
+    const request = pool.request();
+
+    request.input('empresa', empresa);
+
+    // Parâmetros opcionais
+    let whereClause = 'WHERE empresa = @empresa AND isnull(ativo,0) = 1 ';
+
+    if (nome) {
+      whereClause += ' AND nome LIKE @nome';
+      request.input('nome', `%${nome}%`);
+    }
+
+    whereClause += ' ORDER BY email ';
+
+   const query =
+    `SELECT idusuario, nome, email  , celular, isnull(ativo,0) as ativo,
       case isnull(ativo,0) when 0 then 'Inativo' else 'ativo' end as situacao, empresa, idempresa, idvendedor FROM usuarios ${whereClause}`
 
     //  console.log(empresa);
@@ -524,6 +567,7 @@ module.exports = {
   login,
   logout,
   getUsuarios,
+  getUsuariosDropDown,
   getUsuarioById,
   createUsuario,
   updateUsuario,

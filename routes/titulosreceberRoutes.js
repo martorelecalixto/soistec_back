@@ -12,6 +12,7 @@ router.get('/', titulosreceberController.getTituloReceber);
 
 router.post('/baixasreceber', titulosreceberController.createBaixaReceber);
 router.post('/baixasrecebergenerica', titulosreceberController.createBaixasReceberGenerica);
+router.post('/titulorecebermultiplo', titulosreceberController.createTituloReceberMultiplo);
 router.post('/', titulosreceberController.createTituloReceber);
 
 router.put('/:idtitulo', titulosreceberController.updateTituloReceber);

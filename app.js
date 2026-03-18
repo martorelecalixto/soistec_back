@@ -52,6 +52,7 @@ const incvendaseventoRoutes = require('./routes/incvendaseventoRoutes');
 const inceventosRoutes = require('./routes/inceventosRoutes');
 const itensvendaeventoRoutes = require('./routes/itensvendaeventoRoutes');
 const vendaseventoRoutes = require('./routes/vendaseventoRoutes');
+const periodoemissaoRoutes = require('./routes/periodoemissaoRoutes');
 
 // Swagger
 const setupSwagger = require('./swagger');
@@ -116,6 +117,7 @@ app.use('/api/incvendasevento', incvendaseventoRoutes);
 app.use('/api/inceventos', inceventosRoutes);
 app.use('/api/itensvendaevento', itensvendaeventoRoutes);
 app.use('/api/vendasevento', vendaseventoRoutes);
+app.use('/api/periodoemissao', periodoemissaoRoutes);
 
 
 // Swagger

@@ -10,26 +10,75 @@ function normalizeDate(dateString) {
 // Obter todos os recibos
 const getReciboReceber = async (req, res) => {
   try {
-    const { empresa, descricao } = req.query;
+    const { empresa, descricao, idfilial, identidade, idmoeda, datainicial, datafinal, reciboini, recibofin } = req.query;
 
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
-
+    //console.log(req.query);
     const pool = await poolPromise;
     const request = pool.request();
     request.input('empresa', empresa);
 
-    let whereClause = 'WHERE empresa = @empresa';
+    let whereClause = 'WHERE RecibosReceber.empresa = @empresa';
+
+    // Filtros opcionais
+    if (idfilial) {
+      request.input('idfilial', idfilial);
+      whereClause += ' AND recibosreceber.idfilial = @idfilial';
+    }
+
+    if (identidade) {
+      request.input('identidade', identidade);
+      whereClause += ' AND recibosreceber.identidade = @identidade';
+    }
+
+    if (idmoeda) {
+      request.input('idmoeda', idmoeda);
+      whereClause += ' AND recibosreceber.idmoeda = @idmoeda';
+    }
+    
+    if (datainicial) {
+      request.input('datainicial', datainicial); // Formata a data para incluir hora
+      whereClause += ' AND recibosreceber.dataemissao >= @datainicial';
+    }
+    
+    if (datafinal) {
+      request.input('datafinal', datafinal);
+      whereClause += ' AND recibosreceber.dataemissao <= @datafinal';
+    }
+    
+    if (reciboini) {
+      request.input('reciboini', reciboini);
+      whereClause += ' AND recibosreceber.id >= @reciboini';
+    }
+    
+    if (recibofin) {
+      request.input('recibofin', recibofin);
+      whereClause += ' AND recibosreceber.id <= @recibofin';
+    }
+
 
     if (descricao) {
-      whereClause += ' AND descricao LIKE @descricao';
+      whereClause += ' AND RecibosReceber.descricao LIKE @descricao';
       request.input('descricao', `%${descricao}%`);
     }
 
-    whereClause += ' ORDER BY dataemissao DESC';
+    whereClause += ' ORDER BY RecibosReceber.dataemissao DESC';
 
-    const query = `SELECT idrecibo, dataemissao, descricao, valor, identidade, idmoeda, idfilial, chave, tipo, id FROM recibosreceber ${whereClause}`;
+    const query = `
+
+      SELECT        RecibosReceber.idrecibo, RecibosReceber.dataemissao, RecibosReceber.descricao, RecibosReceber.valor, RecibosReceber.identidade, 
+                    RecibosReceber.idmoeda, RecibosReceber.idfilial, RecibosReceber.chave, 
+                    RecibosReceber.tipo, RecibosReceber.id, Entidades.nome as entidade, isnull(VendasBilhetes.idreciboreceber,0) as reciboaereo, 
+                    isnull(VendasBilhetes.idvenda,0) as idvendaaereo, isnull(VendasBilhetes.id,0) AS idaereo, isnull(VendasHoteis.idvenda,0) AS idvendaservico, 
+                    isnull(VendasHoteis.idreciboreceber,0) AS reciboservico, isnull(VendasHoteis.id,0) AS idservico
+      FROM            RecibosReceber LEFT OUTER JOIN
+                              VendasBilhetes ON RecibosReceber.IdRecibo = VendasBilhetes.IdReciboReceber LEFT OUTER JOIN
+                              VendasHoteis ON RecibosReceber.IdRecibo = VendasHoteis.IdReciboReceber LEFT OUTER JOIN
+                              Entidades ON RecibosReceber.IdEntidade = Entidades.IdEntidade
+
+    ${whereClause}`;
     const result = await request.query(query);
 
     res.json(result.recordset);
@@ -135,6 +184,17 @@ const updateReciboReceber = async (req, res) => {
 const deleteReciboReceber = async (req, res) => {
   try {
     const pool = await poolPromise;
+
+    await pool
+      .request()
+      .input('idrecibo', req.params.idrecibo)
+      .query('UPDATE VendasHoteis SET idreciboreceber = NULL WHERE idreciboreceber = @idrecibo AND idreciboreceber > 0');
+
+    await pool
+      .request()
+      .input('idrecibo', req.params.idrecibo)
+      .query('UPDATE VendasBilhetes SET idreciboreceber = NULL WHERE idreciboreceber = @idrecibo AND idreciboreceber > 0');
+
     await pool
       .request()
       .input('idrecibo', req.params.idrecibo)

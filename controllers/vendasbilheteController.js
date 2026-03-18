@@ -1,10 +1,22 @@
 const { poolPromise } = require('../db');
 
+/*
 function normalizeDate(dateString) {
   if (!dateString) return null;
   const d = new Date(dateString);
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+*/
+
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+
+  const [year, month, day] = dateString.split('T')[0].split('-');
+
+  const d = new Date(Date.UTC(year, month - 1, day));
+
+  return d.toISOString();
 }
 
 // Obter todas as vendasbilhete

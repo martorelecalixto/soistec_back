@@ -2,6 +2,8 @@
 const { poolPromise } = require('../db');
 const sql = require('mssql');
 const { v4: uuidv4 } = require('uuid');
+const nfseService = require('../services/nfse.service');
+
 
 function normalizeDate(dateString) {
   if (!dateString) return null;
@@ -10,6 +12,8 @@ function normalizeDate(dateString) {
   return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
 }
 
+
+/*BLOCO DE CODIGOS PARA IMPORTAR XML DAS NFSe*/
 
 /**
  * Helper: remove tudo que não for dígito
@@ -496,6 +500,54 @@ function parseBrazilianDate(v) {
   return new Date(`${m[3]}-${m[2]}-${m[1]}`);
 }
 
+/****************************************************************/
+
+
+
+/*BLOCO DE CODIGO PARA PORTAL NACIONAL NFSE*/
+
+const autenticar = async (req, res) => {
+  try {
+    //console.log('ERNTROU');
+    const resultado = await nfseService.autenticar(req.body);
+    //console.log(resultado.body);
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+};
+
+const emitir = async (req, res) => {
+  try {
+    const resultado = await nfseService.emitir(req.body);
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+};
+
+const consultar = async (req, res) => {
+  try {
+    console.log('++01++');
+    const resultado = await nfseService.consultar(req.query);
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+};
+
+const cancelar = async (req, res) => {
+  try {
+    const resultado = await nfseService.cancelar(req.body);
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+};
+
+/****************************************************************/
+
+
 module.exports = {
   importarNfse,
   getNfse,
@@ -504,5 +556,9 @@ module.exports = {
   deleteNfse,
   getIdFilial,
   getIdCliente,
-  getExistNF
+  getExistNF,
+  autenticar,
+  emitir,
+  consultar,
+  cancelar,
 };

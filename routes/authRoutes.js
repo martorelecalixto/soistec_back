@@ -67,6 +67,8 @@ router.get('/verificaremail', authController.getEmail);
 
 router.get('/', authController.getUsuarios);
 
+router.get('/dropdown', authController.getUsuariosDropDown);
+
 router.post('/', authController.createUsuario);
 
 router.put('/:idusuario', authController.updateUsuario);

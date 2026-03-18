@@ -1,11 +1,23 @@
 const sql = require("mssql");
 const { poolPromise } = require('../db');
 
+/*
 function normalizeDate(dateString) {
   if (!dateString) return null;
   const d = new Date(dateString);
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+*/
+
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+
+  const [year, month, day] = dateString.split('T')[0].split('-');
+
+  const d = new Date(Date.UTC(year, month - 1, day));
+
+  return d.toISOString();
 }
 
 // Obter todas as vendashotel
@@ -151,7 +163,8 @@ const getVendasHotel = async (req, res) => {
                 '    entidades_2.nome, '+
                 '    recibosreceber.id, '+
                 '    faturas.id,'+
-                '    titulosreceber.valorpago';
+                '    titulosreceber.valorpago,'+
+                '    titulosreceber.id';
 
     orderClause += ' ORDER BY Tabela.datavenda desc, Tabela.id ';
 
@@ -196,7 +209,8 @@ const getVendasHotel = async (req, res) => {
             Tabela.emissor,
             Tabela.recibo, 
             Tabela.fatura, 
-            Tabela.valorpago
+            Tabela.valorpago,
+            Tabela.idtitulo
   FROM(
 
      SELECT 
@@ -238,7 +252,8 @@ const getVendasHotel = async (req, res) => {
             entidades_2.nome AS emissor,
             recibosreceber.id AS recibo, 
             faturas.id AS fatura, 
-            ISNULL(titulosreceber.valorpago,0) AS valorpago
+            ISNULL(titulosreceber.valorpago,0) AS valorpago,
+            ISNULL(titulosreceber.id,0) AS idtitulo
               FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
                                       Moeda RIGHT OUTER JOIN
                                       Entidades AS entidades_2 RIGHT OUTER JOIN
@@ -298,7 +313,8 @@ const getVendasHotel = async (req, res) => {
             entidades_2.nome AS emissor,
             recibosreceber.id AS recibo, 
             faturas.id AS fatura, 
-            ISNULL(titulosreceber.valorpago,0) AS valorpago
+            ISNULL(titulosreceber.valorpago,0) AS valorpago,
+            ISNULL(titulosreceber.id,0) AS idtitulo
               FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
                                       Entidades AS entidades_2 RIGHT OUTER JOIN
                                       Moeda RIGHT OUTER JOIN
@@ -355,7 +371,8 @@ const getVendasHotel = async (req, res) => {
             Tabela.emissor,
             Tabela.recibo, 
             Tabela.fatura, 
-            Tabela.valorpago
+            Tabela.valorpago,
+            Tabela.idtitulo
       ${orderClause}
     `
    const result = await request.query(query);

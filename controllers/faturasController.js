@@ -1,11 +1,23 @@
 const { poolPromise } = require('../db');
 const { v4: uuidv4 } = require('uuid');
 
+/*
 function normalizeDate(dateString) {
   if (!dateString) return null;
   const d = new Date(dateString);
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+*/
+
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+
+  const [year, month, day] = dateString.split('T')[0].split('-');
+
+  const d = new Date(Date.UTC(year, month - 1, day));
+
+  return d.toISOString();
 }
 
 // Obter faturas impressão
@@ -88,7 +100,11 @@ const getFaturaImpressao = async (req, res) => {
         isnull(ee.Estado,'') AS estado_entidade, 
         isnull(ee.Cidade,'') AS cidade_entidade, 
         isnull(ee.Bairro,'') AS bairro_entidade, 
-        isnull(ee.CEP,'') AS cep_entidade
+        isnull(ee.CEP,'') AS cep_entidade,
+        isnull(f.desconto, 0) AS valordesconto,
+        isnull(f.juros, 0) AS valorjuro,
+        isnull(f.descricao_desconto,'') AS mensagem_1,
+        isnull(f.descricao_juros,'') AS mensagem_2
       FROM Faturas f
       INNER JOIN Entidades e ON e.IdEntidade = f.IdEntidade
       LEFT JOIN Filiais fi ON f.IdFilial = fi.IdFilial
@@ -766,6 +782,10 @@ const createFatura = async (req, res) => {
         idformapagamento,
         idplanoconta,
         idtitulo,
+        desconto,
+        juros,
+        descricao_desconto,
+        descricao_juros,
         bilhete = [], // valor padrão caso não exista
         servico = [], // valor padrão caso não exista
       } = fatura;
@@ -787,8 +807,11 @@ const createFatura = async (req, res) => {
         .input('chave', uuidv4())
         .input('empresa', empresa)
         .input('id', id)
-        .input('desconto', 0)
+        .input('desconto', desconto)
         .input('valorentrada', 0)
+        .input('juros', juros)
+        .input('descricao_desconto', descricao_desconto)
+        .input('descricao_juros', descricao_juros)
         .query(`
           INSERT INTO faturas (
               dataemissao,
@@ -802,7 +825,10 @@ const createFatura = async (req, res) => {
               empresa,
               id,
               desconto,
-              valorentrada
+              valorentrada,
+              juros,
+              descricao_desconto,
+              descricao_juros
           )
           OUTPUT INSERTED.idfatura
           VALUES (
@@ -817,7 +843,10 @@ const createFatura = async (req, res) => {
               @empresa,
               @id,
               @desconto,
-              @valorentrada
+              @valorentrada,
+              @juros,
+              @descricao_desconto,
+              @descricao_juros
           )
         `);
 
@@ -928,8 +957,6 @@ const createFatura = async (req, res) => {
               WHERE idvenda = @idvenda
             `);
         }
-
-
 
     }
       
@@ -1063,9 +1090,6 @@ const getRelatoriosAnalitico = async (req, res) => {
     if (!empresa) {
       return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
     }
-   // console.log('Empresa: ' + empresa);
-   // console.log('Aéreo: ' + aereo);
-   // console.log('Serviço: ' + servico);
 
     let semFiltros = 'false';
 
@@ -1085,11 +1109,6 @@ const getRelatoriosAnalitico = async (req, res) => {
          (!aereoinicial)&&(!aereofinal)&&(!servicoinicial)&&(!servicofinal)&&(!faturainicial)&&(!faturafinal)&&(!pax)  )  )
       semFiltros = 'true';
 
-    //console.log('Sem filtros: ' + semFiltros);
-    //console.log('Aéreo: ' + aereo);
-    //console.log(req.query);
-
-    //if( aereo === 'true') {
       
       if(tipo == 'Cliente')
           orderbyClause += ' ORDER BY 5, 6, 1 '
@@ -1108,7 +1127,6 @@ const getRelatoriosAnalitico = async (req, res) => {
       else
       if(tipo == 'SemFatura')
         orderbyClause += ' ORDER BY 3, 2, 1 ';
-
 
 
       request.input('empresa', empresa);
@@ -1148,12 +1166,12 @@ const getRelatoriosAnalitico = async (req, res) => {
         request.input('idgrupo', idgrupo);
         whereClauseAereo += ' AND VendasBilhetes.idgrupo = @idgrupo';
       }
-//console.log('Vencimento Inicial: ' + vencimentoinicial);
+
       if (vencimentoinicial) {
         request.input('vencimentoinicial', vencimentoinicial);
         whereClauseAereo += ' AND VendasBilhetes.datavencimento >= @vencimentoinicial';
       }
-   //   console.log('Vencimento Final: ' + vencimentofinal);
+
       if (vencimentofinal) {
         request.input('vencimentofinal', vencimentofinal);
         whereClauseAereo += ' AND VendasBilhetes.datavencimento <= @vencimentofinal';
@@ -1257,7 +1275,9 @@ const getRelatoriosAnalitico = async (req, res) => {
                 Tabela.entidade, 
                 Tabela.dataemissao, 
                 Tabela.datavencimento,
-                Tabela.pagamento
+                Tabela.pagamento,
+                Tabela.desconto AS valordesconto,
+                Tabela.juros AS valorjuro
           FROM(
                 SELECT      Faturas.Id AS idfatura,
                 Faturas.valor, 
@@ -1267,7 +1287,9 @@ const getRelatoriosAnalitico = async (req, res) => {
                 Faturas.dataemissao, 
                 Faturas.datavencimento,
                 FormaPagamento.Nome AS pagamento, 
-                Entidades_4.nome AS operadora
+                Entidades_4.nome AS operadora,
+                Isnull(Faturas.desconto,0) AS desconto,
+                Isnull(Faturas.juros,0) AS juros
           FROM            TitulosReceber RIGHT OUTER JOIN
                                   Filiais RIGHT OUTER JOIN
                                   VendasBilhetes INNER JOIN
@@ -1293,7 +1315,9 @@ const getRelatoriosAnalitico = async (req, res) => {
                 FormaPagamento.Nome,
                 TitulosReceber.ValorPago,
                 TitulosReceber.id,
-                Entidades_4.nome       
+                Entidades_4.nome,
+                Faturas.desconto,
+                Faturas.juros       
           
           `
 
@@ -1455,7 +1479,9 @@ const getRelatoriosAnalitico = async (req, res) => {
                 Faturas.dataemissao, 
                 Faturas.datavencimento,
                 FormaPagamento.Nome AS pagamento, 
-                Entidades_4.nome AS operadora
+                Entidades_4.nome AS operadora,
+                Isnull(Faturas.desconto,0) AS desconto,
+                Isnull(Faturas.juros,0) AS juros
           FROM            TitulosReceber RIGHT OUTER JOIN
                                   Filiais RIGHT OUTER JOIN
                                   VendasHoteis INNER JOIN
@@ -1481,7 +1507,9 @@ const getRelatoriosAnalitico = async (req, res) => {
                 FormaPagamento.Nome,
                 TitulosReceber.ValorPago,
                 TitulosReceber.id,
-                Entidades_4.nome
+                Entidades_4.nome,
+                Faturas.desconto,
+                Faturas.juros
 
       ) AS Tabela
                 GROUP BY      Tabela.idfatura,
@@ -1491,7 +1519,9 @@ const getRelatoriosAnalitico = async (req, res) => {
                 Tabela.entidade, 
                 Tabela.dataemissao, 
                 Tabela.datavencimento,
-                Tabela.pagamento
+                Tabela.pagamento,
+                Tabela.desconto,
+                Tabela.juros
 
         
         `
@@ -1553,6 +1583,8 @@ const getRelatoriosSintetico = async (req, res) => {
             SELECT  
                   SUM(tabela.valor) as valoroutros, 
                   SUM(tabela.valorpago) as valorpago,
+                  SUM(tabela.desconto) as valordesconto,
+                  SUM(tabela.juros) as valorjuro,
                   tabela.entidade
             FROM    (
 
@@ -1572,6 +1604,8 @@ const getRelatoriosSintetico = async (req, res) => {
             SELECT  
                   SUM(tabela.valor) as valoroutros, 
                   SUM(tabela.valorpago) as valorpago,
+                  SUM(tabela.desconto) as valordesconto,
+                  SUM(tabela.juros) as valorjuro,
                   tabela.dataemissao
             FROM    (
 
@@ -1590,6 +1624,8 @@ const getRelatoriosSintetico = async (req, res) => {
             SELECT  
                   SUM(tabela.valor) as valoroutros, 
                   SUM(tabela.valorpago) as valorpago,
+                  SUM(tabela.desconto) as valordesconto,
+                  SUM(tabela.juros) as valorjuro,
                   tabela.datavencimento
             FROM    (
 
@@ -1608,6 +1644,8 @@ const getRelatoriosSintetico = async (req, res) => {
             SELECT  
                   SUM(tabela.valor) as valoroutros, 
                   SUM(tabela.valorpago) as valorpago,
+                  SUM(tabela.desconto) as valordesconto,
+                  SUM(tabela.juros) as valorjuro,
                   tabela.operadora
             FROM    (
 
@@ -1626,6 +1664,8 @@ const getRelatoriosSintetico = async (req, res) => {
             SELECT  
                   SUM(tabela.valor) as valoroutros, 
                   SUM(tabela.valorpago) as valorpago,
+                  SUM(tabela.desconto) as valordesconto,
+                  SUM(tabela.juros) as valorjuro,
                   tabela.idfatura
             FROM    (
 
@@ -1754,7 +1794,9 @@ const getRelatoriosSintetico = async (req, res) => {
               TitulosReceber.id AS idtitulo,
               entidades_3.Nome AS entidade, 
               Faturas.DataEmissao, 
-              Faturas.DataVencimento
+              Faturas.DataVencimento,
+              Isnull(Faturas.desconto,0) AS desconto,
+              Isnull(Faturas.juros,0) AS juros
         FROM            TitulosReceber RIGHT OUTER JOIN
                                 Filiais RIGHT OUTER JOIN
                                 VendasBilhetes INNER JOIN
@@ -1778,7 +1820,9 @@ const getRelatoriosSintetico = async (req, res) => {
               Faturas.DataEmissao, 
               Faturas.DataVencimento,
               TitulosReceber.ValorPago,
-              TitulosReceber.id
+              TitulosReceber.id,
+              Faturas.desconto,
+              Faturas.juros
         
         `
       
@@ -1883,7 +1927,9 @@ const getRelatoriosSintetico = async (req, res) => {
               TitulosReceber.id AS idtitulo,
               entidades_3.Nome AS entidade, 
               Faturas.DataEmissao, 
-              Faturas.DataVencimento
+              Faturas.DataVencimento,
+              Isnull(Faturas.desconto,0) AS desconto,
+              Isnull(Faturas.juros,0) AS juros
         FROM            TitulosReceber RIGHT OUTER JOIN
                                 Filiais RIGHT OUTER JOIN
                                 VendasHoteis INNER JOIN
@@ -1907,7 +1953,9 @@ const getRelatoriosSintetico = async (req, res) => {
               Faturas.DataEmissao, 
               Faturas.DataVencimento,
               TitulosReceber.ValorPago,
-              TitulosReceber.id
+              TitulosReceber.id,
+              Faturas.desconto,
+              Faturas.juros
        
       `
     

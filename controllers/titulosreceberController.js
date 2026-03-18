@@ -1,11 +1,25 @@
 const { poolPromise } = require('../db');
 const { v4: uuidv4 } = require('uuid');
+const sql = require('mssql');
+//const { poolPromise } = require('../database');
 
+/*
 function normalizeDate(dateString) {
   if (!dateString) return null;
   const d = new Date(dateString);
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString(); // sempre "YYYY-MM-DDT00:00:00.000Z"
+}
+*/
+
+function normalizeDate(dateString) {
+  if (!dateString) return null;
+
+  const [year, month, day] = dateString.split('T')[0].split('-');
+
+  const d = new Date(Date.UTC(year, month - 1, day));
+
+  return d.toISOString();
 }
 
 // Obter todos os titulos receber
@@ -131,16 +145,17 @@ const getTituloReceber = async (req, res) => {
                               TABELA.descontopago, TABELA.juropago, TABELA.parcela, TABELA.idvendabilhete, TABELA.idvendahotel, TABELA.idvendapacote, TABELA.idfatura, 
                               TABELA.identidade, TABELA.idmoeda, TABELA.idformapagamento, TABELA.idplanoconta, TABELA.idcentrocusto, TABELA.idfilial, TABELA.chave, TABELA.empresa, 
                               TABELA.comissao, TABELA.idnotacredito, TABELA.idnotadebito, TABELA.idreembolso, TABELA.id, TABELA.idnf, TABELA.numeronf, TABELA.titulovalorentrada, 
-                              TABELA.entidade, TABELA.pagamento, TABELA.planoconta
+                              TABELA.entidade, TABELA.pagamento, TABELA.planoconta, TABELA.sacado, TABELA.idsacado
       FROM(
           SELECT        TitulosReceber.IdTitulo, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, TitulosReceber.DataCompetencia, TitulosReceber.Descricao, TitulosReceber.Documento, TitulosReceber.Valor, TitulosReceber.ValorPago, 
                                   TitulosReceber.DescontoPago, TitulosReceber.JuroPago, TitulosReceber.Parcela, TitulosReceber.IdVendaBilhete, TitulosReceber.IdVendaHotel, TitulosReceber.IdVendaPacote, TitulosReceber.IdFatura, 
                                   TitulosReceber.IdEntidade, TitulosReceber.IdMoeda, TitulosReceber.IdFormaPagamento, TitulosReceber.IdPlanoConta, TitulosReceber.IdCentroCusto, TitulosReceber.IdFilial, TitulosReceber.Chave, TitulosReceber.Empresa, 
                                   TitulosReceber.Comissao, TitulosReceber.IdNotaCredito, TitulosReceber.IdNotaDebito, TitulosReceber.IdReembolso, TitulosReceber.Id, TitulosReceber.IdNF, TitulosReceber.NumeroNF, TitulosReceber.TituloValorEntrada, 
-                                  Entidades.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta
+                                  Entidades_1.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta, Isnull(Entidades.Nome,'') AS sacado, TitulosReceber.idsacado
           FROM            TitulosReceber INNER JOIN
                                   VendasBilhetes ON TitulosReceber.IdVendaBilhete = VendasBilhetes.IdVenda LEFT OUTER JOIN
-                                  Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                                  Entidades ON TitulosReceber.idsacado = Entidades.IdEntidade LEFT OUTER JOIN
+                                  Entidades AS Entidades_1 ON TitulosReceber.IdEntidade = Entidades_1.IdEntidade LEFT OUTER JOIN
                                   FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                   PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta
 
@@ -152,10 +167,11 @@ const getTituloReceber = async (req, res) => {
                                   TitulosReceber.DescontoPago, TitulosReceber.JuroPago, TitulosReceber.Parcela, TitulosReceber.IdVendaBilhete, TitulosReceber.IdVendaHotel, TitulosReceber.IdVendaPacote, TitulosReceber.IdFatura, 
                                   TitulosReceber.IdEntidade, TitulosReceber.IdMoeda, TitulosReceber.IdFormaPagamento, TitulosReceber.IdPlanoConta, TitulosReceber.IdCentroCusto, TitulosReceber.IdFilial, TitulosReceber.Chave, TitulosReceber.Empresa, 
                                   TitulosReceber.Comissao, TitulosReceber.IdNotaCredito, TitulosReceber.IdNotaDebito, TitulosReceber.IdReembolso, TitulosReceber.Id, TitulosReceber.IdNF, TitulosReceber.NumeroNF, TitulosReceber.TituloValorEntrada, 
-                                  Entidades.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta
+                                  Entidades_1.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta, Isnull(Entidades.Nome,'') AS sacado, TitulosReceber.idsacado
           FROM            TitulosReceber INNER JOIN
                                   VendasHoteis ON TitulosReceber.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
-                                  Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
+                                  Entidades ON TitulosReceber.idsacado = Entidades.IdEntidade LEFT OUTER JOIN
+                                  Entidades AS Entidades_1 ON TitulosReceber.IdEntidade = Entidades_1.IdEntidade LEFT OUTER JOIN
                                   FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
                                   PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta
 
@@ -167,13 +183,14 @@ const getTituloReceber = async (req, res) => {
                                   TitulosReceber.DescontoPago, TitulosReceber.JuroPago, TitulosReceber.Parcela, TitulosReceber.IdVendaBilhete, TitulosReceber.IdVendaHotel, TitulosReceber.IdVendaPacote, TitulosReceber.IdFatura, 
                                   TitulosReceber.IdEntidade, TitulosReceber.IdMoeda, TitulosReceber.IdFormaPagamento, TitulosReceber.IdPlanoConta, TitulosReceber.IdCentroCusto, TitulosReceber.IdFilial, TitulosReceber.Chave, TitulosReceber.Empresa, 
                                   TitulosReceber.Comissao, TitulosReceber.IdNotaCredito, TitulosReceber.IdNotaDebito, TitulosReceber.IdReembolso, TitulosReceber.Id, TitulosReceber.IdNF, TitulosReceber.NumeroNF, TitulosReceber.TituloValorEntrada, 
-                                  Entidades.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta
-          FROM            TitulosReceber INNER JOIN
+                                  Entidades_1.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta, Isnull(Entidades.Nome,'') AS sacado, TitulosReceber.idsacado
+          FROM            Entidades AS Entidades_1 RIGHT OUTER JOIN
+                                  TitulosReceber INNER JOIN
                                   Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
-                                  VendasBilhetes ON Faturas.IdFatura = VendasBilhetes.IdFatura LEFT OUTER JOIN
+                                  Entidades ON TitulosReceber.idsacado = Entidades.IdEntidade ON Entidades_1.IdEntidade = TitulosReceber.IdEntidade LEFT OUTER JOIN
                                   VendasHoteis ON Faturas.IdFatura = VendasHoteis.IdFatura LEFT OUTER JOIN
+                                  VendasBilhetes ON Faturas.IdFatura = VendasBilhetes.IdFatura LEFT OUTER JOIN
                                   FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                                  Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
                                   PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta
 
             ${whereClauseGeral} ${whereClauseFat}
@@ -185,10 +202,11 @@ const getTituloReceber = async (req, res) => {
                                   TitulosReceber.DescontoPago, TitulosReceber.JuroPago, TitulosReceber.Parcela, TitulosReceber.IdVendaBilhete, TitulosReceber.IdVendaHotel, TitulosReceber.IdVendaPacote, TitulosReceber.IdFatura, 
                                   TitulosReceber.IdEntidade, TitulosReceber.IdMoeda, TitulosReceber.IdFormaPagamento, TitulosReceber.IdPlanoConta, TitulosReceber.IdCentroCusto, TitulosReceber.IdFilial, TitulosReceber.Chave, TitulosReceber.Empresa, 
                                   TitulosReceber.Comissao, TitulosReceber.IdNotaCredito, TitulosReceber.IdNotaDebito, TitulosReceber.IdReembolso, TitulosReceber.Id, TitulosReceber.IdNF, TitulosReceber.NumeroNF, TitulosReceber.TituloValorEntrada, 
-                                  Entidades.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta
+                                  Entidades_1.Nome AS entidade, FormaPagamento.Nome AS pagamento, PlanoConta.Nome AS planoconta, Isnull(Entidades.Nome,'') AS sacado, TitulosReceber.idsacado
           FROM            TitulosReceber LEFT OUTER JOIN
+                                  Entidades ON TitulosReceber.idsacado = Entidades.IdEntidade LEFT OUTER JOIN
+                                  Entidades AS Entidades_1 ON TitulosReceber.IdEntidade = Entidades_1.IdEntidade LEFT OUTER JOIN
                                   FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento LEFT OUTER JOIN
-                                  Entidades ON TitulosReceber.IdEntidade = Entidades.IdEntidade LEFT OUTER JOIN
                                   PlanoConta ON TitulosReceber.IdPlanoConta = PlanoConta.IdPlanoConta
 
              ${whereClauseGeral} ${whereClause} 
@@ -198,7 +216,7 @@ const getTituloReceber = async (req, res) => {
                               TABELA.descontopago, TABELA.juropago, TABELA.parcela, TABELA.idvendabilhete, TABELA.idvendahotel, TABELA.idvendapacote, TABELA.idfatura, 
                               TABELA.identidade, TABELA.idmoeda, TABELA.idformapagamento, TABELA.idplanoconta, TABELA.idcentrocusto, TABELA.idfilial, TABELA.chave, TABELA.empresa, 
                               TABELA.comissao, TABELA.idnotacredito, TABELA.idnotadebito, TABELA.idreembolso, TABELA.id, TABELA.idnf, TABELA.numeronf, TABELA.titulovalorentrada, 
-                              TABELA.entidade, TABELA.pagamento, TABELA.planoconta
+                              TABELA.entidade, TABELA.pagamento, TABELA.planoconta, TABELA.sacado, TABELA.idsacado
 
     `
    const query = 
@@ -598,7 +616,8 @@ const updateTituloReceber = async (req, res) => {
           id,
           idnf,
           numeronf,
-          titulovalorentrada
+          titulovalorentrada,
+          idsacado
     } = req.body;
 
     const dataEmissaoNorm = normalizeDate(dataemissao);
@@ -639,6 +658,7 @@ const updateTituloReceber = async (req, res) => {
       .input('idnf', idnf)
       .input('numeronf', numeronf)
       .input('titulovalorentrada', titulovalorentrada)
+      .input('idsacado', idsacado)
       .query(`
         UPDATE TitulosReceber SET
             dataemissao = @dataemissao,
@@ -655,7 +675,8 @@ const updateTituloReceber = async (req, res) => {
             idcentrocusto = @idcentrocusto,
             idfilial = @idfilial,
             comissao = @comissao,
-            titulovalorentrada = @titulovalorentrada
+            titulovalorentrada = @titulovalorentrada,
+            idsacado = @idsacado
           WHERE idtitulo = @idtitulo
       `);
 
@@ -1150,12 +1171,16 @@ const createTituloReceber = async (req, res) => {
           id,
           idnf,
           numeronf,
-          titulovalorentrada
+          titulovalorentrada,
+          idsacado
     } = req.body;
 
     const dataEmissaoNorm = normalizeDate(dataemissao);
     const dataCompetenciaNorm = normalizeDate(datacompetencia);
     const dataVencimentoNorm = normalizeDate(datavencimento);
+
+    console.log('dataemissao:', dataemissao);
+    console.log('dataemissao normal:', dataVencimentoNorm);
 
     const pool = await poolPromise;
     const result = await pool
@@ -1190,6 +1215,7 @@ const createTituloReceber = async (req, res) => {
       .input('idnf', idnf)
       .input('numeronf', numeronf)
       .input('titulovalorentrada', titulovalorentrada)
+      .input('idsacado', idsacado)
       .query(`
         INSERT INTO titulosreceber (
             dataemissao,
@@ -1221,7 +1247,8 @@ const createTituloReceber = async (req, res) => {
             id,
             idnf,
             numeronf,
-            titulovalorentrada
+            titulovalorentrada,
+            idsacado
         )
         OUTPUT INSERTED.idtitulo
         VALUES (
@@ -1254,7 +1281,8 @@ const createTituloReceber = async (req, res) => {
             @id,
             @idnf,
             @numeronf,
-            @titulovalorentrada
+            @titulovalorentrada,
+            @idsacado
         )
       `);
     const idtitulo = result.recordset[0].idtitulo;
@@ -1263,6 +1291,131 @@ const createTituloReceber = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+// Criar um novo titulo
+const createTituloReceberMultiplo = async (req, res) => {
+  try {
+   // console.log('ENTROU NA API');
+    const titulos = req.body; // espera receber um array de objetos
+
+    if (!Array.isArray(titulos)) {
+      return res.status(400).json({ success: false, message: 'O body deve ser uma lista de titulos' });
+    }
+
+    const listaIdTitulo = [];
+
+    for (const titulo of titulos) {
+      const {
+        dataemissao,
+        datavencimento,
+        descricao,
+        valor,
+        identidade,
+        idmoeda,
+        idfilial,
+        empresa,
+        id,
+        idformapagamento,
+        idplanoconta,
+        parcela,
+        idempresa,
+        idsacado
+      } = titulo;
+
+      
+      const dataEmissaoNorm = normalizeDate(dataemissao);
+      const dataVencimentoNorm = normalizeDate(datavencimento);
+      const novoTitulo = await incTituloRec(idempresa); // <-- AGORA FUNCIONA
+
+      //************** INSERE TITULO ***************** */
+      const poolTit = await poolPromise;
+      const resultTit = await poolTit
+        .request()
+          .input('dataemissao', dataEmissaoNorm)
+          .input('datavencimento', dataVencimentoNorm)
+          .input('datacompetencia', dataEmissaoNorm)
+          .input('descricao', descricao)
+          .input('documento', id)
+          .input('valor', valor)
+          .input('valorpago', 0)
+          .input('descontopago', 0)
+          .input('juropago', 0)
+          .input('parcela', parcela)
+          .input('identidade', identidade)
+          .input('idmoeda', idmoeda)
+          .input('idformapagamento', idformapagamento)
+          .input('idplanoconta', idplanoconta)
+          .input('idfilial', idfilial)
+          .input('chave', uuidv4())
+          .input('empresa', empresa)
+          .input('id', novoTitulo)
+          .input('idsacado', idsacado)
+          .query(`
+            INSERT INTO titulosreceber (
+                dataemissao,
+                datavencimento,
+                datacompetencia,
+                descricao,
+                documento,
+                valor,
+                valorpago,
+                descontopago,
+                juropago,
+                parcela,
+                identidade,
+                idmoeda,
+                idformapagamento,
+                idplanoconta,
+                idfilial,
+                chave,
+                empresa,
+                id,
+                idsacado
+            )
+            OUTPUT INSERTED.idtitulo
+            VALUES (
+                @dataemissao,
+                @datavencimento,
+                @datacompetencia,
+                @descricao,
+                @documento,
+                @valor,
+                @valorpago,
+                @descontopago,
+                @juropago,
+                @parcela,
+                @identidade,
+                @idmoeda,
+                @idformapagamento,
+                @idplanoconta,
+                @idfilial,
+                @chave,
+                @empresa,
+                @id,
+                @idsacado
+            )
+          `);
+
+      const idtit = resultTit.recordset[0].idtitulo;
+
+      // Adiciona na lista de retorno
+      listaIdTitulo.push(idtit);
+
+    }      
+
+    // Retorna a lista de idfatura
+    res.status(201).json({
+      success: true,
+      message: 'Titulos criados com sucesso',
+      idtitulos: listaIdTitulo
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+
 };
 
 // Obter relatorios analítico de titulos a receber
@@ -1464,38 +1617,26 @@ const getRelatoriosAnalitico = async (req, res) => {
                       TABELA.id,
                       TABELA.datapagamento,
                       TABELA.valorbaixa,
-            					TABELA.contabancaria
+            					TABELA.contabancaria,
+                      TABELA.sacado
         FROM(
-        SELECT        Entidades.Nome AS entidade, 
-                      Filiais.Nome AS filial, 
-                      PlanoConta.Nome AS planoconta, 
-                      FormaPagamento.Nome AS pagamento,
-                      TitulosReceber.Id AS idtitulo, 
-                      Faturas.Id AS idfatura, 
-                      TitulosReceber.valor, 
-                      isnull(TitulosReceber.valorpago,0) AS valorpago, 
-                      (isnull(TitulosReceber.valor,0) - isnull(TitulosReceber.valorpago,0)) AS valoraberto,
-                      isnull(TitulosReceber.descontopago,0) AS descontopago, 
-                      isnull(TitulosReceber.juropago,0) AS juropago, 
-                      TitulosReceber.descricao, 
-                      TitulosReceber.dataemissao, 
-                      TitulosReceber.datavencimento,
-                      BaixasReceber.id,
-                      BaixasReceber.databaixa AS datapagamento,
-                      BaixasReceber.ValorPago AS valorbaixa,
-            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
-        FROM            Faturas RIGHT OUTER JOIN
-                                PlanoConta INNER JOIN
-                                Entidades INNER JOIN
-                                TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
-                                FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
-                                Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta INNER JOIN
-                                VendasHoteis ON TitulosReceber.IdVendaHotel = VendasHoteis.IdVenda ON Faturas.IdFatura = TitulosReceber.IdFatura LEFT OUTER JOIN
-                                Grupos ON VendasHoteis.IdGrupo = Grupos.Id LEFT OUTER JOIN
-                                ContasBancarias INNER JOIN
-                                Lancamentos INNER JOIN
-                                BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
-                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber
+              SELECT        Entidades_1.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, 
+                                      ISNULL(TitulosReceber.ValorPago, 0) AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, 
+                                      ISNULL(TitulosReceber.JuroPago, 0) AS juropago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, BaixasReceber.Id, BaixasReceber.DataBaixa AS datapagamento, 
+                                      BaixasReceber.ValorPago AS valorbaixa, ISNULL(Bancos.Nome, '') + '  ' + ISNULL(ContasBancarias.NumeroConta, '') AS contabancaria, Isnull(entidades.nome, '') AS sacado
+              FROM            PlanoConta INNER JOIN
+                                      Entidades AS Entidades_1 INNER JOIN
+                                      TitulosReceber ON Entidades_1.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
+                                      FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
+                                      Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta INNER JOIN
+                                      VendasHoteis ON TitulosReceber.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                      Entidades ON TitulosReceber.idsacado = Entidades.IdEntidade LEFT OUTER JOIN
+                                      Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                      Grupos ON VendasHoteis.IdGrupo = Grupos.Id LEFT OUTER JOIN
+                                      ContasBancarias INNER JOIN
+                                      Lancamentos INNER JOIN
+                                      BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                      Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber
 
          ${whereClauseGeral} ${whereClauseSer}   
 
@@ -1517,35 +1658,23 @@ const getRelatoriosAnalitico = async (req, res) => {
                       BaixasReceber.databaixa,
                       BaixasReceber.ValorPago,
             					Bancos.nome,
-                      ContasBancarias.NumeroConta
+                      ContasBancarias.NumeroConta,
+                      Entidades_1.nome
         
         UNION
         
-        SELECT        Entidades.Nome AS entidade, 
-                      Filiais.Nome AS filial, 
-                      PlanoConta.Nome AS planoconta, 
-                      FormaPagamento.Nome AS pagamento,
-                      TitulosReceber.Id AS idtitulo, 
-                      Faturas.Id AS idfatura, 
-                      TitulosReceber.valor, 
-                      isnull(TitulosReceber.valorpago,0) AS valorpago, 
-                      (isnull(TitulosReceber.valor,0) - isnull(TitulosReceber.valorpago,0)) AS valoraberto,
-                      isnull(TitulosReceber.descontopago,0) AS descontopago, 
-                      isnull(TitulosReceber.juropago,0) AS juropago, 
-                      TitulosReceber.descricao, 
-                      TitulosReceber.dataemissao, 
-                      TitulosReceber.datavencimento,
-                      BaixasReceber.id,
-                      BaixasReceber.databaixa AS datapagamento,
-                      BaixasReceber.ValorPago AS valorbaixa,
-            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
-        FROM            Faturas RIGHT OUTER JOIN
+        SELECT        Entidades_1.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, 
+                                ISNULL(TitulosReceber.ValorPago, 0) AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, 
+                                ISNULL(TitulosReceber.JuroPago, 0) AS juropago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, BaixasReceber.Id, BaixasReceber.DataBaixa AS datapagamento, 
+                                BaixasReceber.ValorPago AS valorbaixa, ISNULL(Bancos.Nome, '') + '  ' + ISNULL(ContasBancarias.NumeroConta, '') AS contabancaria, Isnull(entidades.nome, '') AS sacado
+        FROM            Entidades RIGHT OUTER JOIN
                                 PlanoConta INNER JOIN
-                                Entidades INNER JOIN
-                                TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
+                                Entidades AS Entidades_1 INNER JOIN
+                                TitulosReceber ON Entidades_1.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
                                 Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta INNER JOIN
-                                VendasBilhetes ON TitulosReceber.IdVendaBilhete = VendasBilhetes.IdVenda ON Faturas.IdFatura = TitulosReceber.IdFatura LEFT OUTER JOIN
+                                VendasBilhetes ON TitulosReceber.IdVendaBilhete = VendasBilhetes.IdVenda ON Entidades.IdEntidade = TitulosReceber.idsacado LEFT OUTER JOIN
+                                Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
                                 Grupos ON VendasBilhetes.IdGrupo = Grupos.Id LEFT OUTER JOIN
                                 ContasBancarias INNER JOIN
                                 Lancamentos INNER JOIN
@@ -1572,42 +1701,30 @@ const getRelatoriosAnalitico = async (req, res) => {
                       BaixasReceber.databaixa,
                       BaixasReceber.ValorPago,
             					Bancos.nome,
-                      ContasBancarias.NumeroConta
+                      ContasBancarias.NumeroConta,
+                      Entidades_1.nome
         
         UNION
         
-        SELECT        Entidades.Nome AS entidade, 
-                      Filiais.Nome AS filial, 
-                      PlanoConta.Nome AS planoconta, 
-                      FormaPagamento.Nome AS pagamento,
-                      TitulosReceber.Id AS idtitulo, 
-                      Faturas.Id AS idfatura, 
-                      TitulosReceber.valor, 
-                      isnull(TitulosReceber.valorpago,0) AS valorpago, 
-                      (isnull(TitulosReceber.valor,0) - isnull(TitulosReceber.valorpago,0)) AS valoraberto,
-                      isnull(TitulosReceber.descontopago,0) AS descontopago, 
-                      isnull(TitulosReceber.juropago,0) AS juropago, 
-                      TitulosReceber.descricao, 
-                      TitulosReceber.dataemissao, 
-                      TitulosReceber.datavencimento,
-                      BaixasReceber.id,
-                      BaixasReceber.databaixa AS datapagamento,
-                      BaixasReceber.ValorPago AS valorbaixa,
-            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
-        FROM            ContasBancarias INNER JOIN
-                                Lancamentos INNER JOIN
-                                BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
-                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco RIGHT OUTER JOIN
-                                Grupos RIGHT OUTER JOIN
-                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo RIGHT OUTER JOIN
+        SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, 
+                                ISNULL(TitulosReceber.ValorPago, 0) AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, 
+                                ISNULL(TitulosReceber.JuroPago, 0) AS juropago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, BaixasReceber.Id, BaixasReceber.DataBaixa AS datapagamento, 
+                                BaixasReceber.ValorPago AS valorbaixa, ISNULL(Bancos.Nome, '') + '  ' + ISNULL(ContasBancarias.NumeroConta, '') AS contabancaria, Isnull(entidades_1.nome, '') AS sacado
+        FROM            Grupos RIGHT OUTER JOIN
+                                VendasHoteis RIGHT OUTER JOIN
                                 PlanoConta INNER JOIN
                                 Entidades INNER JOIN
                                 TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
                                 Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta INNER JOIN
                                 Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Entidades AS Entidades_1 ON TitulosReceber.idsacado = Entidades_1.IdEntidade ON VendasHoteis.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
                                 Grupos AS Grupos_1 RIGHT OUTER JOIN
-                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON Faturas.IdFatura = VendasBilhetes.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON BaixasReceber.IdTituloReceber = TitulosReceber.IdTitulo
+                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON Faturas.IdFatura = VendasBilhetes.IdFatura ON Grupos.Id = VendasHoteis.IdGrupo LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber
         
         ${whereClauseGeral} ${whereClauseFat}
 
@@ -1629,38 +1746,27 @@ const getRelatoriosAnalitico = async (req, res) => {
                       BaixasReceber.databaixa,
                       BaixasReceber.ValorPago,
             					Bancos.nome,
-                      ContasBancarias.NumeroConta
+                      ContasBancarias.NumeroConta,
+                      Entidades_1.nome
         
         UNION
         
-        SELECT        Entidades.Nome AS entidade, 
-                      Filiais.Nome AS filial, 
-                      PlanoConta.Nome AS planoconta, 
-                      FormaPagamento.Nome AS pagamento,
-                      TitulosReceber.Id AS idtitulo, 
-                      Faturas.Id AS idfatura, 
-                      TitulosReceber.valor, 
-                      isnull(TitulosReceber.valorpago,0) AS valorpago, 
-                      (isnull(TitulosReceber.valor,0) - isnull(TitulosReceber.valorpago,0)) AS valoraberto,
-                      isnull(TitulosReceber.descontopago,0) AS descontopago, 
-                      isnull(TitulosReceber.juropago,0) AS juropago, 
-                      TitulosReceber.descricao, 
-                      TitulosReceber.dataemissao, 
-                      TitulosReceber.datavencimento,
-                      BaixasReceber.id,
-                      BaixasReceber.databaixa AS datapagamento,
-                      BaixasReceber.ValorPago AS valorbaixa,
-            					(isnull(Bancos.nome, '') +'  '+ isnull(ContasBancarias.NumeroConta, '')) AS contabancaria
-        FROM            PlanoConta INNER JOIN
+        SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, 
+                                ISNULL(TitulosReceber.ValorPago, 0) AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, 
+                                ISNULL(TitulosReceber.JuroPago, 0) AS juropago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, BaixasReceber.Id, BaixasReceber.DataBaixa AS datapagamento, 
+                                BaixasReceber.ValorPago AS valorbaixa, ISNULL(Bancos.Nome, '') + '  ' + ISNULL(ContasBancarias.NumeroConta, '') AS contabancaria, Isnull(entidades_1.nome, '') AS sacado
+        FROM            Entidades AS Entidades_1 RIGHT OUTER JOIN
+                                PlanoConta INNER JOIN
                                 Entidades INNER JOIN
                                 TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
-                                Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta LEFT OUTER JOIN
+                                Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta ON Entidades_1.IdEntidade = TitulosReceber.idsacado LEFT OUTER JOIN
                                 Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
                                 ContasBancarias INNER JOIN
                                 Lancamentos INNER JOIN
                                 BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
                                 Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber
+
 
         ${whereClauseGeral} ${whereClause}
                                 
@@ -1682,7 +1788,8 @@ const getRelatoriosAnalitico = async (req, res) => {
                       BaixasReceber.databaixa,
                       BaixasReceber.ValorPago,
             					Bancos.nome,
-                      ContasBancarias.NumeroConta
+                      ContasBancarias.NumeroConta,
+                      Entidades_1.nome
 
         
         ) as TABELA
@@ -1703,7 +1810,8 @@ const getRelatoriosAnalitico = async (req, res) => {
                       TABELA.id,
                       TABELA.datapagamento,
                       TABELA.valorbaixa,
-            					TABELA.contabancaria
+            					TABELA.contabancaria,
+                      TABELA.sacado
 
 
        `
@@ -1713,18 +1821,19 @@ const getRelatoriosAnalitico = async (req, res) => {
     script =
       `
         SELECT        TABELA.entidade, TABELA.filial, TABELA.planoconta, TABELA.pagamento, TABELA.idtitulo, TABELA.idfatura, TABELA.valor, TABELA.valorpago, TABELA.valoraberto, TABELA.descontopago, TABELA.juropago, 
-                                TABELA.descricao, TABELA.dataemissao, TABELA.datavencimento 
+                                TABELA.descricao, TABELA.dataemissao, TABELA.datavencimento, TABELA.sacado 
         FROM(
-        SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, ISNULL(TitulosReceber.ValorPago, 
+        SELECT        Entidades_1.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, ISNULL(TitulosReceber.ValorPago, 
                                 0) AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, ISNULL(TitulosReceber.JuroPago, 0) AS juropago, 
-                                TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento
-        FROM            Faturas RIGHT OUTER JOIN
-                                PlanoConta INNER JOIN
-                                Entidades INNER JOIN
-                                TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
+                                TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, Isnull(entidades.nome, '') AS sacado
+        FROM            PlanoConta INNER JOIN
+                                Entidades AS Entidades_1 INNER JOIN
+                                TitulosReceber ON Entidades_1.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
                                 Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta INNER JOIN
-                                VendasHoteis ON TitulosReceber.IdVendaHotel = VendasHoteis.IdVenda ON Faturas.IdFatura = TitulosReceber.IdFatura LEFT OUTER JOIN
+                                VendasHoteis ON TitulosReceber.IdVendaHotel = VendasHoteis.IdVenda LEFT OUTER JOIN
+                                Entidades ON TitulosReceber.idsacado = Entidades.IdEntidade LEFT OUTER JOIN
+                                Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
                                 Grupos ON VendasHoteis.IdGrupo = Grupos.Id LEFT OUTER JOIN
                                 ContasBancarias INNER JOIN
                                 Lancamentos INNER JOIN
@@ -1734,20 +1843,21 @@ const getRelatoriosAnalitico = async (req, res) => {
          ${whereClauseGeral} ${whereClauseSer}   
 
         GROUP BY Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosReceber.Id, TitulosReceber.Valor, TitulosReceber.ValorPago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, 
-                                TitulosReceber.DataVencimento, TitulosReceber.DescontoPago, TitulosReceber.JuroPago, Faturas.Id
+                                TitulosReceber.DataVencimento, TitulosReceber.DescontoPago, TitulosReceber.JuroPago, Faturas.Id, Entidades_1.nome
         
         UNION
         
-        SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, ISNULL(TitulosReceber.ValorPago, 
+        SELECT        Entidades_1.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, ISNULL(TitulosReceber.ValorPago, 
                                 0) AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, ISNULL(TitulosReceber.JuroPago, 0) AS juropago, 
-                                TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento
-        FROM            Faturas RIGHT OUTER JOIN
+                                TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, Isnull(entidades.nome, '') AS sacado
+        FROM            Entidades RIGHT OUTER JOIN
                                 PlanoConta INNER JOIN
-                                Entidades INNER JOIN
-                                TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
+                                Entidades AS Entidades_1 INNER JOIN
+                                TitulosReceber ON Entidades_1.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
                                 Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta INNER JOIN
-                                VendasBilhetes ON TitulosReceber.IdVendaBilhete = VendasBilhetes.IdVenda ON Faturas.IdFatura = TitulosReceber.IdFatura LEFT OUTER JOIN
+                                VendasBilhetes ON TitulosReceber.IdVendaBilhete = VendasBilhetes.IdVenda ON Entidades.IdEntidade = TitulosReceber.idsacado LEFT OUTER JOIN
+                                Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
                                 Grupos ON VendasBilhetes.IdGrupo = Grupos.Id LEFT OUTER JOIN
                                 ContasBancarias INNER JOIN
                                 Lancamentos INNER JOIN
@@ -1757,43 +1867,45 @@ const getRelatoriosAnalitico = async (req, res) => {
         ${whereClauseGeral} ${whereClauseAer} 
 
         GROUP BY Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosReceber.Id, Faturas.Id, TitulosReceber.Valor, TitulosReceber.ValorPago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, 
-        TitulosReceber.DataVencimento, TitulosReceber.DescontoPago, TitulosReceber.JuroPago
+        TitulosReceber.DataVencimento, TitulosReceber.DescontoPago, TitulosReceber.JuroPago, Entidades_1.nome
         
         UNION
         
         SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.Id AS idfatura, TitulosReceber.Valor, 
                                 ISNULL(TitulosReceber.ValorPago, 0) AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, 
-                                ISNULL(TitulosReceber.JuroPago, 0) AS juropago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento
-        FROM            ContasBancarias INNER JOIN
-                                Lancamentos INNER JOIN
-                                BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
-                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco RIGHT OUTER JOIN
-                                Grupos RIGHT OUTER JOIN
-                                VendasHoteis ON Grupos.Id = VendasHoteis.IdGrupo RIGHT OUTER JOIN
+                                ISNULL(TitulosReceber.JuroPago, 0) AS juropago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, Isnull(entidades_1.nome, '') AS sacado
+        FROM            Grupos RIGHT OUTER JOIN
+                                VendasHoteis RIGHT OUTER JOIN
                                 PlanoConta INNER JOIN
                                 Entidades INNER JOIN
                                 TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
                                 Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta INNER JOIN
                                 Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
+                                Entidades AS Entidades_1 ON TitulosReceber.idsacado = Entidades_1.IdEntidade ON VendasHoteis.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
                                 Grupos AS Grupos_1 RIGHT OUTER JOIN
-                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON Faturas.IdFatura = VendasBilhetes.IdFatura ON VendasHoteis.IdFatura = Faturas.IdFatura ON BaixasReceber.IdTituloReceber = TitulosReceber.IdTitulo
+                                VendasBilhetes ON Grupos_1.Id = VendasBilhetes.IdGrupo ON Faturas.IdFatura = VendasBilhetes.IdFatura ON Grupos.Id = VendasHoteis.IdGrupo LEFT OUTER JOIN
+                                ContasBancarias INNER JOIN
+                                Lancamentos INNER JOIN
+                                BaixasReceber ON Lancamentos.IdLancamento = BaixasReceber.IdLancamento ON ContasBancarias.IdContaBancaria = Lancamentos.IdContaBancaria INNER JOIN
+                                Bancos ON ContasBancarias.IdBanco = Bancos.IdBanco ON TitulosReceber.IdTitulo = BaixasReceber.IdTituloReceber
         
         ${whereClauseGeral} ${whereClauseFat}
 
         GROUP BY   Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosReceber.Id, TitulosReceber.Valor, TitulosReceber.ValorPago, TitulosReceber.Descricao, 
-            TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, TitulosReceber.descontopago, TitulosReceber.juropago, Faturas.Id
+            TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, TitulosReceber.descontopago, TitulosReceber.juropago, Faturas.Id, Entidades_1.nome
         
         UNION
         
         SELECT        Entidades.Nome AS entidade, Filiais.Nome AS filial, PlanoConta.Nome AS planoconta, FormaPagamento.Nome AS pagamento, TitulosReceber.Id AS idtitulo, Faturas.id as idfatura, TitulosReceber.Valor, ISNULL(TitulosReceber.ValorPago, 0) 
                                 AS valorpago, ISNULL(TitulosReceber.Valor, 0) - ISNULL(TitulosReceber.ValorPago, 0) AS valoraberto, ISNULL(TitulosReceber.DescontoPago, 0) AS descontopago, ISNULL(TitulosReceber.JuroPago, 0) AS juropago, 
-                                TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento
-        FROM            PlanoConta INNER JOIN
+                                TitulosReceber.Descricao, TitulosReceber.DataEmissao, TitulosReceber.DataVencimento, Isnull(entidades_1.nome, '') AS sacado
+        FROM            Entidades AS Entidades_1 RIGHT OUTER JOIN
+                                PlanoConta INNER JOIN
                                 Entidades INNER JOIN
                                 TitulosReceber ON Entidades.IdEntidade = TitulosReceber.IdEntidade INNER JOIN
                                 FormaPagamento ON TitulosReceber.IdFormaPagamento = FormaPagamento.IdFormaPagamento INNER JOIN
-                                Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta LEFT OUTER JOIN
+                                Filiais ON TitulosReceber.IdFilial = Filiais.IdFilial ON PlanoConta.IdPlanoConta = TitulosReceber.IdPlanoConta ON Entidades_1.IdEntidade = TitulosReceber.idsacado LEFT OUTER JOIN
                                 Faturas ON TitulosReceber.IdFatura = Faturas.IdFatura LEFT OUTER JOIN
                                 ContasBancarias INNER JOIN
                                 Lancamentos INNER JOIN
@@ -1803,12 +1915,12 @@ const getRelatoriosAnalitico = async (req, res) => {
         ${whereClauseGeral} ${whereClause}
                                 
         GROUP BY Entidades.Nome, Filiais.Nome, PlanoConta.Nome, FormaPagamento.Nome, TitulosReceber.Id, Faturas.id, TitulosReceber.Valor, TitulosReceber.ValorPago, TitulosReceber.Descricao, TitulosReceber.DataEmissao, 
-                                TitulosReceber.DataVencimento, TitulosReceber.DescontoPago, TitulosReceber.JuroPago
+                                TitulosReceber.DataVencimento, TitulosReceber.DescontoPago, TitulosReceber.JuroPago, Entidades_1.nome
 
         
         ) as TABELA
         GROUP BY TABELA.entidade, TABELA.filial, TABELA.planoconta, TABELA.pagamento, TABELA.idtitulo, TABELA.idfatura, TABELA.Valor, TABELA.valorpago, TABELA.valoraberto, TABELA.descontopago, TABELA.juropago, 
-                 TABELA.descricao, TABELA.dataemissao, TABELA.datavencimento
+                 TABELA.descricao, TABELA.dataemissao, TABELA.datavencimento, TABELA.sacado
                  
        
 
@@ -1829,6 +1941,70 @@ const getRelatoriosAnalitico = async (req, res) => {
   }
 };
 
+// ====================================================================
+// FUNÇÃO incTituloRec (NÃO É API!)
+// ====================================================================
+async function incTituloRec(idempresa) {
+
+  // 🔐 Validação de segurança
+  if (!Number.isInteger(idempresa) || idempresa <= 0) {
+    throw new Error('idempresa inválido');
+  }
+
+  const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+
+  const coluna = `id_${idempresa}`;
+  let valorAtualizado = 0;
+
+  try {
+
+    await transaction.begin();
+
+    const request = new sql.Request(transaction);
+
+    // 🔎 Verifica se coluna existe
+    const check = await request
+      .input("coluna", sql.NVarChar, coluna)
+      .query(`
+        SELECT 1 
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = 'IncTituloRec'
+        AND COLUMN_NAME = @coluna
+      `);
+
+    // 🏗 Se não existir, cria a coluna
+    if (check.recordset.length === 0) {
+      await request.batch(`
+        ALTER TABLE IncTituloRec 
+        ADD ${coluna} INT NOT NULL DEFAULT 0
+      `);
+    }
+
+    // 🔄 Incrementa de forma segura
+    const updateResult = await request.query(`
+      UPDATE IncTituloRec
+      SET ${coluna} = ISNULL(${coluna}, 0) + 1;
+
+      SELECT ${coluna} AS valor
+      FROM IncTituloRec;
+    `);
+
+    valorAtualizado = updateResult.recordset[0].valor;
+
+    await transaction.commit();
+
+    return valorAtualizado;
+
+  } catch (err) {
+
+    await transaction.rollback();
+    console.error('Erro em incTituloRec:', err);
+    throw err;
+
+  }
+}
+
 
 module.exports = {
   getTituloReceber,
@@ -1846,5 +2022,6 @@ module.exports = {
   deleteBaixasReceber,
   getTituloReceberLancamento,
   createBaixasReceberGenerica,
-  getRelatoriosAnalitico
+  getRelatoriosAnalitico,
+  createTituloReceberMultiplo,
 };

@@ -12,6 +12,7 @@ router.get('/', titulospagarController.getTituloPagar);
 
 router.post('/baixaspagar', titulospagarController.createBaixaPagar);
 router.post('/baixaspagargenerica', titulospagarController.createBaixasPagarGenerica);
+router.post('/titulopagarmultiplo', titulospagarController.createTituloPagarMultiplo);
 router.post('/', titulospagarController.createTituloPagar);
 
 router.put('/:idtitulo', titulospagarController.updateTituloPagar);
