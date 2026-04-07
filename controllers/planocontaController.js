@@ -37,7 +37,7 @@ const getPlanoContaPaiDropDown = async (req, res) => {
 };
 
 // Obter todas as plano conta
-const getPlanoContaDropDown = async (req, res) => {
+const getPlanoContaCreditoDropDown = async (req, res) => {
   try {
       const { empresa } = req.query;
 
@@ -50,9 +50,44 @@ const getPlanoContaDropDown = async (req, res) => {
       const request = pool.request();
 
       request.input('empresa', empresa);
+      request.input('tipo', 'ANALÍTICO');
+      request.input('natureza', 'CRÉDITO');
 
       // Parâmetros opcionais
-      let whereClause = 'WHERE empresa = @empresa ';
+      let whereClause = 'WHERE empresa = @empresa  AND tipo = @tipo AND natureza = @natureza ';
+      whereClause += ' ORDER BY nome ';
+
+      const query =
+          `SELECT idplanoconta, nome
+            FROM planoconta ${whereClause}`
+
+      const result = await request.query(query);
+
+      res.json(result.recordset);         
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getPlanoContaDebitoDropDown = async (req, res) => {
+  try {
+      const { empresa } = req.query;
+
+      // Verifica se o parâmetro 'empresa' foi fornecido
+      if (!empresa) {
+        return res.status(400).json({ success: false, message: 'O parâmetro "empresa" é obrigatório.' });
+      }
+
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('empresa', empresa);
+      request.input('tipo', 'ANALÍTICO');
+      request.input('natureza', 'DÉBITO');
+
+      // Parâmetros opcionais
+      let whereClause = 'WHERE empresa = @empresa AND tipo = @tipo AND natureza = @natureza ';
       whereClause += ' ORDER BY nome ';
 
       const query =
@@ -88,7 +123,7 @@ const getPlanoConta = async (req, res) => {
       request.input('nome', `%${nome}%`);
     }
 
-    whereClause += ' ORDER BY empresa, estrutura';
+    whereClause += ' ORDER BY estrutura';
 
     const query = `SELECT idplanoconta, nome, empresa, estrutura, natureza, idplanocontapai, tipo, idpaigeral, naoresultado FROM planoconta ${whereClause}`;
 
@@ -297,7 +332,8 @@ module.exports = {
   createPlanoConta,
   updatePlanoConta,
   deletePlanoConta,
-  getPlanoContaDropDown,
+  getPlanoContaCreditoDropDown,
+  getPlanoContaDebitoDropDown,
   getPlanoContaPaiDropDown,
   temPaiFunc,
   temIrmaoFunc,

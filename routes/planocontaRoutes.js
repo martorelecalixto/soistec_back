@@ -3,6 +3,10 @@ const router = express.Router();
 const planocontaController = require('../controllers/planocontaController');
 
 
+router.get('/dropdowncredito', planocontaController.getPlanoContaCreditoDropDown);
+
+router.get('/dropdowndebito', planocontaController.getPlanoContaDebitoDropDown);
+
 router.get('/tempai', planocontaController.temPaiFunc);
 
 router.get('/temirmao', planocontaController.temIrmaoFunc);
