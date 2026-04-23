@@ -59,7 +59,23 @@ const gerencialRoutes = require('./routes/gerencialRoutes');
 const setupSwagger = require('./swagger');
 
 // ✅ Middlewares globais (ordem importante)
-app.use(cors());
+//app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (
+      origin.startsWith('http://localhost') ||
+      origin === 'https://soistec-api.onrender.com'
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
+/**/
 
 // ⚠️ Deve vir ANTES das rotas (apenas uma vez)
 app.use(express.json());
@@ -151,6 +167,19 @@ async function limparUploadsTemporarios() {
 cron.schedule('0 3 * * *', limparUploadsTemporarios);
 limparUploadsTemporarios(); // também limpa na inicialização
 
+//Manter seu backend sempre acordado usando o UptimeRobot
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+app.head('/health', (req, res) => {
+  res.sendStatus(200);
+});
+
+// Inicialização do servidor
+app.get("/", (req, res) => {
+  res.send("API rodando 🚀");
+});
 
 // Inicialização do servidor
 const PORT = process.env.PORT || 4000;
