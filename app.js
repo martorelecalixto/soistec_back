@@ -59,8 +59,8 @@ const gerencialRoutes = require('./routes/gerencialRoutes');
 const setupSwagger = require('./swagger');
 
 // ✅ Middlewares globais (ordem importante)
-//app.use(cors());
-app.use(cors({
+app.use(cors());
+/*app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
 
@@ -74,7 +74,7 @@ app.use(cors({
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
-}));
+}));*/
 /**/
 
 // ⚠️ Deve vir ANTES das rotas (apenas uma vez)
