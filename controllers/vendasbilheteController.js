@@ -131,7 +131,7 @@ const getVendasBilhete = async (req, res) => {
                    ' vendasbilhetes.id,  vendasbilhetes.empresa, vendasbilhetes.datavenda, entidades_3.nome, formapagamento.nome, ' +
                    ' vendasbilhetes.datavencimento, vendasbilhetes.idmoeda, vendasbilhetes.idvendedor, vendasbilhetes.idemissor, vendasbilhetes.idformapagamento, ' +
                    ' vendasbilhetes.idcentrocusto, vendasbilhetes.idfilial, vendasbilhetes.idfatura, vendasbilhetes.idreciboreceber, vendasbilhetes.idgrupo, ' +
-                   ' entidades_1.nome, entidades_2.nome, recibosreceber.id, faturas.id, TitulosReceber.valorpago, TitulosReceber.idtitulo ';
+                   ' entidades_1.nome, entidades_2.nome, recibosreceber.id, faturas.id, TitulosReceber.valorpago, TitulosReceber.id ';
 
     orderClause += ' ORDER BY Tabela.datavenda desc, Tabela.id ';
 
@@ -194,7 +194,7 @@ const getVendasBilhete = async (req, res) => {
                       RecibosReceber.id AS recibo, 
                       Faturas.id AS fatura, 
                       ISNULL(TitulosReceber.valorpago, 0) AS valorpago, 
-                      TitulosReceber.idtitulo
+                      TitulosReceber.id AS idtitulo
               FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
                                       Moeda RIGHT OUTER JOIN
                                       Entidades AS entidades_2 RIGHT OUTER JOIN
@@ -242,7 +242,7 @@ const getVendasBilhete = async (req, res) => {
                       RecibosReceber.id AS recibo, 
                       Faturas.id AS fatura, 
                       ISNULL(TitulosReceber.valorpago, 0) AS valorpago, 
-                      TitulosReceber.idtitulo
+                      TitulosReceber.id AS idtitulo
               FROM            Entidades AS entidades_1 RIGHT OUTER JOIN
                                       Entidades AS entidades_2 RIGHT OUTER JOIN
                                       Moeda RIGHT OUTER JOIN

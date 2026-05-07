@@ -244,7 +244,7 @@ const createCopet = async (req, res) => {
 
     const id = result.recordset[0].id;
 
-    res.status(201).json({ success: true, idvenda, message: 'copet criado com sucesso' });
+    res.status(201).json({ success: true, id, message: 'copet criado com sucesso' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -6,7 +6,7 @@ const dbConfig = {
   server: process.env.DB_SERVER, // Ex: server.database.windows.net
   database: process.env.DB_DATABASE,
   options: {
-    encrypt: false, // (true)Importante para acesso externo (Azure / SmarterASP) e (false) para acesso localhost
+    encrypt: true, // (true)Importante para acesso externo (Azure / SmarterASP) e (false) para acesso localhost
     trustServerCertificate: true,
   },
 };
