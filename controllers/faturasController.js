@@ -1793,8 +1793,8 @@ const getRelatoriosSintetico = async (req, res) => {
               Isnull(TitulosReceber.ValorPago,0) AS valorpago,
               TitulosReceber.id AS idtitulo,
               entidades_3.Nome AS entidade, 
-              Faturas.DataEmissao, 
-              Faturas.DataVencimento,
+              CONVERT(DATE, Faturas.DataEmissao) AS DataEmissao, 
+              CONVERT(DATE, Faturas.DataVencimento) AS DataVencimento, 
               Isnull(Faturas.desconto,0) AS desconto,
               Isnull(Faturas.juros,0) AS juros
         FROM            TitulosReceber RIGHT OUTER JOIN
@@ -1926,8 +1926,8 @@ const getRelatoriosSintetico = async (req, res) => {
               Isnull(TitulosReceber.ValorPago,0) AS valorpago,
               TitulosReceber.id AS idtitulo,
               entidades_3.Nome AS entidade, 
-              Faturas.DataEmissao, 
-              Faturas.DataVencimento,
+              CONVERT(DATE, Faturas.DataEmissao) AS DataEmissao, 
+              CONVERT(DATE, Faturas.DataVencimento) AS DataVencimento, 
               Isnull(Faturas.desconto,0) AS desconto,
               Isnull(Faturas.juros,0) AS juros
         FROM            TitulosReceber RIGHT OUTER JOIN
@@ -1963,6 +1963,8 @@ const getRelatoriosSintetico = async (req, res) => {
      `  ${scriptInicio} ${scriptAereo} ${scriptServico} ${scriptFim}  ${orderbyClause} `
    
     const result = await request.query(query);
+    //console.log(result.recordset);
+
     
    res.json(result.recordset);    
   } catch (error) {
